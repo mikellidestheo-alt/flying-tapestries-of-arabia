@@ -14,7 +14,65 @@
   "debugTools": {
     "cooldownTicks": 10,
     "targetDistance": 30,
-    "crater": { "radius": 11, "amount": -7, "kind": 1 },
-    "mound": { "radius": 13, "amount": 6, "kind": 0 }
+    "crater": {
+      "radius": 11,
+      "amount": -7,
+      "kind": 1
+    },
+    "mound": {
+      "radius": 13,
+      "amount": 6,
+      "kind": 0
+    }
+  },
+  "caps": {
+    "projectiles": 32,
+    "orbs": 120,
+    "creatures": 24,
+    "wells": 3,
+    "events": 160
+  },
+  "player": {
+    "maxHp": 100,
+    "maxMana": 200,
+    "startMana": 60,
+    "hpRegenPerSecond": 1.5,
+    "respawnManaLossFrac": 0.3,
+    "invulnTicks": 75,
+    "absorbRadius": 3.6,
+    "magnetRadius": 16,
+    "magnetSpeed": 46
+  },
+  "orbs": {
+    "ambientEveryTicks": 40,
+    "ambientNearMax": 36,
+    "ambientRadiusMin": 35,
+    "ambientRadiusMax": 170,
+    "ambientAltitude": 2.6,
+    "ambientValue": 4,
+    "lifetimeTicks": 3600,
+    "despawnDistance": 260
+  },
+  "creatureSpawning": {
+    "targetNear": 7,
+    "ringMin": 120,
+    "ringMax": 200,
+    "despawnDistance": 320,
+    "spawnEveryTicks": 60,
+    "firstSpawnTick": 45
+  },
+  "wells": {
+    "firstTick": 600,
+    "minIntervalTicks": 1200,
+    "maxIntervalTicks": 2100,
+    "maxActive": 2,
+    "minDistance": 150,
+    "maxDistance": 380,
+    "reserve": 160,
+    "lifeTicks": 3900,
+    "drawRadius": 15,
+    "drawMaxHeight": 45,
+    "drawPerSecond": 32,
+    "fadeTicks": 60
   }
 }

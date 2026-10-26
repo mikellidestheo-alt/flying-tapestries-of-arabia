@@ -1,0 +1,18 @@
+{
+  "dust-sprite": {
+    "name": "Dust Sprite",
+    "hp": 34,
+    "speed": 15,
+    "wanderSpeed": 5,
+    "aggroRange": 100,
+    "leashRange": 170,
+    "attackRange": 4.2,
+    "attackDamage": 9,
+    "attackCooldownTicks": 36,
+    "hover": 5,
+    "hitRadius": 2.6,
+    "manaDrop": 14,
+    "orbCount": 3,
+    "wanderRadius": 45
+  }
+}

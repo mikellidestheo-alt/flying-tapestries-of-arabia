@@ -1,0 +1,18 @@
+{
+  "fireball": {
+    "name": "Fireball",
+    "element": "fire",
+    "manaCost": 12,
+    "cooldownTicks": 12,
+    "speed": 78,
+    "maxRange": 230,
+    "gravity": 7,
+    "damage": 22,
+    "area": 7.5,
+    "falloff": 0.45,
+    "hitRadius": 1.6,
+    "effects": [{ "type": "burn", "dps": 4, "durationTicks": 90 }],
+    "terrain": { "radius": 5.5, "amount": -1.8, "kind": 1 },
+    "aimAssist": { "range": 170, "cosMin": 0.94 }
+  }
+}
