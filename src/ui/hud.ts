@@ -2,7 +2,7 @@
 import castleData from '../data/castles.json';
 import simData from '../data/sim.json';
 import { BRANCHES, castleStats, nextUpgrade, tierDef } from '../sim/castles';
-import { SPELLS, spellFor } from '../sim/combat';
+import { nextSpellUpgrade, spellAt, spellFor } from '../sim/combat';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 
@@ -42,6 +42,9 @@ export class Hud {
   private upgrade = $<HTMLButtonElement>('#btnUpgrade');
   private upgradeCost = $<HTMLElement>('#upgradeCost');
   private deposit = $<HTMLElement>('#btnDeposit');
+  private weapon = $<HTMLElement>('#btnWeapon');
+  private weaponCost = $<HTMLElement>('#weaponCost');
+  private palaceInfo = $<HTMLElement>('#palaceInfo');
   private branchPicker = $<HTMLElement>('#branchPicker');
   private branchOptions = $<HTMLElement>('#branchOptions');
   private branchTitle = $<HTMLElement>('#branchTitle');
@@ -52,13 +55,13 @@ export class Hud {
   private markers: Marker[] = [];
   private toastTimer = 0;
   private vignetteTimer = 0;
-  private last = { hp: -1, mana: -1, cd: -1, nomana: false, share: '', timer: '', castle: '', foe: '', up: '' };
+  private last = { wtier: 0, wcan: false, palace: '', hp: -1, mana: -1, cd: -1, nomana: false, share: '', timer: '', castle: '', foe: '', up: '' };
   reducedFlashing = false;
   onUpgrade: (branch: number) => void = () => undefined;
   private pickerOpen = false;
 
   constructor() {
-    this.spellCost.textContent = String(SPELLS[spellFor()]!.manaCost);
+    this.spellCost.textContent = String(spellAt(spellFor(), 1).manaCost);
     this.upgrade.addEventListener('click', () => this.pressUpgrade());
     $('#branchCancel').addEventListener('click', () => this.closePicker());
   }
@@ -83,7 +86,7 @@ export class Hud {
     mid.className = 'mid';
     this.compass.appendChild(mid);
     this.markers = [];
-    this.last = { hp: -1, mana: -1, cd: -1, nomana: false, share: '', timer: '', castle: '', foe: '', up: '' };
+    this.last = { wtier: 0, wcan: false, palace: '', hp: -1, mana: -1, cd: -1, nomana: false, share: '', timer: '', castle: '', foe: '', up: '' };
     this.castleInfo.classList.add('hidden');
     this.foeInfo.classList.add('hidden');
     this.upgrade.classList.add('hidden');
@@ -119,7 +122,7 @@ export class Hud {
       this.manaFill.style.transform = `scaleX(${p.mana / simData.player.maxMana})`;
       this.manaText.textContent = String(mana);
     }
-    const def = SPELLS[spellFor()]!;
+    const def = spellAt(spellFor(), p.spellTier);
     const cd = Math.round((p.spellCd / def.cooldownTicks) * 100);
     if (cd !== this.last.cd) {
       this.last.cd = cd;
@@ -131,6 +134,21 @@ export class Hud {
       this.spellBtn.classList.toggle('nomana', nomana);
     }
 
+    // Weapon tier pips, spell cost, and the weapon-upgrade button.
+    const up = nextSpellUpgrade(p.spellTier);
+    const can = !!up && p.mana >= up.cost;
+    if (p.spellTier !== this.last.wtier || can !== this.last.wcan) {
+      this.last.wtier = p.spellTier;
+      this.last.wcan = can;
+      this.spellCost.textContent = `${def.manaCost}`;
+      this.spellBtn.querySelector('em')!.textContent = ['', 'I', 'II', 'III'][p.spellTier] ?? '';
+      this.weapon.classList.toggle('hidden', !up);
+      this.weapon.classList.toggle('cant', !can);
+      if (up) {
+        this.weaponCost.textContent = String(up.cost);
+        this.weapon.setAttribute('aria-label', `Upgrade weapon to ${up.name} for ${up.cost} mana`);
+      }
+    }
     this.updateShares(sim);
     this.updateCompass(sim, p);
     this.updateCastle(sim, p, p.mana);
@@ -145,6 +163,14 @@ export class Hud {
       if (this.targetMark) this.targetMark.style.left = `${m.targetShare * 100}%`;
       const mine = Math.round((m.shares[0] ?? 0) * 100);
       this.shareText.textContent = `You ${mine}% · goal ${Math.round(m.targetShare * 100)}%${m.suddenDeath ? ' · SUDDEN DEATH' : ''}`;
+    }
+    const mineCastle = sim.castles.find((c) => c.faction === 0);
+    const need = sim.setup?.palaceWinMana ?? 0;
+    const palace = `${mineCastle?.tier ?? 1}|${Math.floor((sim.factions[0]?.captured ?? 0) / 10)}`;
+    if (palace !== this.last.palace) {
+      this.last.palace = palace;
+      const got = Math.floor(sim.factions[0]?.captured ?? 0);
+      this.palaceInfo.textContent = `Palace win: tier 5 castle + ${need} mana · you: tier ${mineCastle?.tier ?? 1}, ${got}`;
     }
     const secs = Math.floor(sim.tick / simData.tickRate);
     const t = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;

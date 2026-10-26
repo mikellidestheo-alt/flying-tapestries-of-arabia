@@ -34,6 +34,8 @@ export interface Projectile {
   /** Homing target kind (0 none, 1 creature, 2 wizard index+1, 3 nest) and id. */
   tk?: number;
   tid?: number;
+  /** Weapon tier the bolt was cast at (1-3). */
+  tier?: number;
 }
 
 export const CREATURE_WANDER = 0;
@@ -125,6 +127,9 @@ export interface Structure {
 export type SimEventType =
   | 'arrow'
   | 'upgrade'
+  | 'spellUpgrade'
+  | 'bounty'
+  | 'monsterFire'
   | 'castleHit'
   | 'castleDowngrade'
   | 'castleDestroyed'

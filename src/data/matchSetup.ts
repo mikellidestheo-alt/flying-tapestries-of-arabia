@@ -9,6 +9,7 @@ export function matchSetupFromChapter(chapter: ChapterConfig, humanElements: Ele
     humanElements,
     rivals: chapter.rivals.map((r, i) => ({ id: r.id, name: r.name, personality: r.personality, element: elements[i]! })),
     targetShare: chapter.targetShare,
+    palaceWinMana: chapter.palaceWinMana,
     aiLevel: chapter.aiLevel,
     comeback: chapter.comeback,
     difficulty,

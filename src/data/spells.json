@@ -32,6 +32,73 @@
       "homingRange": 150
     },
     "structureMult": 1.0,
-    "interceptHp": 16
+    "interceptHp": 16,
+    "tiers": [
+      {
+        "name": "Blazing Fireball",
+        "upgradeCost": 90,
+        "manaCost": 14,
+        "cooldownTicks": 11,
+        "speed": 82,
+        "damage": 30,
+        "area": 9.5,
+        "hitRadius": 1.9,
+        "effects": [
+          {
+            "type": "burn",
+            "dps": 6,
+            "durationTicks": 100
+          }
+        ],
+        "terrain": {
+          "radius": 7,
+          "amount": -2.2,
+          "kind": 1
+        }
+      },
+      {
+        "name": "Inferno Orb",
+        "upgradeCost": 180,
+        "manaCost": 17,
+        "cooldownTicks": 10,
+        "speed": 86,
+        "damage": 40,
+        "area": 12,
+        "hitRadius": 2.3,
+        "effects": [
+          {
+            "type": "burn",
+            "dps": 9,
+            "durationTicks": 120
+          }
+        ],
+        "terrain": {
+          "radius": 9,
+          "amount": -2.8,
+          "kind": 1
+        }
+      }
+    ],
+    "tierNames": [
+      "Fireball",
+      "Blazing Fireball",
+      "Inferno Orb"
+    ]
+  },
+  "genie-bolt": {
+    "name": "Curse Bolt",
+    "element": "dark",
+    "manaCost": 0,
+    "cooldownTicks": 0,
+    "speed": 42,
+    "maxRange": 135,
+    "gravity": 0,
+    "damage": 11,
+    "area": 3.5,
+    "falloff": 0.3,
+    "hitRadius": 1.5,
+    "effects": [],
+    "interceptHp": 8,
+    "structureMult": 0
   }
 }

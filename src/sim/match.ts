@@ -4,6 +4,9 @@ import matchData from '../data/match.json';
 import type { Element } from '../data/elements';
 import type { Sim } from './sim';
 import { SIM_TICK_RATE } from './sim';
+import castleData from '../data/castles.json';
+
+const MAX_CASTLE_TIER = castleData.tiers.length;
 
 export type DifficultyId = 'easy' | 'normal' | 'hard';
 export type DifficultyTuning = (typeof difficultyData)['normal'];
@@ -20,6 +23,8 @@ export interface MatchSetup {
   humanElements: Element[];
   rivals: RivalSetup[];
   targetShare: number;
+  /** Top-tier castle + this much captured mana wins outright. */
+  palaceWinMana: number;
   /** 0..1 rival AI skill for the chapter. */
   aiLevel: number;
   comeback: {
@@ -90,6 +95,15 @@ export function stepMatch(sim: Sim): void {
   const human = sim.factions[0]!;
   if (human.eliminated) return end('lost', 'Your castle fell.');
   if (sim.factions.every((f) => f.human || f.eliminated)) return end('won', 'Every rival castle has fallen.');
+
+  // Palace race: a top-tier castle plus enough captured mana wins outright.
+  for (const f of sim.factions) {
+    if (f.eliminated) continue;
+    const c = sim.castles.find((q) => q.faction === f.id);
+    if (c && !c.ruined && c.tier >= MAX_CASTLE_TIER && f.captured >= setup.palaceWinMana) {
+      return end(f.human ? 'won' : 'lost', f.human ? 'Your palace stands and your treasury overflows: victory!' : `${f.name} completed a palace and amassed a fortune.`);
+    }
+  }
 
   // Mana share race.
   if (total >= matchData.minTotalForWin && minutes >= matchData.winAfterMinutes) {

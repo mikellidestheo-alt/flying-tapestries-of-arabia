@@ -50,6 +50,7 @@
   "structureKit": "sandstone-oasis",
   "creatureSet": [
     "dust-sprite",
+    "evil-genie",
     "oryx"
   ],
   "ambient": {
@@ -98,5 +99,6 @@
     "name": "Sprite Obelisk",
     "color": "#8a6a3a",
     "glow": "#ffd27a"
-  }
+  },
+  "palaceWinMana": 3000
 }

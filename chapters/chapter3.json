@@ -103,5 +103,6 @@
     "name": "Sprite Obelisk",
     "color": "#8a6a3a",
     "glow": "#ffd27a"
-  }
+  },
+  "palaceWinMana": 2600
 }

@@ -58,13 +58,21 @@ export class GameAudio {
     return { pan: right * 0.8, gain: Math.max(0, 1 - d / 260) };
   }
 
+  /** Was this event produced at the listener's own position (their own bounty or upgrade)? */
+  private isLocal(e: SimEvent, l: Listener): boolean {
+    return Math.abs(e.x - l.x) < 0.01 && Math.abs(e.z - l.z) < 0.01;
+  }
+
   handle(e: SimEvent, l: Listener, now: number): void {
     if (!this.engine.ready || !this.spec) return;
     this.clock = now;
     const { pan, gain } = this.place(e, l);
     switch (e.type) {
       case 'cast': this.sfx.castFire(0, 0.7); break;
-      case 'impact': this.sfx.impactFire(pan, gain); break;
+      case 'impact': if (e.v >= 0) this.sfx.impactFire(pan, gain); break;
+      case 'monsterFire': this.sfx.monsterFire(pan, gain); break;
+      case 'bounty': if (this.isLocal(e, l)) this.sfx.bounty(degreeHz(this.spec, 0), 0.9); break;
+      case 'spellUpgrade': if (this.isLocal(e, l)) this.sfx.weaponUp(0.9); break;
       case 'hit': this.sfx.hit(pan, gain * 0.8); break;
       case 'kill': this.sfx.kill(pan, gain); break;
       case 'orb': {

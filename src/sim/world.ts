@@ -2,7 +2,7 @@
 import simData from '../data/sim.json';
 import { clamp, dcos, dsin } from './dmath';
 import { CREATURE_CHASE, CREATURE_WANDER } from './entities';
-import { CREATURES, hurtCreature } from './combat';
+import { CREATURES, MONSTER_FACTION, SPELLS, hurtCreature } from './combat';
 import type { PlayerState, Sim } from './sim';
 import { SIM_DT, SIM_TICK_RATE } from './sim';
 import { baseHeight } from './terrain';
@@ -102,6 +102,16 @@ export function stepCreatures(sim: Sim): void {
       tz = c.z + (c.z - target.z);
       speed = def.speed;
       ty = T.surfaceAt(c.x, c.z) + def.hover;
+    } else if (c.state === CREATURE_CHASE && def.ranged) {
+      // Ranged monsters (genies) close to their preferred range, then circle the target and fire.
+      const near = dist < def.ranged.preferred;
+      const ux = (target.x - c.x) / Math.max(1, dist);
+      const uz = (target.z - c.z) / Math.max(1, dist);
+      const side = c.id % 2 === 0 ? 1 : -1;
+      tx = near ? c.x - uz * side * 20 - ux * 6 : target.x;
+      tz = near ? c.z + ux * side * 20 - uz * 6 : target.z;
+      speed = near ? def.speed * 0.75 : def.speed;
+      ty = target.y + 4;
     } else if (c.state === CREATURE_CHASE) {
       tx = target.x;
       tz = target.z;
@@ -137,8 +147,29 @@ export function stepCreatures(sim: Sim): void {
     c.y += (Math.max(floor, ty + bob) - c.y) * 0.12;
     if (c.y < floor) c.y = floor;
 
-    // Attack.
+    // Ranged attack: a curse bolt aimed with a little lead and a seeded error.
     if (c.cd > 0) c.cd--;
+    if (def.ranged && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.ranged.range && sim.projectiles.length < simData.caps.projectiles) {
+      const bolt = SPELLS[def.ranged.spell]!;
+      const t = dist / bolt.speed;
+      let dx = target.x + target.vx * t * 0.8 - c.x;
+      let dz = target.z + target.vz * t * 0.8 - c.z;
+      const dy = target.y - c.y;
+      const err = sim.rng.range(-def.ranged.aimError, def.ranged.aimError);
+      const ce = dcos(err);
+      const se = dsin(err);
+      [dx, dz] = [dx * ce - dz * se, dx * se + dz * ce];
+      const hd = Math.sqrt(dx * dx + dz * dz) || 1;
+      const flight = hd / bolt.speed;
+      sim.projectiles.push({
+        id: sim.nextId++, owner: -1, faction: MONSTER_FACTION, hp: bolt.interceptHp, spell: def.ranged.spell,
+        x: c.x, y: c.y + 1.5, z: c.z, px: c.x, py: c.y + 1.5, pz: c.z,
+        vx: (dx / hd) * bolt.speed, vy: dy / Math.max(0.05, flight), vz: (dz / hd) * bolt.speed, travelled: 0, tk: 0, tid: 0, tier: 1,
+      });
+      c.cd = def.ranged.cooldownTicks;
+      sim.emit('monsterFire', c.x, c.y + 1.5, c.z, 0);
+    }
+    // Melee attack.
     if (def.hostile && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.attackRange && target.invuln === 0) {
       const dmg = def.attackDamage * (sim.setup ? DIFFICULTIES[sim.setup.difficulty].enemyDamage : 1);
       target.hp -= dmg;

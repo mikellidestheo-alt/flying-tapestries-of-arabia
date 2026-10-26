@@ -5,10 +5,11 @@ A modern 3D open-world flying and spellcasting game for Android phones, inspired
 > **Status:** early development. Milestone 3 is playable: two chapters, castles with archers, rival wizards, offline play. See [docs/milestones.md](docs/milestones.md).
 
 ## How to play (current build)
-- **Goal:** capture the chapter's target share of all the mana (shown on the bar at the top) before the rival wizard does, or knock out every rival castle. Matches run about 10-14 minutes.
+- **Goal (any one wins):** own a tier-5 palace castle with enough captured mana (the HUD shows the target), capture the chapter's target share of all mana (bar at the top), or knock out every rival castle. Matches run about 9-14 minutes.
+- **Risk and reward:** killing a rival wizard or knocking down a castle tier pays big mana bounties. If YOU die you lose all your personal mana and 30% of your castle bank.
 - **Left thumb**: touch and drag anywhere on the left half. Left/right steers, up boosts, down brakes. Let go to cruise.
-- **Flame button** (right): throw a Fireball. It auto-aims a little at nearby targets.
-- **Gather mana**: fly into blue orbs, hover beside a glowing **mana well**, hunt wild **oryx**, destroy sprite **nests**, defeat creatures.
+- **Flame button** (right): throw your wizard's attack. It auto-aims a little at nearby targets. The small **flame-arrow button** above it upgrades your weapon (3 tiers) with personal mana; **Crater/Mound** (8 mana) reshape the ground.
+- **Gather mana**: fly into blue orbs, hover beside a glowing **mana well**, hunt wild **oryx**, destroy sprite **nests**, beat **evil genies** (they fire back!) and other creatures.
 - **Upgrade button** (appears near your castle): spend mana to grow your castle: more archers, stronger walls, more income. Your own mana pool holds at most 200, so for the bigger upgrades hold **Deposit** near the castle to move mana into the castle bank (the bank can hold 900 and also fills slowly by itself).
 - **Pause** (top corner): settings (graphics quality, battery saver, left-handed layout, tilt steering, volume, difficulty lives in the chapter menu).
 - Desktop (dev only): WASD/arrows to fly, Space fireball, U upgrade.

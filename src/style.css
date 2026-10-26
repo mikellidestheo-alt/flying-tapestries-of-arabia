@@ -30,10 +30,6 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 .act:active, .act.down { background: rgba(243, 201, 105, 0.55); transform: scale(0.95); }
 .act.small { width: 52px; height: 52px; }
 #btnMound { border-radius: 14px; } /* shape differs from the round crater button: never colour alone */
-#devTools { position: absolute; right: calc(var(--safe-r) + 250px); bottom: calc(var(--safe-b) + 24px); display: none; gap: 10px; pointer-events: none; }
-#ui.dev #devTools { display: flex; }
-#ui.lefty #devTools { right: auto; left: calc(var(--safe-l) + 250px); }
-
 #hud { position: absolute; left: calc(var(--safe-l) + 14px); top: calc(var(--safe-t) + 12px); display: flex; flex-direction: column; gap: 6px; width: 200px; pointer-events: none; }
 #ui.lefty #hud { left: auto; right: calc(var(--safe-r) + 76px); }
 .bar { display: flex; align-items: center; gap: 6px; }
@@ -130,5 +126,16 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 .act.dep { position: absolute; right: calc(var(--safe-r) + 240px); bottom: calc(var(--safe-b) + 28px); width: 78px; height: 78px; color: #5fd8ff; border-color: #5fd8ff; background: rgba(10, 30, 50, 0.65); font-size: 11px; }
 .act.dep span { text-align: center; line-height: 1.05; margin-top: 2px; }
 #ui.lefty .act.dep { right: auto; left: calc(var(--safe-l) + 240px); }
-#ui.dev #devTools { right: calc(var(--safe-r) + 330px); }
-#ui.lefty.dev #devTools { right: auto; left: calc(var(--safe-l) + 330px); }
+/* Terrain tools + weapon upgrade sit right above the fire button. */
+#sideTools { position: absolute; right: calc(var(--safe-r) + 20px); bottom: calc(var(--safe-b) + 140px); display: flex; flex-direction: row-reverse; gap: 10px; pointer-events: none; }
+#ui.lefty #sideTools { right: auto; left: calc(var(--safe-l) + 20px); flex-direction: row; }
+#sideTools .act.small { width: 56px; height: 56px; position: relative; }
+#sideTools .act i { position: absolute; bottom: 4px; font: 700 11px system-ui, sans-serif; font-style: normal; color: #cfe; }
+#ui.no-tt #sideTools .tt { display: none; }
+.act.wpn { color: #ffb25a; border-color: #ffd58a; background: rgba(60, 20, 20, 0.65); }
+.act.wpn b { position: absolute; bottom: 3px; font: 800 12px system-ui, sans-serif; color: #fff; }
+.act.wpn svg { margin-bottom: 8px; }
+.act.wpn.cant { color: #8a8aa8; border-color: #8a8aa8; }
+.act.wpn.hidden, #sideTools .hidden { display: none; }
+#palaceInfo { font: 600 11px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; opacity: 0.9; }
+.act.spell em { position: absolute; top: 6px; font: 800 12px system-ui, sans-serif; font-style: normal; color: #ffd58a; letter-spacing: 1px; }

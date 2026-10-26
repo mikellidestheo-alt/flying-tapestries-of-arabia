@@ -52,6 +52,8 @@ export interface ChapterConfig {
   music: { scale: string; rootMidi: number; tempoBpm: number; rhythm: string; motif: number[] };
   rivals: RivalConfig[];
   targetShare: number;
+  /** Win by owning a top-tier castle AND having captured at least this much mana. */
+  palaceWinMana: number;
   matchLengthMinutes: number;
   aiLevel: number;
   comeback: {
@@ -98,6 +100,7 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(c.music.tempoBpm >= 60 && c.music.tempoBpm <= 160, 'tempo out of range');
   need(c.music.motif.length >= 4, 'motif too short');
   need(c.targetShare > 0.2 && c.targetShare < 1, 'targetShare out of range');
+  need(c.palaceWinMana >= 800 && c.palaceWinMana <= 4000, 'palaceWinMana out of range');
   need(c.matchLengthMinutes >= 8 && c.matchLengthMinutes <= 16, 'matchLengthMinutes should be 8-16');
   need(c.comeback.startMinute < c.comeback.suddenDeathMinute, 'comeback must start before sudden death');
   need(c.comeback.suddenDeathMinute > c.matchLengthMinutes - 3, 'sudden death should start near match end');

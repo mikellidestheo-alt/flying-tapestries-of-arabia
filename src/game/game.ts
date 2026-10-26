@@ -13,7 +13,7 @@ import { GameRenderer } from '../render/gameRenderer';
 import { GOVERNOR, PRESETS, QualityGovernor, guessPreset } from '../render/quality';
 import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } from '../save';
 import { tierDef } from '../sim/castles';
-import { SPELLS, spellFor } from '../sim/combat';
+import { spellAt, spellFor } from '../sim/combat';
 import { ACTION_SPELL, SIM_DT, Sim } from '../sim/sim';
 import { DebugOverlay } from '../ui/debugOverlay';
 import { Hud } from '../ui/hud';
@@ -63,7 +63,7 @@ export class Game {
     this.controls.onPress = (bit) => {
       if (this.save.settings.haptics) vibrate(12);
       const p = this.sim?.players[0];
-      if (bit === ACTION_SPELL && p && p.mana < SPELLS[spellFor()]!.manaCost) this.audio.denied();
+      if (bit === ACTION_SPELL && p && p.mana < spellAt(spellFor(), p.spellTier).manaCost) this.audio.denied();
     };
     this.debug = new DebugOverlay($('#debug'));
     this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r), {
@@ -259,6 +259,7 @@ export class Game {
     this.controls.tiltEnabled = s.tilt;
     this.debug.setVisible(s.debugOverlay);
     this.ui.classList.toggle('dev', s.debugOverlay);
+    this.ui.classList.toggle('no-tt', !s.terrainTools);
     this.audio.setVolumes(s.musicVolume, s.sfxVolume, s.muted);
     this.renderer.setReducedFlashing(s.reducedFlashing);
     this.hud.reducedFlashing = s.reducedFlashing;
@@ -326,6 +327,12 @@ export class Game {
           this.hud.showToast(e.x === sim.castles[0]!.x ? 'Your castle was battered down a tier!' : 'An enemy castle lost a tier!');
           break;
         case 'castleDestroyed': this.hud.showToast('A castle has fallen!'); break;
+        case 'bounty':
+          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Bounty! +${Math.round(e.v)} mana`);
+          break;
+        case 'spellUpgrade':
+          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Weapon upgraded: ${spellAt(spellFor(), e.v).name}!`);
+          break;
         case 'nestDestroyed': this.hud.showToast('Nest destroyed: mana released!'); break;
         default: break;
       }

@@ -61,7 +61,7 @@
   },
   "structureKit": "terracotta-bazaar",
   "creatureSet": [
-    "lantern-wisp",
+    "evil-genie",
     "dust-sprite",
     "oryx"
   ],
@@ -111,5 +111,6 @@
     "name": "Lantern Obelisk",
     "color": "#7a4a3a",
     "glow": "#ffb347"
-  }
+  },
+  "palaceWinMana": 3200
 }

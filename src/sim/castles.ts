@@ -183,13 +183,17 @@ function dropLoot(sim: Sim, c: Castle, amount: number): void {
 }
 
 /** Damage a castle. At zero HP it drops a tier; a tier-1 castle is destroyed and its faction eliminated. */
-export function damageCastle(sim: Sim, c: Castle, amount: number): void {
+export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1): void {
   if (c.ruined || c.invuln > 0 || amount <= 0) return;
   c.hp -= amount;
   c.lastHit = sim.tick;
   sim.emit('castleHit', c.x, c.y + 6, c.z, amount);
   if (c.hp > 0) return;
   if (c.tier > 1) {
+    const attackerWizard = sim.players[attacker];
+    if (attackerWizard && attackerWizard.faction !== c.faction) {
+      sim.award(attackerWizard, matchData.bounty.castleDowngradeBase + matchData.bounty.castleDowngradePerTier * c.tier);
+    }
     const loot = c.bank * castleData.downgradeLootFraction;
     c.bank -= loot;
     dropLoot(sim, c, loot + 20);
@@ -202,6 +206,8 @@ export function damageCastle(sim: Sim, c: Castle, amount: number): void {
     refreshObstacle(sim, c);
     sim.emit('castleDowngrade', c.x, c.y + 6, c.z, c.tier);
   } else {
+    const attackerWizard = sim.players[attacker];
+    if (attackerWizard && attackerWizard.faction !== c.faction) sim.award(attackerWizard, matchData.bounty.castleDestroy);
     c.ruined = true;
     c.hp = 0;
     dropLoot(sim, c, c.bank + 60);

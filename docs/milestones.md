@@ -70,3 +70,12 @@ Fixed: terrain planner re-sorted ~225 candidates every frame (now only on chunk-
 - Max mana: pool caps at 200; bigger upgrades are paid via the castle bank. New **Deposit** button (hold near your castle) moves mana into the bank; HUD shows what you still need.
 - Castles restyled in Arabian architecture (onion domes, balconied towers/minarets, pointed merlons, arched windows) with warmer sandstone colours.
 - Guided aim: wider, smarter auto-target cone plus light homing. Tests: 106 passing.
+
+### M3 follow-up 2 (phone feedback, 2026-10-26)
+- Terrain buttons moved next to the fire button (with the new weapon-upgrade button); they cost 8 mana and can be turned off in Settings.
+- **Weapon upgrade:** 3 tiers per wizard attack (Fireball -> Blazing Fireball -> Inferno Orb), bought with personal mana; tier pips on the cast button.
+- **Bounties:** wizard kill = 130 mana; castle tier knocked off = 70 + 30 x tier; castle destroyed = 320 (overflow goes to the castle bank).
+- **Dying:** all personal mana is lost (drops as orbs) and 30% of the castle bank.
+- **Palace win:** tier-5 castle + chapter mana target wins outright (HUD shows progress). Match length in autopilot sims: 9-13 min.
+- **Evil genies:** ranged monsters (curse bolts, can be shot down by archers), 45 mana each.
+- Tests: 124 passing. Bundle: 181 KB gzip JS (budget 300).

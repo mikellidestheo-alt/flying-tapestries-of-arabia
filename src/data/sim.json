@@ -23,7 +23,8 @@
       "radius": 13,
       "amount": 6,
       "kind": 0
-    }
+    },
+    "manaCost": 8
   },
   "caps": {
     "projectiles": 32,

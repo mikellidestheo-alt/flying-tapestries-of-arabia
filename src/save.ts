@@ -16,6 +16,7 @@ export interface Settings {
   sfxVolume: number;
   muted: boolean;
   difficulty: 'easy' | 'normal' | 'hard';
+  terrainTools: boolean;
 }
 
 export interface Progress {
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sfxVolume: 0.8,
   muted: false,
   difficulty: 'normal',
+  terrainTools: true,
 };
 
 export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false, cleared: 0 };

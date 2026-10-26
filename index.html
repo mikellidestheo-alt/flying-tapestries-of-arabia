@@ -30,14 +30,19 @@
       <div id="topHud">
         <div id="shareWrap"><div id="shareBar"></div><div id="shareLine"><span id="shareText"></span><span id="timer"></span></div></div>
         <div id="compass"></div>
+        <div id="palaceInfo"></div>
       </div>
       <div id="castleInfo" class="hidden"></div>
       <div id="foeInfo" class="hidden"><span id="foeName"></span><div class="track"><i id="foeFill"></i></div></div>
       <div id="tutorial" class="hidden"><p id="tutorialText"></p><button id="tutorialSkip" type="button">Skip tutorial</button></div>
 
-      <div id="devTools">
-        <button id="btnMound" class="act small" type="button" aria-label="Raise mound (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg></button>
-        <button id="btnCrater" class="act small" type="button" aria-label="Dig crater (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+      <div id="sideTools">
+        <button id="btnCrater" class="act small tt" type="button" aria-label="Dig crater (8 mana)"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg><i>8</i></button>
+        <button id="btnMound" class="act small tt" type="button" aria-label="Raise mound (8 mana)"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><i>8</i></button>
+        <button id="btnWeapon" class="act small wpn" type="button" aria-label="Upgrade weapon">
+          <svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 2c1 3.4 5 5 5 9.6a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5.6.2 1.5.8 2.4 1.8 2.7 1-2.2.1-4 .7-6.7z" fill="currentColor"/><path d="M19 20v-6m-3 3 3-3 3 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <b id="weaponCost">90</b>
+        </button>
       </div>
       <button id="btnUpgrade" class="act upg hidden" type="button" aria-label="Upgrade castle">
         <svg viewBox="0 0 24 24" width="34" height="34"><path d="M4 21V10l3-2V5h2v2h2V5h2v2h2V5h2v3l3 2v11h-5v-5a3 3 0 0 0-6 0v5z" fill="currentColor"/></svg>
@@ -57,6 +62,7 @@
       <div id="actions">
         <button id="btnSpell" class="act spell" type="button" aria-label="Cast fireball">
           <svg viewBox="0 0 24 24" width="44" height="44"><path d="M12 1.5c1.2 4.2 6.3 6.2 6.3 12.2a6.3 6.3 0 0 1-12.6 0c0-3.1 1.9-5.1 3.2-7 .2 1.9 1 3 2.2 3.4 1.3-2.7.2-5.2.9-8.6z" fill="currentColor"/></svg>
+          <em></em>
           <span id="spellCost">12</span>
           <i id="spellCd"></i>
         </button>

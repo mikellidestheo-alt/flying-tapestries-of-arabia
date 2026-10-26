@@ -23,6 +23,14 @@
   },
   "wizardHitRadius": 2.6,
   "wizardMaxHp": 100,
-  "wizardRespawnManaLoss": 0.3,
-  "winAfterMinutes": 6
+  "wizardRespawnManaLoss": 1.0,
+  "winAfterMinutes": 8,
+  "deathBankLoss": 0.3,
+  "bounty": {
+    "wizardKill": 130,
+    "castleDowngradeBase": 70,
+    "castleDowngradePerTier": 30,
+    "castleDestroy": 320
+  },
+  "lastHitCreditTicks": 150
 }

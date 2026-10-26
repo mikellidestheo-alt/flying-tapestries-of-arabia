@@ -41,6 +41,7 @@ export class SettingsPanel {
     this.switchRow('Battery saver', 'Caps the game at 30 fps.', s.batterySaver, (v) => this.change({ batterySaver: v }));
     this.switchRow('Left-handed layout', 'Mirrors the stick and buttons.', s.leftHanded, (v) => this.change({ leftHanded: v }));
     this.switchRow('Tilt steering (experimental)', 'Tilt the phone to steer. Hold it comfortably, then turn this on.', s.tilt, (v) => this.change({ tilt: v }));
+    this.switchRow('Terrain tools', 'Crater and Mound buttons above the fire button (8 mana each).', s.terrainTools, (v) => this.change({ terrainTools: v }));
     this.switchRow('Vibration', 'Short haptic buzz on actions.', s.haptics, (v) => this.change({ haptics: v }));
     this.switchRow('Reduced flashing', 'Softens bright flashes (used by effects in later updates).', s.reducedFlashing, (v) => this.change({ reducedFlashing: v }));
     this.switchRow('Debug overlay', 'FPS, frame time, entity counts, latency.', s.debugOverlay, (v) => this.change({ debugOverlay: v }));

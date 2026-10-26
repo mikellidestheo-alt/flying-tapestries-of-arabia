@@ -3,7 +3,6 @@
 import * as THREE from 'three';
 import simData from '../data/sim.json';
 import { PRESETS } from './quality';
-import { CREATURES } from '../sim/combat';
 import type { QualityPreset } from '../save';
 import type { SimEvent } from '../sim/entities';
 import type { Sim } from '../sim/sim';
@@ -19,6 +18,8 @@ const EMBER = [1.0, 0.82, 0.4] as const;
 const DUST = [0.85, 0.7, 0.45] as const;
 const GOLD = [1.0, 0.85, 0.4] as const;
 const RED = [1.0, 0.25, 0.2] as const;
+const WHITE_HOT = [1.0, 0.85, 0.5] as const;
+const CURSE = [0.65, 0.25, 0.95] as const;
 
 function makeBeamTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -58,6 +59,30 @@ function oryxGeometry(): THREE.BufferGeometry {
   return b.build();
 }
 
+/** Evil genie: smoky tail, muscled torso with gold armlets, horned black turban, glowing red eyes. */
+function genieGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  const smoke = '#4a3f9a';
+  const skin = '#5a6fd0';
+  b.add(new THREE.ConeGeometry(1.3, 3.6, 9), smoke, [0, 0.6, 0], [Math.PI, 0, 0]); // wispy tail, tip down
+  b.add(new THREE.ConeGeometry(0.8, 2.2, 7), '#2f2872', [0.35, -0.5, 0.1], [Math.PI, 0.4, 0.3]); // curling wisp
+  b.add(new THREE.CylinderGeometry(1.15, 0.9, 1.7, 9), skin, [0, 2.4, 0]); // torso
+  b.add(new THREE.CylinderGeometry(1.2, 1.2, 0.35, 9), '#e8b83a', [0, 1.8, 0]); // gold sash
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.CylinderGeometry(0.32, 0.26, 1.7, 6), skin, [sx * 1.35, 2.4, 0.5], [-0.9, 0, sx * -0.35]); // arms forward
+    b.add(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 6), '#e8b83a', [sx * 1.55, 2.0, 0.95], [-0.9, 0, sx * -0.35]); // armlets
+    b.add(new THREE.SphereGeometry(0.4, 6, 5), '#7a8be8', [sx * 1.7, 1.8, 1.4]); // hands
+  }
+  b.add(new THREE.SphereGeometry(0.78, 9, 7), skin, [0, 3.85, 0.1]); // head
+  b.add(new THREE.ConeGeometry(0.2, 0.55, 4), '#2a1f1a', [0, 3.35, 0.7], [Math.PI, 0, 0]); // pointed goatee
+  for (const sx of [-1, 1]) b.add(new THREE.SphereGeometry(0.17, 5, 4), '#ff3b2e', [sx * 0.3, 3.95, 0.8]); // glowing eyes
+  b.add(new THREE.CylinderGeometry(0.85, 0.9, 0.6, 9), '#1c1630', [0, 4.45, 0.05]); // black turban band
+  b.add(new THREE.SphereGeometry(0.85, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), '#2a2050', [0, 4.7, 0.05]); // turban dome
+  b.add(new THREE.OctahedronGeometry(0.25), '#ff4a3a', [0, 4.55, 0.85]); // ruby
+  for (const sx of [-1, 1]) b.add(new THREE.ConeGeometry(0.22, 1.2, 5), '#e8e0d0', [sx * 0.7, 5.0, 0], [0, 0, sx * -0.45]); // horns
+  return b.build();
+}
+
 interface WellView {
   group: THREE.Group;
   beam: THREE.Mesh;
@@ -71,10 +96,12 @@ export class EntityRenderer {
   readonly group = new THREE.Group();
   private glow!: GlowLayer;
   private particles!: Particles;
-  private creatures!: THREE.InstancedMesh;
-  private animals!: THREE.InstancedMesh;
-  private animalGeom = oryxGeometry();
-  private creatureGeom = dustSpriteGeometry();
+  private typeMeshes = new Map<string, THREE.InstancedMesh>();
+  private typeGeoms = new Map<string, THREE.BufferGeometry>([
+    ['dust-sprite', dustSpriteGeometry()],
+    ['oryx', oryxGeometry()],
+    ['evil-genie', genieGeometry()],
+  ]);
   private creatureMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   private wellViews: WellView[] = [];
   private beamTex = makeBeamTexture();
@@ -105,10 +132,10 @@ export class EntityRenderer {
 
   setQuality(q: QualityPreset): void {
     this.quality = q;
-    this.group.remove(this.glow.points, this.creatures, this.animals, this.structures.group);
+    this.group.remove(this.glow.points, ...this.typeMeshes.values(), this.structures.group);
     this.glow.dispose();
-    this.creatures.dispose();
-    this.animals.dispose();
+    for (const m of this.typeMeshes.values()) m.dispose();
+    this.typeMeshes.clear();
     this.structures.dispose();
     this.build();
   }
@@ -117,16 +144,15 @@ export class EntityRenderer {
     const caps = PRESETS[this.quality].caps;
     this.glow = new GlowLayer(caps.orbs + caps.projectiles + caps.particles + 64);
     this.particles = new Particles(caps.particles);
-    this.creatures = new THREE.InstancedMesh(this.creatureGeom, this.creatureMat, Math.min(caps.creatures, simData.caps.creatures));
-    this.creatures.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.creatures.frustumCulled = false;
-    this.creatures.count = 0;
-    this.animals = new THREE.InstancedMesh(this.animalGeom, this.creatureMat, Math.min(caps.creatures, simData.caps.creatures));
-    this.animals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.animals.frustumCulled = false;
-    this.animals.count = 0;
+    for (const [type, geom] of this.typeGeoms) {
+      const mesh = new THREE.InstancedMesh(geom, this.creatureMat, Math.min(caps.creatures, simData.caps.creatures));
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      mesh.count = 0;
+      this.typeMeshes.set(type, mesh);
+    }
     this.structures = new StructureRenderer(this.chapter, caps.archers);
-    this.group.add(this.glow.points, this.creatures, this.animals, this.structures.group);
+    this.group.add(this.glow.points, ...this.typeMeshes.values(), this.structures.group);
   }
 
   private makeWell(): WellView {
@@ -164,6 +190,10 @@ export class EntityRenderer {
         P.burst(this.rnd, n(10), e.x, e.y, e.z, 9, 0.35, 1.1 * f, ...FIRE);
         break;
       case 'impact':
+        if (e.v < 0) {
+          P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 9, 0.5, 1.4 * f, ...CURSE, 4, 0.4);
+          break;
+        }
         P.burst(this.rnd, n(26), e.x, e.y + 0.5, e.z, 17, 0.7, 1.5 * f, ...EMBER, 10, 0.5);
         P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 7, 1.0, 3.2, ...DUST, -1, 0.7);
         P.burst(this.rnd, n(8), e.x, e.y + 1, e.z, 12, 0.5, 2.4 * f, ...FIRE, 4, 0.2);
@@ -218,6 +248,16 @@ export class EntityRenderer {
         P.burst(this.rnd, n(30), e.x, e.y, e.z, 16, 1.0, 3.0, ...DUST, -2, 0.4);
         P.burst(this.rnd, n(18), e.x, e.y, e.z, 14, 1.0, 2.0 * f, ...GOLD, -2, 0.7);
         break;
+      case 'monsterFire':
+        P.burst(this.rnd, n(6), e.x, e.y, e.z, 7, 0.35, 1.4 * f, ...CURSE);
+        break;
+      case 'bounty':
+        P.burst(this.rnd, n(40), e.x, e.y + 2, e.z, 20, 1.3, 2.4 * f, ...GOLD, -2, 0.9);
+        break;
+      case 'spellUpgrade':
+        P.burst(this.rnd, n(36), e.x, e.y + 1, e.z, 18, 1.1, 2.2 * f, ...FIRE, -2, 0.7);
+        P.burst(this.rnd, n(16), e.x, e.y + 1, e.z, 12, 1.0, 1.6 * f, ...WHITE_HOT, 0, 0.5);
+        break;
       case 'wizardDown':
         P.burst(this.rnd, n(24), e.x, e.y, e.z, 12, 0.9, 2.6, ...DUST, -2, 0.2);
         break;
@@ -262,45 +302,73 @@ export class EntityRenderer {
       const x = lerp(p.px, p.x);
       const y = lerp(p.py, p.y);
       const z = lerp(p.pz, p.z);
-      glow.add(x, y, z, FIRE[0], FIRE[1], FIRE[2], 1, 4.2);
-      glow.add(x, y, z, 1, 0.95, 0.7, 1, 1.9);
-      this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32, 2.0 * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
+      if (p.spell === 'genie-bolt') {
+        glow.add(x, y, z, 0.7, 0.25, 1, 1, 3.4);
+        glow.add(x, y, z, 1, 0.8, 1, 1, 1.5);
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, this.rnd() * 2, (this.rnd() - 0.5) * 2, 0.3, 1.8 * this.flashScale, 0.6, 0.2, 0.95, 0);
+        continue;
+      }
+      const tier = p.tier ?? 1;
+      const big = 1 + (tier - 1) * 0.45;
+      const hot = tier === 3 ? WHITE_HOT : FIRE;
+      glow.add(x, y, z, hot[0], hot[1], hot[2], 1, 4.2 * big);
+      glow.add(x, y, z, 1, 0.95, 0.7, 1, 1.9 * big);
+      this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32 + 0.05 * tier, 2.0 * big * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
     }
 
-    // Creatures (instanced): hostile sprites and neutral wild animals use separate meshes.
+    // Creatures (instanced, one mesh per type).
     const cs = sim.creatures;
-    const cap = this.creatures.instanceMatrix.count;
-    let nSprites = 0;
-    let nAnimals = 0;
+    const counts = new Map<string, number>();
     for (let i = 0; i < cs.length; i++) {
       const c = cs[i]!;
-      const hostile = CREATURES[c.type]!.hostile;
-      const mesh = hostile ? this.creatures : this.animals;
-      const idx = hostile ? nSprites : nAnimals;
-      if (idx >= cap) continue;
+      const mesh = this.typeMeshes.get(c.type);
+      if (!mesh) continue;
+      const idx = counts.get(c.type) ?? 0;
+      if (idx >= mesh.instanceMatrix.count) continue;
+      counts.set(c.type, idx + 1);
       const x = lerp(c.px, c.x);
       const y = lerp(c.py, c.y);
       const z = lerp(c.pz, c.z);
       this.dummy.position.set(x, y, z);
       const heading = Math.atan2(c.vx, c.vz);
-      if (hostile) this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
-      else this.dummy.rotation.set(0, heading, 0);
-      this.dummy.scale.setScalar(hostile ? 1 : 1.5);
-      if (!hostile) this.dummy.position.y += Math.abs(Math.sin(time * 9 + c.id)) * (c.state === 1 ? 0.5 : 0.08); // gallop bounce
+      let scale = 1;
+      if (c.type === 'dust-sprite') this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
+      else if (c.type === 'evil-genie') {
+        // Faces the nearest wizard while circling; sways like smoke.
+        let face = heading;
+        let bd = Infinity;
+        for (const p of sim.players) {
+          const d = (p.x - x) ** 2 + (p.z - z) ** 2;
+          if (p.active && d < bd) {
+            bd = d;
+            face = Math.atan2(p.x - x, p.z - z);
+          }
+        }
+        this.dummy.rotation.set(0, face, Math.sin(time * 2.2 + c.id) * 0.1);
+        this.dummy.position.y += Math.sin(time * 2.6 + c.id) * 0.5;
+        scale = 1.15;
+      } else {
+        this.dummy.rotation.set(0, heading, 0);
+        scale = 1.5;
+        this.dummy.position.y += Math.abs(Math.sin(time * 9 + c.id)) * (c.state === 1 ? 0.5 : 0.08); // gallop bounce
+      }
+      this.dummy.scale.setScalar(scale);
       this.dummy.updateMatrix();
       mesh.setMatrixAt(idx, this.dummy.matrix);
       if (c.burnTicks > 0) this.tint.setRGB(1.8, 0.8, 0.45);
       else this.tint.setRGB(1, 1, 1);
       mesh.setColorAt(idx, this.tint);
-      if (hostile) nSprites++;
-      else nAnimals++;
+      if (c.type === 'evil-genie') {
+        // Menacing red eye-glow and a trail of dark smoke.
+        glow.add(x, y + 3.9 * scale, z, 1, 0.2, 0.15, 0.7 + 0.3 * Math.sin(time * 6 + c.id), 2.4);
+        if (this.rnd() < 0.35) this.particles.spawn(x, y - 0.5, z, (this.rnd() - 0.5) * 2, -1, (this.rnd() - 0.5) * 2, 0.7, 2.4, 0.35, 0.25, 0.6);
+      }
       if (c.burnTicks > 0 && this.rnd() < 0.5) this.particles.spawn(x, y + 1, z, 0, 3, 0, 0.5, 1.6 * this.flashScale, FIRE[0], FIRE[1], FIRE[2]);
     }
-    this.creatures.count = nSprites;
-    this.animals.count = nAnimals;
-    for (const m of [this.creatures, this.animals]) {
-      m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    for (const [type, mesh] of this.typeMeshes) {
+      mesh.count = counts.get(type) ?? 0;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
 
     // Wells: beacon beam, spinning ring, and a stream of mana flowing to a drawing player.
@@ -351,11 +419,9 @@ export class EntityRenderer {
 
   dispose(): void {
     this.glow.dispose();
-    this.creatures.dispose();
-    this.animals.dispose();
-    this.animalGeom.dispose();
+    for (const m of this.typeMeshes.values()) m.dispose();
+    for (const g of this.typeGeoms.values()) g.dispose();
     this.structures.dispose();
-    this.creatureGeom.dispose();
     this.creatureMat.dispose();
     this.beamTex.dispose();
     for (const v of this.wellViews) {

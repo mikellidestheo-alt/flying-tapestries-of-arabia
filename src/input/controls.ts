@@ -1,6 +1,6 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_MOUND, ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_MOUND, ACTION_DEPOSIT, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -105,6 +105,7 @@ export class Controls {
     this.bindButton('#btnMound', ACTION_MOUND);
     this.bindButton('#btnSpell', ACTION_SPELL);
     this.bindButton('#btnDeposit', ACTION_DEPOSIT);
+    this.bindTap('#btnWeapon', ACTION_SPELLUP);
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
@@ -113,6 +114,7 @@ export class Controls {
       if (e.code === 'KeyV') this.pressed |= ACTION_MOUND;
       if (e.code === 'Space' || e.code === 'KeyF') this.pressed |= ACTION_SPELL;
       if (e.code === 'KeyU') this.upgradeBranch = 1;
+      if (e.code === 'KeyG') this.pressed |= ACTION_SPELLUP;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
@@ -137,6 +139,17 @@ export class Controls {
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
+  }
+
+  /** A button that fires once per tap (no auto-repeat while held). */
+  private bindTap(sel: string, bit: number): void {
+    const el = this.root.querySelector<HTMLElement>(sel)!;
+    el.addEventListener('pointerdown', (e) => {
+      this.pressed |= bit;
+      this.onPress?.(bit);
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
 
   private moveKnob(dx: number, dy: number): void {

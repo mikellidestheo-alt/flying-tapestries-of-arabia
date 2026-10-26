@@ -4,6 +4,6 @@
     { "id": "mana", "text": "Fly into the glowing blue mana orbs to collect mana.", "until": { "manaGained": 8 } },
     { "id": "spell", "text": "Tap the flame button to throw a Fireball. Shoot a Dust Sprite for more mana!", "until": { "casts": 2 } },
     { "id": "castle", "text": "Follow the gold castle icon on the compass home. Near your castle, tap Upgrade. Short on mana? Hold Deposit to move mana into the castle bank first.", "until": { "castleTier": 2 } },
-    { "id": "goal", "text": "Capture the target share of all mana to win. Watch the share bar at the top. Good luck!", "until": { "seconds": 9 } }
+    { "id": "goal", "text": "Win by owning a tier-5 palace with enough mana, by capturing the target share, or by felling every rival castle. Wizard kills and castle hits pay big bounties, but if you die you lose ALL your mana. Upgrade your weapon (flame +) to fight better. Good luck!", "until": { "seconds": 9 } }
   ]
 }

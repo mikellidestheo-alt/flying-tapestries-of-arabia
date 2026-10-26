@@ -34,5 +34,30 @@
     "manaDrop": 18,
     "orbCount": 3,
     "wanderRadius": 60
+  },
+  "evil-genie": {
+    "name": "Evil Genie",
+    "hp": 75,
+    "speed": 13,
+    "wanderSpeed": 4,
+    "aggroRange": 135,
+    "leashRange": 210,
+    "attackRange": 0,
+    "attackDamage": 0,
+    "attackCooldownTicks": 0,
+    "hover": 7,
+    "hitRadius": 3.1,
+    "manaDrop": 45,
+    "orbCount": 5,
+    "wanderRadius": 55,
+    "hostile": true,
+    "fleeRange": 0,
+    "ranged": {
+      "spell": "genie-bolt",
+      "range": 100,
+      "preferred": 55,
+      "cooldownTicks": 54,
+      "aimError": 0.1
+    }
   }
 }

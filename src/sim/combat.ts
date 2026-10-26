@@ -11,13 +11,91 @@ import type { PlayerState, Sim } from './sim';
 import { SIM_DT } from './sim';
 import { buildingTopAt } from './terrain';
 
-export type SpellDef = (typeof spells)['fireball'];
-export const SPELLS = spells as Record<string, SpellDef>;
-export const CREATURES = creatureData as Record<string, (typeof creatureData)['dust-sprite']>;
+export interface SpellEffect {
+  type: string;
+  dps: number;
+  durationTicks: number;
+}
+
+export interface SpellDef {
+  name: string;
+  element: string;
+  manaCost: number;
+  cooldownTicks: number;
+  speed: number;
+  maxRange: number;
+  gravity: number;
+  damage: number;
+  area: number;
+  falloff: number;
+  hitRadius: number;
+  effects: SpellEffect[];
+  terrain?: { radius: number; amount: number; kind: number };
+  aimAssist?: { range: number; cosMin: number; distanceWeight: number; homingStrength: number; homingMaxAngle: number; homingRange: number };
+  structureMult: number;
+  interceptHp: number;
+  /** Mana spent to reach this tier (tier 1 = free). */
+  upgradeCost?: number;
+}
+
+type SpellEntry = SpellDef & { tiers?: Partial<SpellDef>[]; tierNames?: string[] };
+export const SPELLS = spells as unknown as Record<string, SpellEntry>;
+export const MAX_SPELL_TIER = 3;
+
+export interface CreatureDef {
+  name: string;
+  hp: number;
+  speed: number;
+  wanderSpeed: number;
+  aggroRange: number;
+  leashRange: number;
+  fleeRange: number;
+  attackRange: number;
+  attackDamage: number;
+  attackCooldownTicks: number;
+  hover: number;
+  hitRadius: number;
+  manaDrop: number;
+  orbCount: number;
+  wanderRadius: number;
+  hostile: boolean;
+  ranged?: { spell: string; range: number; preferred: number; cooldownTicks: number; aimError: number };
+}
+export const CREATURES = creatureData as unknown as Record<string, CreatureDef>;
+
+/** Faction id used by monster projectiles: they hurt every wizard and nothing else. */
+export const MONSTER_FACTION = 99;
+
+/** Spell definition for a tier (1-3): the base entry with that tier's overrides applied. */
+export function spellAt(id: string, tier: number): SpellDef {
+  const base = SPELLS[id]!;
+  const t = Math.max(1, Math.min(MAX_SPELL_TIER, Math.floor(tier || 1)));
+  if (t === 1 || !base.tiers) return base;
+  const merged: SpellDef = { ...base };
+  for (let i = 0; i < t - 1; i++) Object.assign(merged, base.tiers[i] ?? {});
+  return merged;
+}
 
 /** Spell a wizard casts. M2/M3 placeholder: everyone throws the Fireball (full kits in M4). */
 export function spellFor(): string {
   return 'fireball';
+}
+
+/** Cost of the next weapon tier for a wizard, or null at the top. */
+export function nextSpellUpgrade(tier: number): { tier: number; cost: number; name: string } | null {
+  if (tier >= MAX_SPELL_TIER) return null;
+  const def = spellAt(spellFor(), tier + 1);
+  return { tier: tier + 1, cost: def.upgradeCost ?? 0, name: def.name };
+}
+
+/** Spend mana to raise a wizard's weapon one tier (anywhere on the map). */
+export function tryUpgradeSpell(sim: Sim, p: PlayerState): boolean {
+  const up = nextSpellUpgrade(p.spellTier);
+  if (!up || !p.active || p.mana < up.cost) return false;
+  p.mana -= up.cost;
+  p.spellTier = up.tier;
+  sim.emit('spellUpgrade', p.x, p.y, p.z, up.tier);
+  return true;
 }
 
 interface Target {
@@ -34,7 +112,8 @@ interface Target {
 export function tryCast(sim: Sim, playerIndex: number): boolean {
   const p = sim.players[playerIndex]!;
   const id = spellFor();
-  const def = SPELLS[id]!;
+  const def = spellAt(id, p.spellTier);
+  const assist = def.aimAssist!;
   if (!p.active || p.spellCd > 0 || p.mana < def.manaCost || sim.projectiles.length >= simData.caps.projectiles) return false;
 
   p.mana -= def.manaCost;
@@ -55,10 +134,10 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
     const dy = t.y - oy;
     const dz = t.z - oz;
     const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (d > def.aimAssist.range || d < 1) return;
+    if (d > assist.range || d < 1) return;
     const cos = (dx * fx + dz * fz) / d;
-    if (cos < def.aimAssist.cosMin) return;
-    const score = cos - (d / def.aimAssist.range) * def.aimAssist.distanceWeight;
+    if (cos < assist.cosMin) return;
+    const score = cos - (d / assist.range) * assist.distanceWeight;
     if (score > bestScore) {
       bestScore = score;
       best = t;
@@ -90,7 +169,7 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
   }
   const proj: Projectile = {
     id: sim.nextId++, owner: playerIndex, faction: p.faction, hp: def.interceptHp, spell: id,
-    x: ox, y: oy, z: oz, px: ox, py: oy, pz: oz, vx, vy, vz, travelled: 0, tk: tgt ? tgt.kind : 0, tid: tgt ? tgt.id : 0,
+    x: ox, y: oy, z: oz, px: ox, py: oy, pz: oz, vx, vy, vz, travelled: 0, tk: tgt ? tgt.kind : 0, tid: tgt ? tgt.id : 0, tier: p.spellTier,
   };
   sim.projectiles.push(proj);
   sim.emit('cast', ox, oy, oz, playerIndex);
@@ -122,6 +201,7 @@ export function hurtWizard(sim: Sim, w: PlayerState, amount: number, attacker: n
   if (!w.active || w.hp <= 0 || w.invuln > 0) return;
   w.hp -= amount;
   w.lastHitBy = attacker;
+  w.lastHitTick = sim.tick;
   sim.emit('hit', w.x, w.y, w.z, amount);
   if (!w.isRival) sim.emit('playerHit', w.x, w.y, w.z, amount);
 }
@@ -145,11 +225,12 @@ export function hurtStructure(sim: Sim, s: Structure, amount: number, attacker: 
 }
 
 function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, ground: boolean): void {
-  const def = SPELLS[proj.spell]!;
+  const def = spellAt(proj.spell, proj.tier ?? 1);
+  const monster = proj.faction === MONSTER_FACTION;
   const area2 = def.area * def.area;
   const falloffDamage = (d: number) => def.damage * (1 - def.falloff * clamp(d / def.area, 0, 1));
 
-  for (const c of sim.creatures) {
+  for (const c of monster ? [] : sim.creatures) {
     const dx = c.x - x;
     const dy = c.y - y;
     const dz = c.z - z;
@@ -172,22 +253,22 @@ function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, gro
     if (d2 > area2) continue;
     hurtWizard(sim, w, falloffDamage(Math.sqrt(d2)), proj.owner);
   }
-  for (const s of sim.structures) {
+  for (const s of monster ? [] : sim.structures) {
     const dx = s.x - x;
     const dz = s.z - z;
     const d2 = dx * dx + dz * dz;
     if (!s.alive || d2 > (def.area + matchData.nests.radius) ** 2) continue;
     hurtStructure(sim, s, falloffDamage(Math.sqrt(d2)) * def.structureMult, proj.owner);
   }
-  for (const c of sim.castles) {
+  for (const c of monster ? [] : sim.castles) {
     if (c.faction === proj.faction || c.ruined) continue;
     const o = sim.terrain.obstacles.find((q) => q.id === c.id);
     const r = (o?.r ?? 12) + def.area;
     const dx = c.x - x;
     const dz = c.z - z;
-    if (dx * dx + dz * dz < r * r) damageCastle(sim, c, def.damage * def.structureMult);
+    if (dx * dx + dz * dz < r * r) damageCastle(sim, c, def.damage * def.structureMult, proj.owner);
   }
-  if (ground && y - sim.terrain.params.waterLevel > 0.2 && buildingTopAt(sim.terrain.params, x, z) === 0) {
+  if (def.terrain && ground && y - sim.terrain.params.waterLevel > 0.2 && buildingTopAt(sim.terrain.params, x, z) === 0) {
     const t = def.terrain;
     sim.terrain.deltas.add(x, z, t.radius, t.amount, t.kind, sim.tick);
   }
@@ -215,12 +296,13 @@ function homeIn(sim: Sim, p: Projectile, def: SpellDef): void {
   const dx = tx - p.x;
   const dz = tz - p.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
-  if (dist < 1 || dist > def.aimAssist.homingRange) return;
+  const assist = def.aimAssist;
+  if (!assist || dist < 1 || dist > assist.homingRange) return;
   const sp = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
   if (sp < 1) return;
   const cos = (p.vx * dx + p.vz * dz) / (sp * dist);
-  if (cos < dcos(def.aimAssist.homingMaxAngle)) return; // already past it: let it fly
-  const k = def.aimAssist.homingStrength;
+  if (cos < dcos(assist.homingMaxAngle)) return; // already past it: let it fly
+  const k = assist.homingStrength;
   const t = dist / sp;
   p.vx += ((dx / dist) * sp - p.vx) * k;
   p.vz += ((dz / dist) * sp - p.vz) * k;
@@ -234,7 +316,7 @@ export function stepProjectiles(sim: Sim): void {
   let w = 0;
   for (let i = 0; i < list.length; i++) {
     const p = list[i]!;
-    const def = SPELLS[p.spell]!;
+    const def = spellAt(p.spell, p.tier ?? 1);
     if (p.hp <= 0) {
       sim.emit('fizzle', p.x, p.y, p.z, p.owner); // shot down by archers
       continue;
@@ -250,7 +332,8 @@ export function stepProjectiles(sim: Sim): void {
     p.travelled += def.speed * SIM_DT;
 
     let done = false;
-    for (const c of sim.creatures) {
+    const monster = p.faction === MONSTER_FACTION;
+    for (const c of monster ? [] : sim.creatures) {
       const r = def.hitRadius + CREATURES[c.type]!.hitRadius;
       const dx = c.x - p.x;
       const dy = c.y - p.y;
@@ -275,7 +358,7 @@ export function stepProjectiles(sim: Sim): void {
         }
       }
     }
-    if (!done) {
+    if (!done && !monster) {
       for (const s of sim.structures) {
         if (!s.alive) continue;
         const dx = s.x - p.x;

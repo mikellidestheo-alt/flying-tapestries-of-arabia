@@ -5,9 +5,9 @@ import castleData from '../data/castles.json';
 import rivalData from '../data/rivals.json';
 import { clamp, datan2, wrapAngle } from './dmath';
 import { nextUpgrade } from './castles';
-import { SPELLS, spellFor } from './combat';
+import { nextSpellUpgrade, spellAt, spellFor } from './combat';
 import { DIFFICULTIES } from './match';
-import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
+import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
 
 export type Personality = keyof typeof rivalData.personalities;
 const AI = rivalData.ai;
@@ -54,7 +54,7 @@ function decide(sim: Sim, p: PlayerState, ai: RivalAI): void {
   const diff = DIFFICULTIES[setup.difficulty];
   const skill = 0.5 + 0.5 * setup.aiLevel;
   const castle = sim.castles.find((c) => c.faction === p.faction)!;
-  const spellCost = SPELLS[spellFor()]!.manaCost;
+  const spellCost = spellAt(spellFor(), p.spellTier).manaCost;
   const need = clamp(1 - p.mana / 90, 0, 1);
   const best: Candidate = { kind: 'explore', id: 0, x: castle.x + sim.rng.range(-320, 320), z: castle.z + sim.rng.range(-320, 320), score: 0.1 };
   const offer = (c: Candidate) => {
@@ -107,7 +107,7 @@ function decide(sim: Sim, p: PlayerState, ai: RivalAI): void {
       const d = dist(w.x, w.z, p.x, p.z);
       const dHome = dist(w.x, w.z, castle.x, castle.z);
       const aggression = pers.aggression * diff.rivalAggression * (0.6 + 0.4 * skill);
-      if (d < 560) offer({ kind: 'wizard', id: sim.players.indexOf(w) + 1, x: w.x, z: w.z, score: (aggression * 1.1) / (1 + d / 160) });
+      if (d < 560) offer({ kind: 'wizard', id: sim.players.indexOf(w) + 1, x: w.x, z: w.z, score: (aggression * 1.6) / (1 + d / 190) });
       if (dHome < AI.defendRadius) offer({ kind: 'wizard', id: sim.players.indexOf(w) + 1, x: w.x, z: w.z, score: pers.defense * 2.2 });
     }
   }
@@ -119,7 +119,7 @@ function decide(sim: Sim, p: PlayerState, ai: RivalAI): void {
       const d = dist(c.x, c.z, p.x, p.z);
       if (d < 1500) {
         const urge = pers.aggression * diff.rivalAggression * skill * (0.3 + minutes / 5);
-        offer({ kind: 'castle', id: c.id, x: c.x, z: c.z, score: (urge * 0.8) / (1 + d / 900) });
+        offer({ kind: 'castle', id: c.id, x: c.x, z: c.z, score: (urge * 1.3) / (1 + d / 1000) });
       }
     }
   }
@@ -213,13 +213,16 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
   const steer = clamp(wrapAngle(p.heading - desired) * AI.steerGain, -1, 1);
 
   let actions = 0;
-  const def = SPELLS[spellFor()]!;
+  const def = spellAt(spellFor(), p.spellTier);
   if (combat && p.mana >= def.manaCost) {
     let range = AI.combatRange;
     if (ai.goal === 'castle') range = AI.castleAttackRange;
     const aligned = Math.abs(wrapAngle(p.heading - toGoal)) < 0.3;
     if (d < range && aligned && sim.rng.next() < diff.rivalAccuracy * (0.5 + 0.5 * setup.aiLevel)) actions |= ACTION_SPELL;
   }
+  // Buy better weapons when flush: aggressive rivals do it first.
+  const wu = nextSpellUpgrade(p.spellTier);
+  if (wu && p.mana >= wu.cost + 40 && sim.rng.next() < 0.04 + 0.04 * (ai.personality === 'aggressive' ? 1 : 0)) actions |= ACTION_SPELLUP;
   let branch = 0;
   if (ai.goal === 'home') {
     const up = nextUpgrade(castle);

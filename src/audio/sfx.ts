@@ -158,6 +158,33 @@ export class Sfx {
     if (win) this.noise(o.ctx, o.dest, t + 0.5, 0.8, 6000, 3000, 1, 0.15);
   }
 
+  /** Evil genie firing: a dark, hollow whoosh. */
+  monsterFire(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sawtooth', 300, 110, 0.3, 0.14);
+    this.noise(o.ctx, o.dest, t, 0.28, 900, 250, 2, 0.35);
+  }
+
+  /** Bounty / reward: a bright golden arpeggio. */
+  bounty(rootHz: number, gain: number): void {
+    const o = this.out(0, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    [1, 1.25, 1.5, 2, 3].forEach((m, i) => this.tone(o.ctx, o.dest, t + i * 0.07, 'triangle', rootHz * m * 2, rootHz * m * 2, 0.5, 0.3));
+  }
+
+  /** Weapon upgrade: a rising fiery sweep with a chime on top. */
+  weaponUp(gain: number): void {
+    const o = this.out(0, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.6, 300, 4000, 1, 0.5);
+    this.tone(o.ctx, o.dest, t, 'sawtooth', 120, 480, 0.5, 0.25);
+    this.tone(o.ctx, o.dest, t + 0.4, 'sine', 1320, 1320, 0.7, 0.3);
+  }
+
   denied(gain: number): void {
     const o = this.out(0, gain);
     if (!o) return;

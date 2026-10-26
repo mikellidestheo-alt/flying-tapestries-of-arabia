@@ -3,6 +3,7 @@
 import simData from '../data/sim.json';
 import flightData from '../data/flight.json';
 import matchData from '../data/match.json';
+import castleData from '../data/castles.json';
 import { clamp, dcos, dsin, wrapAngle } from './dmath';
 import { DeltaStore, DELTA_BUMP, DELTA_CRATER } from './deltas';
 import { Prng, hashInts } from './prng';
@@ -10,7 +11,7 @@ import {
   CREATURE_WANDER,
   type Castle, type Creature, type Faction, type Orb, type Projectile, type SimEvent, type SimEventType, type Structure, type Well,
 } from './entities';
-import { CREATURES, creatureHp, stepProjectiles, tryCast } from './combat';
+import { CREATURES, creatureHp, stepProjectiles, tryCast, tryUpgradeSpell } from './combat';
 import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryDeposit, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
@@ -26,6 +27,7 @@ export const ACTION_MOUND = 2;
 export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
 export const ACTION_DEPOSIT = 16;
+export const ACTION_SPELLUP = 32;
 
 export interface PlayerInput {
   /** -1 (left) .. 1 (right) */
@@ -67,8 +69,11 @@ export interface PlayerState {
   rivalIndex: number;
   /** False once a rival's faction is eliminated. */
   active: boolean;
-  /** Index of the wizard who last damaged this one (-1 none). */
+  /** Index of the wizard who last damaged this one (-1 none), and when. */
   lastHitBy: number;
+  lastHitTick: number;
+  /** Weapon tier 1-3 (bought with personal mana). */
+  spellTier: number;
 }
 
 export interface SimOptions {
@@ -161,7 +166,7 @@ export class Sim {
     return {
       x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0,
       hp: simData.player.maxHp, mana: simData.player.startMana, spellCd: 0, invuln: 0, kills: 0, deaths: 0, casts: 0,
-      drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1,
+      drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1, lastHitTick: -9999, spellTier: 1,
     };
   }
 
@@ -244,6 +249,7 @@ export class Sim {
       if ((input.actions | 0) & ACTION_SPELL) tryCast(this, i);
       if ((input.actions | 0) & ACTION_UPGRADE) tryUpgrade(this, p, input);
       if ((input.actions | 0) & ACTION_DEPOSIT) tryDeposit(this, p);
+      if ((input.actions | 0) & ACTION_SPELLUP) tryUpgradeSpell(this, p);
     }
     stepProjectiles(this);
     stepCreatures(this);
@@ -308,8 +314,9 @@ export class Sim {
     // Debug terrain tools (stand-ins for earth spells until M4).
     if (p.cooldown > 0) p.cooldown--;
     const actions = input.actions | 0;
-    if (p.cooldown === 0 && (actions & (ACTION_CRATER | ACTION_MOUND)) !== 0) {
+    if (p.cooldown === 0 && (actions & (ACTION_CRATER | ACTION_MOUND)) !== 0 && p.mana >= simData.debugTools.manaCost) {
       const tools = simData.debugTools;
+      p.mana -= tools.manaCost;
       const tx = p.x + fx * tools.targetDistance;
       const tz = p.z + fz * tools.targetDistance;
       const t = actions & ACTION_CRATER ? tools.crater : tools.mound;
@@ -341,6 +348,18 @@ export class Sim {
     return a;
   }
 
+  /** Grant mana outright (bounties, rewards): fills the pool first, the overflow goes into the castle bank. Counts fully towards the captured share. */
+  award(p: PlayerState, amount: number): void {
+    const f = this.factions[p.faction];
+    if (f) f.captured += amount;
+    const toPool = Math.max(0, Math.min(amount, simData.player.maxMana - p.mana));
+    p.mana += toPool;
+    const rest = amount - toPool;
+    const castle = this.castles.find((c) => c.faction === p.faction && !c.ruined);
+    if (castle && rest > 0) castle.bank = Math.min(castleData.bankCap, castle.bank + rest);
+    this.emit('bounty', p.x, p.y, p.z, amount);
+  }
+
   spawnOrb(x: number, y: number, z: number, value: number, vx: number, vz: number): void {
     if (this.orbs.length >= simData.caps.orbs) return;
     this.orbs.push({ id: this.nextId++, x, y, z, px: x, py: y, pz: z, vx, vz, value, age: 0 });
@@ -357,20 +376,28 @@ export class Sim {
     });
   }
 
-  /** Respawn at the faction's castle (or the sandbox spawn) with a mana penalty; the lost mana drops as orbs. */
+  /**
+   * Death is costly: ALL of the wizard's personal mana drops as orbs, 30% of the castle bank is
+   * lost, and whoever landed the last blow (within a few seconds) collects a big bounty.
+   */
   respawn(p: PlayerState): void {
     p.deaths++;
     p.hp = this.maxHpFor(p);
     const lost = Math.floor(p.mana * matchData.wizardRespawnManaLoss);
     p.mana -= lost;
-    const n = clamp(Math.round(lost / 10), 0, 8);
+    const n = clamp(Math.round(lost / 12), 0, 8);
     for (let i = 0; i < n; i++) {
       const a = this.rng.range(0, 6.283185307);
       const sp = this.rng.range(4, 12);
       this.spawnOrb(p.x, p.y, p.z, lost / n, dcos(a) * sp, dsin(a) * sp);
     }
-    const credit = this.players[p.lastHitBy];
-    if (credit) credit.kills++;
+    const castle = this.castles.find((c) => c.faction === p.faction && !c.ruined);
+    if (castle) castle.bank *= 1 - matchData.deathBankLoss;
+    const killer = this.players[p.lastHitBy];
+    if (killer && killer.active && killer.faction !== p.faction && this.tick - p.lastHitTick <= matchData.lastHitCreditTicks) {
+      killer.kills++;
+      this.award(killer, matchData.bounty.wizardKill);
+    }
     p.lastHitBy = -1;
     const home = this.homeOf(p.faction);
     p.x = home.x;
