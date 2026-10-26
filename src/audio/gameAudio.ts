@@ -32,6 +32,10 @@ export class GameAudio {
     void this.music.play(this.spec, (chapter.music as { file?: string | null }).file ?? null);
   }
 
+  stopMusic(): void {
+    this.music.stop();
+  }
+
   setVolumes(music: number, sfx: number, muted: boolean): void {
     this.engine.setVolumes(music, sfx, muted);
   }
@@ -74,6 +78,10 @@ export class GameAudio {
       case 'respawn': this.sfx.respawn(0.8); break;
       case 'wellSpawn': this.sfx.wellSpawn(pan, Math.max(0.5, gain), degreeHz(this.spec, 7)); break;
       case 'wellEnd': this.sfx.wellEnd(pan, gain, degreeHz(this.spec, 7)); break;
+      case 'matchEnd':
+        this.music.stop();
+        this.sfx.sting(e.v === 1, degreeHz(this.spec, 0), 0.9);
+        break;
       case 'wellDraw': this.sfx.wellDraw(0.6, degreeHz(this.spec, 14 + (Math.floor(this.clock * 3) % 3))); break;
       default: break;
     }

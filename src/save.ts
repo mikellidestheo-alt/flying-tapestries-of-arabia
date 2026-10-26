@@ -15,12 +15,15 @@ export interface Settings {
   musicVolume: number;
   sfxVolume: number;
   muted: boolean;
+  difficulty: 'easy' | 'normal' | 'hard';
 }
 
 export interface Progress {
   unlockedChapters: number;
   wizard: string;
   tutorialDone: boolean;
+  /** Bitmask of cleared chapters (bit n-1 = chapter n). */
+  cleared: number;
 }
 
 export interface SaveData {
@@ -41,9 +44,10 @@ export const DEFAULT_SETTINGS: Settings = {
   musicVolume: 0.7,
   sfxVolume: 0.8,
   muted: false,
+  difficulty: 'normal',
 };
 
-export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false };
+export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false, cleared: 0 };
 
 const KEY = 'fta-save-v1';
 
@@ -74,7 +78,11 @@ export function loadSave(): SaveData {
   const o = isObject(raw) ? raw : {};
   const settings = mergeKnown(DEFAULT_SETTINGS, o.settings);
   if (!['high', 'medium', 'low'].includes(settings.quality)) settings.quality = DEFAULT_SETTINGS.quality;
-  return { version: 1, settings, progress: mergeKnown(DEFAULT_PROGRESS, o.progress) };
+  if (!['easy', 'normal', 'hard'].includes(settings.difficulty)) settings.difficulty = DEFAULT_SETTINGS.difficulty;
+  const progress = mergeKnown(DEFAULT_PROGRESS, o.progress);
+  if (!(progress.unlockedChapters >= 1 && progress.unlockedChapters <= 6)) progress.unlockedChapters = 1;
+  if (!Number.isInteger(progress.cleared) || progress.cleared < 0) progress.cleared = 0;
+  return { version: 1, settings, progress };
 }
 
 export function writeSave(data: SaveData): void {

@@ -13,6 +13,26 @@
     "hitRadius": 2.6,
     "manaDrop": 14,
     "orbCount": 3,
-    "wanderRadius": 45
+    "wanderRadius": 45,
+    "hostile": true,
+    "fleeRange": 0
+  },
+  "oryx": {
+    "name": "Desert Oryx",
+    "hostile": false,
+    "hp": 42,
+    "speed": 21,
+    "wanderSpeed": 5,
+    "aggroRange": 0,
+    "leashRange": 0,
+    "fleeRange": 85,
+    "attackRange": 0,
+    "attackDamage": 0,
+    "attackCooldownTicks": 30,
+    "hover": 0,
+    "hitRadius": 2.4,
+    "manaDrop": 18,
+    "orbCount": 3,
+    "wanderRadius": 60
   }
 }

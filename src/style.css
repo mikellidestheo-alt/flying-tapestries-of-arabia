@@ -30,9 +30,9 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 .act:active, .act.down { background: rgba(243, 201, 105, 0.55); transform: scale(0.95); }
 .act.small { width: 52px; height: 52px; }
 #btnMound { border-radius: 14px; } /* shape differs from the round crater button: never colour alone */
-#devTools { position: absolute; right: calc(var(--safe-r) + 150px); bottom: calc(var(--safe-b) + 24px); display: none; gap: 10px; pointer-events: none; }
+#devTools { position: absolute; right: calc(var(--safe-r) + 250px); bottom: calc(var(--safe-b) + 24px); display: none; gap: 10px; pointer-events: none; }
 #ui.dev #devTools { display: flex; }
-#ui.lefty #devTools { right: auto; left: calc(var(--safe-l) + 150px); }
+#ui.lefty #devTools { right: auto; left: calc(var(--safe-l) + 250px); }
 
 #hud { position: absolute; left: calc(var(--safe-l) + 14px); top: calc(var(--safe-t) + 12px); display: flex; flex-direction: column; gap: 6px; width: 200px; pointer-events: none; }
 #ui.lefty #hud { left: auto; right: calc(var(--safe-r) + 76px); }
@@ -79,3 +79,51 @@ button.primary:active { transform: scale(0.97); }
 
 @media (orientation: portrait) { #rotate { display: flex !important; z-index: 50; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---- M3: top HUD, compass, upgrade, tutorial, menus ---- */
+#topHud { position: absolute; top: calc(var(--safe-t) + 8px); left: 50%; transform: translateX(-50%); width: min(340px, 46vw); display: flex; flex-direction: column; align-items: stretch; gap: 4px; pointer-events: none; }
+#shareBar { display: flex; height: 12px; border-radius: 7px; overflow: hidden; background: rgba(0, 0, 0, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.6); position: relative; }
+#shareBar i { display: block; height: 100%; transition: width 0.4s; }
+#shareBar b { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #fff; box-shadow: 0 0 4px #000; }
+#shareLine { display: flex; justify-content: space-between; font: 700 13px system-ui, sans-serif; text-shadow: 0 1px 3px #000; }
+#compass { position: relative; height: 30px; background: rgba(10, 8, 30, 0.4); border-radius: 15px; overflow: hidden; }
+#compass .mk { position: absolute; top: 3px; width: 24px; height: 24px; margin-left: -12px; display: flex; align-items: center; justify-content: center; font: 800 11px system-ui, sans-serif; text-shadow: 0 1px 2px #000; }
+#compass .mk svg { filter: drop-shadow(0 1px 2px #000); }
+#compass .mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, 0.35); }
+#castleInfo { position: absolute; left: calc(var(--safe-l) + 14px); top: calc(var(--safe-t) + 64px); font: 600 13px/1.35 system-ui, sans-serif; background: rgba(26, 16, 48, 0.6); border-radius: 10px; padding: 5px 9px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+#ui.lefty #castleInfo { left: auto; right: calc(var(--safe-r) + 76px); }
+#foeInfo { position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--safe-t) + 90px); width: 200px; font: 700 13px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; pointer-events: none; }
+#foeInfo .track { height: 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.6); overflow: hidden; margin-top: 2px; }
+#foeInfo .track i { display: block; height: 100%; width: 100%; transform-origin: left; background: #ff6b6b; }
+.act.upg { position: absolute; right: calc(var(--safe-r) + 142px); bottom: calc(var(--safe-b) + 28px); width: 86px; height: 86px; color: #ffe08a; border-color: #ffe08a; background: rgba(40, 30, 10, 0.65); font-size: 12px; }
+#ui.lefty .act.upg { right: auto; left: calc(var(--safe-l) + 142px); }
+.act.upg.cant { color: #9a9ab5; border-color: #8a8aa8; }
+.act.upg span { margin-top: 2px; text-align: center; line-height: 1.05; }
+#branchPicker { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(10, 6, 24, 0.55); z-index: 6; }
+#branchOptions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
+#branchOptions button { flex: 1 1 150px; min-height: 84px; border-radius: 14px; border: 2px solid var(--gold); background: rgba(255, 255, 255, 0.08); color: #fff; font: 700 16px system-ui, sans-serif; padding: 8px; touch-action: manipulation; }
+#branchOptions button small { display: block; font-weight: 500; opacity: 0.8; margin-top: 3px; font-size: 13px; }
+#branchOptions button svg { display: block; margin: 0 auto 2px; }
+button.ghost { font: 600 16px system-ui, sans-serif; padding: 10px 20px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.6); background: transparent; color: #fff; min-height: 48px; touch-action: manipulation; }
+button.ghost:active { background: rgba(255, 255, 255, 0.15); }
+#tutorial { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + 12px); width: min(400px, 46vw); background: rgba(26, 16, 48, 0.82); border: 1.5px solid var(--gold); border-radius: 14px; padding: 8px 12px; pointer-events: auto; text-align: center; }
+#tutorial p { margin: 0 0 2px; font-size: 14px; line-height: 1.25; }
+#tutorial button { background: transparent; border: 0; color: #ffd98a; text-decoration: underline; font: 600 13px system-ui, sans-serif; padding: 6px 10px; min-height: 36px; touch-action: manipulation; }
+.card.menu { max-width: 800px; padding: 10px 16px; }
+.card.menu h2 { margin-bottom: 2px; font-size: 20px; }
+.card.menu .seg button { min-height: 40px; padding: 8px 10px; }
+#chapterList { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 6px; }
+#chapterList button { text-align: left; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); color: #fff; padding: 6px 9px; min-height: 58px; font: 700 14px/1.15 system-ui, sans-serif; touch-action: manipulation; }
+#chapterList button small { display: block; font-weight: 500; opacity: 0.8; font-size: 12px; margin-top: 2px; }
+#chapterList button.sel { border-color: var(--gold); background: rgba(243, 201, 105, 0.18); }
+#chapterList button:disabled { opacity: 0.45; }
+.menu-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.menu-row label { font-size: 16px; }
+.menu-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; flex-wrap: wrap; position: sticky; bottom: -16px; padding: 8px 0 2px; background: linear-gradient(transparent, rgba(26, 16, 48, 0.95) 35%); }
+#endShares { margin: 8px 0; }
+#endShares .r { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 15px; }
+#endShares .r span { width: 150px; text-align: left; }
+#endShares .r .track { flex: 1; height: 12px; border-radius: 6px; background: rgba(0, 0, 0, 0.45); overflow: hidden; }
+#endShares .r .track i { display: block; height: 100%; }
+#endShares .r b { width: 44px; text-align: right; }
+#pauseScreen .row:first-child { gap: 10px; flex-wrap: wrap; }

@@ -1,0 +1,19 @@
+{
+  "personalities": {
+    "aggressive": { "aggression": 0.9, "greed": 0.45, "defense": 0.2, "upgradeEagerness": 0.35, "hunt": 0.5 },
+    "greedy": { "aggression": 0.3, "greed": 1.0, "defense": 0.3, "upgradeEagerness": 0.55, "hunt": 0.7 },
+    "defensive": { "aggression": 0.25, "greed": 0.5, "defense": 1.0, "upgradeEagerness": 0.95, "hunt": 0.3 }
+  },
+  "ai": {
+    "decideEveryTicks": 9,
+    "orbSearchRadius": 190,
+    "wellSearchRadius": 620,
+    "combatRange": 150,
+    "orbitDistance": 70,
+    "retreatHpFraction": 0.3,
+    "defendRadius": 150,
+    "castleAttackRange": 120,
+    "steerGain": 2.4,
+    "cruiseThrottle": 0.35
+  }
+}

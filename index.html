@@ -27,11 +27,28 @@
         <div class="bar hp" title="Health"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 21 C4 14 2 10 2 7 a5 5 0 0 1 10 -1 a5 5 0 0 1 10 1 c0 3 -2 7 -10 14z" fill="currentColor"/></svg><div class="track"><i id="hpFill"></i></div></div>
         <div class="bar mana" title="Mana"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/></svg><div class="track"><i id="manaFill"></i></div><b id="manaText">0</b></div>
       </div>
-      <div id="wellGuide" class="hidden"><svg id="wellArrow" viewBox="0 0 24 24" width="30" height="30"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg><span id="wellDist"></span></div>
+      <div id="topHud">
+        <div id="shareWrap"><div id="shareBar"></div><div id="shareLine"><span id="shareText"></span><span id="timer"></span></div></div>
+        <div id="compass"></div>
+      </div>
+      <div id="castleInfo" class="hidden"></div>
+      <div id="foeInfo" class="hidden"><span id="foeName"></span><div class="track"><i id="foeFill"></i></div></div>
+      <div id="tutorial" class="hidden"><p id="tutorialText"></p><button id="tutorialSkip" type="button">Skip tutorial</button></div>
 
       <div id="devTools">
         <button id="btnMound" class="act small" type="button" aria-label="Raise mound (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg></button>
         <button id="btnCrater" class="act small" type="button" aria-label="Dig crater (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+      </div>
+      <button id="btnUpgrade" class="act upg hidden" type="button" aria-label="Upgrade castle">
+        <svg viewBox="0 0 24 24" width="34" height="34"><path d="M4 21V10l3-2V5h2v2h2V5h2v2h2V5h2v3l3 2v11h-5v-5a3 3 0 0 0-6 0v5z" fill="currentColor"/></svg>
+        <span id="upgradeCost">Upgrade</span>
+      </button>
+      <div id="branchPicker" class="hidden">
+        <div class="card wide">
+          <h2 id="branchTitle">Choose a path</h2>
+          <div id="branchOptions"></div>
+          <button id="branchCancel" class="ghost" type="button">Not now</button>
+        </div>
       </div>
       <div id="actions">
         <button id="btnSpell" class="act spell" type="button" aria-label="Cast fireball">
@@ -49,15 +66,35 @@
       <div class="card">
         <h1>Flying Tapestries<br />of Arabia</h1>
         <p class="sub">Fly a magic tapestry over a golden world.</p>
-        <button id="startBtn" class="primary" type="button">Tap to fly</button>
+        <button id="startBtn" class="primary" type="button">Tap to begin</button>
         <p class="tiny" id="startInfo"></p>
+      </div>
+    </div>
+
+    <div id="menuScreen" class="overlay hidden">
+      <div class="card wide menu">
+        <h2>Choose your chapter</h2>
+        <div id="chapterList"></div>
+        <div class="menu-row"><label>Difficulty</label><div id="difficultySeg" class="seg"></div></div>
+        <div class="menu-row"><label>Wizard</label><div id="wizardSeg" class="seg"></div></div>
+        <div class="menu-actions"><button id="playBtn" class="primary" type="button">Play</button><button id="menuSettingsBtn" class="ghost" type="button">Settings</button></div>
+      </div>
+    </div>
+
+    <div id="endScreen" class="overlay hidden">
+      <div class="card wide">
+        <h1 id="endTitle">Victory</h1>
+        <p class="sub" id="endReason"></p>
+        <div id="endShares"></div>
+        <div class="menu-actions"><button id="endNext" class="primary" type="button">Next chapter</button><button id="endRetry" class="ghost" type="button">Play again</button><button id="endMenu" class="ghost" type="button">Chapters</button></div>
       </div>
     </div>
 
     <div id="pauseScreen" class="overlay hidden">
       <div class="card wide">
-        <h2>Paused</h2>
-        <div class="row"><button id="resumeBtn" class="primary" type="button">Resume</button></div>
+        <h2 id="settingsTitle">Paused</h2>
+        <div class="row" id="pauseActions"><button id="resumeBtn" class="primary" type="button">Resume</button><button id="restartBtn" class="ghost" type="button">Restart</button><button id="quitBtn" class="ghost" type="button">Chapters</button></div>
+        <div class="row"><button id="closeSettingsBtn" class="primary hidden" type="button">Close</button></div>
         <div id="settings"></div>
       </div>
     </div>

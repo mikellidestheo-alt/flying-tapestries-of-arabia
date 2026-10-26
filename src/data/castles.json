@@ -1,0 +1,176 @@
+{
+  "upgradeRadius": 48,
+  "healRadius": 56,
+  "healPerSecond": 9,
+  "bankCap": 900,
+  "downgradeInvulnTicks": 150,
+  "downgradeLootFraction": 0.5,
+  "retargetEveryTicks": 4,
+  "maxArrowEventsPerTick": 6,
+  "branchTiers": [
+    3,
+    5
+  ],
+  "branches": {
+    "archers": {
+      "name": "Archery Corps",
+      "blurb": "+1 archer",
+      "archers": 1,
+      "wallHpMult": 1,
+      "incomeMult": 1
+    },
+    "walls": {
+      "name": "Stone Wards",
+      "blurb": "Walls +50% HP",
+      "archers": 0,
+      "wallHpMult": 1.5,
+      "incomeMult": 1
+    },
+    "income": {
+      "name": "Treasury",
+      "blurb": "Mana income +40%",
+      "archers": 0,
+      "wallHpMult": 1,
+      "incomeMult": 1.4
+    }
+  },
+  "branchOrder": [
+    "archers",
+    "walls",
+    "income"
+  ],
+  "tiers": [
+    {
+      "tier": 1,
+      "name": "Outpost",
+      "cost": 0,
+      "wallHp": 320,
+      "archers": 0,
+      "archerRange": 0,
+      "archerDamage": 0,
+      "archerRate": 0,
+      "income": 0.4,
+      "visual": {
+        "wallRadius": 9,
+        "wallHeight": 3.5,
+        "keepSize": 5.5,
+        "keepHeight": 7,
+        "towers": 0,
+        "towerHeight": 0,
+        "domes": 1,
+        "minarets": 0,
+        "banners": 1
+      }
+    },
+    {
+      "tier": 2,
+      "name": "Fort",
+      "cost": 80,
+      "wallHp": 520,
+      "archers": 2,
+      "archerRange": 75,
+      "archerDamage": 3,
+      "archerRate": 0.8,
+      "income": 0.7,
+      "visual": {
+        "wallRadius": 10.5,
+        "wallHeight": 4.5,
+        "keepSize": 6,
+        "keepHeight": 9,
+        "towers": 2,
+        "towerHeight": 8,
+        "domes": 3,
+        "minarets": 0,
+        "banners": 2
+      }
+    },
+    {
+      "tier": 3,
+      "name": "Citadel",
+      "cost": 170,
+      "wallHp": 800,
+      "archers": 4,
+      "archerRange": 88,
+      "archerDamage": 3.2,
+      "archerRate": 0.9,
+      "income": 1.05,
+      "visual": {
+        "wallRadius": 12,
+        "wallHeight": 5.5,
+        "keepSize": 7,
+        "keepHeight": 11,
+        "towers": 4,
+        "towerHeight": 10,
+        "domes": 5,
+        "minarets": 0,
+        "banners": 3
+      }
+    },
+    {
+      "tier": 4,
+      "name": "Fortress",
+      "cost": 300,
+      "wallHp": 1200,
+      "archers": 6,
+      "archerRange": 100,
+      "archerDamage": 3.4,
+      "archerRate": 0.95,
+      "income": 1.5,
+      "visual": {
+        "wallRadius": 13,
+        "wallHeight": 6.5,
+        "keepSize": 8,
+        "keepHeight": 13,
+        "towers": 4,
+        "towerHeight": 13,
+        "domes": 6,
+        "minarets": 2,
+        "banners": 4
+      }
+    },
+    {
+      "tier": 5,
+      "name": "Palace",
+      "cost": 520,
+      "wallHp": 1800,
+      "archers": 8,
+      "archerRange": 112,
+      "archerDamage": 3.2,
+      "archerRate": 1.0,
+      "income": 2.1,
+      "visual": {
+        "wallRadius": 14.5,
+        "wallHeight": 7.5,
+        "keepSize": 9,
+        "keepHeight": 16,
+        "towers": 6,
+        "towerHeight": 15,
+        "domes": 8,
+        "minarets": 4,
+        "banners": 6
+      }
+    }
+  ],
+  "factionStyles": [
+    {
+      "name": "Gold",
+      "color": "#f0b429",
+      "shape": "crescent"
+    },
+    {
+      "name": "Crimson",
+      "color": "#d6403a",
+      "shape": "pennant"
+    },
+    {
+      "name": "Violet",
+      "color": "#8c5ad8",
+      "shape": "swallow"
+    },
+    {
+      "name": "Emerald",
+      "color": "#2fae6f",
+      "shape": "disc"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ Checkpoints: M1, M3, M5c, M6.
 | Setup | done |
 | M1 Flight + terrain | done - phone tested OK (60 fps High, low heat) |
 | M2 Spell, orbs, enemy, music layer 1 | done |
-| M3 Castle, archers, rivals, win, chapters 1-2, offline | not started |
+| M3 Castle, archers, rivals, win, chapters 1-2, offline | done - awaiting phone test (checkpoint) |
 | M4 Four wizards + balance | not started |
 | M5a Chapters 3-4 | not started |
 | M5b Chapters 5-6 | not started |
@@ -49,3 +49,19 @@ Fixed: terrain planner re-sorted ~225 candidates every frame (now only on chunk-
 **Bundle:** JS 627 KB raw / **160 KB gzip** (budget 300); total ~164 KB gzip.
 **Notes:** non-fire wizards throw Fireballs until M4. Combat music layer + adaptive layers are M5c.
 **Phone checklist (M2):** (1) Tap to fly: you should hear the drone, drum and oud within a second. (2) Press the flame button: whoosh, bolt, impact boom, scorch crater. (3) Fly at the glowing blue orbs: chimes rise in pitch as you chain them. (4) Dust sprites spawn around you; shoot them (aim assist helps), they drop orbs. If one touches you it hurts and the screen flashes red. (5) After ~20 s a mana well appears: follow the arrow, hover beside the beam and watch mana fill. (6) Settings: change the wizard (turbans/headscarves), try music/effects sliders and mute. (7) Check FPS and warmth with the debug overlay on (see the `cpu` figure).
+
+### M3 (2026-10-26): castles, archers, rivals, win rules, chapters 1-2, offline
+**Built:** five-tier castle table with visible growth (towers, domes, minarets, banners; each faction's banner differs in colour AND shape) and three upgrade branches (archers / walls / income) at tiers 3 and 5; instanced turbaned archers with distance LOD and arrow tracers; rival wizard AI (aggressive / greedy / defensive) driving the same flight and spell code as the player, with castles, upgrades, raids and healing; mana-share win condition with comeback bonus, sudden death and last-castle-standing; hostile nests that spawn guard sprites; wild animals (Desert Oryx) as a neutral mana source; chapter 1 (Oasis Dawn) and chapter 2 (Rooftops of the Spice Bazaar, a rooftop city with buildings in the shared sim); difficulty Easy/Normal/Hard; chapter select menu; HUD (share bar, compass, upgrade + branch picker, castle info, enemy castle HP); skippable tutorial; victory/defeat screens with stings; local save (unlocks, cleared chapters, wizard, difficulty, settings); real **offline service worker**.
+**Tests:** 101 passing (adds castle tiers/upgrades/branches/damage, archers, win/comeback/sudden death, difficulty, rival AI full-match runs and determinism, city determinism and rooftop flight, tutorial, wild animals, perf guards). A 4-wizard match tick costs ~0.09 ms.
+**Bundle:** JS 673 KB raw / **176 KB gzip** (budget 300); total ~181 KB gzip.
+**Balance simulation (autopilot vs rival, Normal):** matches end at 12-14 min via sudden death (chapters 1-3), 15-18 min in chapter 5; early wins are impossible before minute 6. A skilled human should win earlier by gathering mana faster than the AI.
+**Known gaps / next:** rivals fight each other only when they meet (more raiding comes with chapter tuning in M5a/b); non-fire wizards still throw Fireballs (M4); combat music layer, bloom, stress test (M5c); co-op (M6).
+**Phone checklist (M3):**
+1. Open the live link. Tap "Tap to begin", pick **Oasis Dawn**, Normal, a wizard, then Play. Tutorial prompts appear at the bottom; try Skip too.
+2. Share bar (top) shows everyone's share of mana and the goal marker; compass shows your castle (gold) and the rival's (red, numbered); blue diamonds are mana wells.
+3. Fly home to your castle, tap **Upgrade**; at tier 3 choose a path. Watch the castle grow and archers appear on the walls. Let a Dust Sprite near the castle and watch archer tracers.
+4. Hunt an Oryx (cream, long horns, flees) for mana; destroy a nest (obelisk) for a mana burst.
+5. Fly to the rival castle and shoot it; its HP bar appears. It drops a tier when its walls fall. Try to win by share, by sudden death, or by eliminating the rival.
+6. Win once to unlock **Rooftops of the Spice Bazaar**: fly low over the roofs; shots burst on rooftops.
+7. **Offline test:** with the game loaded once online, switch on airplane mode, fully close Chrome, reopen the link: the game should still load and play. (Tip: open Chrome menu > "Add to Home screen" for a fullscreen app icon.)
+8. Check FPS and warmth on High in both chapters with the debug overlay (chapter 2 draws more triangles: about 60-70k).

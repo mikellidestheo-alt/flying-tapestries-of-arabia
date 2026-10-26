@@ -50,7 +50,7 @@
   "structureKit": "sandstone-oasis",
   "creatureSet": [
     "dust-sprite",
-    "sand-scarab"
+    "oryx"
   ],
   "ambient": {
     "sound": "desert-wind-soft",
@@ -86,5 +86,17 @@
     "trailingIncomeBonus": 0.35,
     "suddenDeathMinute": 12,
     "suddenDeathShare": 0.4
+  },
+  "structureStyle": {
+    "wall": "#f0dcae",
+    "shade": "#c79a62",
+    "dome": "#2a8f9c",
+    "trim": "#e9b44c",
+    "roof": "#d9a35a"
+  },
+  "nest": {
+    "name": "Sprite Obelisk",
+    "color": "#8a6a3a",
+    "glow": "#ffd27a"
   }
 }

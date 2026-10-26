@@ -146,6 +146,18 @@ export class Sfx {
     this.tone(o.ctx, o.dest, t, 'sine', hz, hz * 1.5, 0.3, 0.16);
   }
 
+  /** Short victory / defeat stings: a rising major-ish arpeggio or a falling minor one. */
+  sting(win: boolean, rootHz: number, gain: number): void {
+    const o = this.out(0, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    const steps = win ? [1, 1.25, 1.5, 2, 2.5] : [1, 0.944, 0.75, 0.667, 0.5];
+    steps.forEach((m, i) => {
+      this.tone(o.ctx, o.dest, t + i * 0.13, win ? 'triangle' : 'sawtooth', rootHz * m * 2, rootHz * m * 2, win ? 0.9 : 1.1, win ? 0.32 : 0.2);
+    });
+    if (win) this.noise(o.ctx, o.dest, t + 0.5, 0.8, 6000, 3000, 1, 0.15);
+  }
+
   denied(gain: number): void {
     const o = this.out(0, gain);
     if (!o) return;

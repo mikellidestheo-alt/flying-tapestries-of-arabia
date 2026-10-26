@@ -3,12 +3,15 @@
 import * as THREE from 'three';
 import simData from '../data/sim.json';
 import { PRESETS } from './quality';
+import { CREATURES } from '../sim/combat';
 import type { QualityPreset } from '../save';
 import type { SimEvent } from '../sim/entities';
 import type { Sim } from '../sim/sim';
 import { GlowLayer } from './glowLayer';
 import { MergeBuilder } from './mergeBuilder';
 import { Particles } from './particles';
+import type { ChapterConfig } from '../data/chapters';
+import { StructureRenderer } from './structureRenderer';
 
 const MANA = [0.35, 0.85, 1.0] as const;
 const FIRE = [1.0, 0.55, 0.18] as const;
@@ -40,6 +43,21 @@ function dustSpriteGeometry(): THREE.BufferGeometry {
   return b.build();
 }
 
+function oryxGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  const cream = '#f1e3c4';
+  const dark = '#3b2a22';
+  b.add(new THREE.BoxGeometry(1.25, 1.25, 2.9), cream, [0, 1.8, 0]);
+  b.add(new THREE.BoxGeometry(0.9, 0.5, 2.3), '#d9c39a', [0, 1.1, 0]); // belly shade
+  for (const [x, z] of [[-0.42, 1.0], [0.42, 1.0], [-0.42, -1.0], [0.42, -1.0]] as const) b.add(new THREE.BoxGeometry(0.3, 1.5, 0.3), cream, [x, 0.75, z]);
+  b.add(new THREE.BoxGeometry(0.6, 1.3, 0.7), cream, [0, 2.5, 1.5], [0.55, 0, 0]); // neck
+  b.add(new THREE.BoxGeometry(0.62, 0.62, 1.1), cream, [0, 3.1, 2.1]); // head
+  b.add(new THREE.BoxGeometry(0.64, 0.2, 0.7), dark, [0, 2.95, 2.45]); // face stripe
+  for (const sx of [-1, 1]) b.add(new THREE.BoxGeometry(0.1, 0.1, 2.0), dark, [sx * 0.22, 3.7, 1.5], [0.9, 0, sx * 0.08]); // long horns
+  b.add(new THREE.BoxGeometry(0.2, 0.2, 0.9), dark, [0, 2.4, -1.7], [-0.7, 0, 0]); // tail
+  return b.build();
+}
+
 interface WellView {
   group: THREE.Group;
   beam: THREE.Mesh;
@@ -54,6 +72,8 @@ export class EntityRenderer {
   private glow!: GlowLayer;
   private particles!: Particles;
   private creatures!: THREE.InstancedMesh;
+  private animals!: THREE.InstancedMesh;
+  private animalGeom = oryxGeometry();
   private creatureGeom = dustSpriteGeometry();
   private creatureMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   private wellViews: WellView[] = [];
@@ -65,8 +85,9 @@ export class EntityRenderer {
   private nearDist: number[] = [];
   private seed = 1234567;
   private quality: QualityPreset;
+  private structures!: StructureRenderer;
 
-  constructor(quality: QualityPreset) {
+  constructor(quality: QualityPreset, private chapter: ChapterConfig) {
     this.quality = quality;
     this.build();
     for (let i = 0; i < simData.caps.wells; i++) this.wellViews.push(this.makeWell());
@@ -84,9 +105,11 @@ export class EntityRenderer {
 
   setQuality(q: QualityPreset): void {
     this.quality = q;
-    this.group.remove(this.glow.points, this.creatures);
+    this.group.remove(this.glow.points, this.creatures, this.animals, this.structures.group);
     this.glow.dispose();
     this.creatures.dispose();
+    this.animals.dispose();
+    this.structures.dispose();
     this.build();
   }
 
@@ -98,7 +121,12 @@ export class EntityRenderer {
     this.creatures.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.creatures.frustumCulled = false;
     this.creatures.count = 0;
-    this.group.add(this.glow.points, this.creatures);
+    this.animals = new THREE.InstancedMesh(this.animalGeom, this.creatureMat, Math.min(caps.creatures, simData.caps.creatures));
+    this.animals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.animals.frustumCulled = false;
+    this.animals.count = 0;
+    this.structures = new StructureRenderer(this.chapter, caps.archers);
+    this.group.add(this.glow.points, this.creatures, this.animals, this.structures.group);
   }
 
   private makeWell(): WellView {
@@ -162,6 +190,37 @@ export class EntityRenderer {
       case 'wellEnd':
         P.burst(this.rnd, n(30), e.x, e.y + 2, e.z, 14, 1.0, 2.0, ...MANA, -4, 0.6);
         break;
+      case 'arrow': {
+        // A short bright streak from the archer to its target.
+        const steps = 7;
+        for (let i = 0; i < steps; i++) {
+          const t = i / (steps - 1);
+          P.spawn(e.x + (e.x2 - e.x) * t, e.y + (e.y2 - e.y) * t, e.z + (e.z2 - e.z) * t, 0, 0, 0, 0.1 + 0.2 * t, 0.9, 1, 0.95, 0.75);
+        }
+        break;
+      }
+      case 'castleHit':
+        P.burst(this.rnd, n(8), e.x, e.y, e.z, 10, 0.5, 2.0 * f, ...DUST, 6, 0.4);
+        break;
+      case 'upgrade':
+        P.burst(this.rnd, n(50), e.x, e.y + 8, e.z, 22, 1.4, 2.6 * f, ...GOLD, -2, 0.8);
+        P.burst(this.rnd, n(24), e.x, e.y + 4, e.z, 14, 1.2, 3.0, ...MANA, 0, 0.5);
+        break;
+      case 'castleDowngrade':
+        P.burst(this.rnd, n(40), e.x, e.y, e.z, 20, 1.4, 4.5, ...DUST, -2, 0.4);
+        P.burst(this.rnd, n(20), e.x, e.y, e.z, 18, 0.9, 2.4 * f, ...FIRE, 6, 0.5);
+        break;
+      case 'castleDestroyed':
+        P.burst(this.rnd, n(70), e.x, e.y, e.z, 26, 1.8, 5.0, ...DUST, -2, 0.5);
+        P.burst(this.rnd, n(50), e.x, e.y, e.z, 24, 1.2, 2.8 * f, ...FIRE, 6, 0.6);
+        break;
+      case 'nestDestroyed':
+        P.burst(this.rnd, n(30), e.x, e.y, e.z, 16, 1.0, 3.0, ...DUST, -2, 0.4);
+        P.burst(this.rnd, n(18), e.x, e.y, e.z, 14, 1.0, 2.0 * f, ...GOLD, -2, 0.7);
+        break;
+      case 'wizardDown':
+        P.burst(this.rnd, n(24), e.x, e.y, e.z, 12, 0.9, 2.6, ...DUST, -2, 0.2);
+        break;
       default:
         break;
     }
@@ -208,28 +267,41 @@ export class EntityRenderer {
       this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32, 2.0 * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
     }
 
-    // Creatures (instanced).
+    // Creatures (instanced): hostile sprites and neutral wild animals use separate meshes.
     const cs = sim.creatures;
-    const cn = Math.min(cs.length, this.creatures.instanceMatrix.count);
-    for (let i = 0; i < cn; i++) {
+    const cap = this.creatures.instanceMatrix.count;
+    let nSprites = 0;
+    let nAnimals = 0;
+    for (let i = 0; i < cs.length; i++) {
       const c = cs[i]!;
+      const hostile = CREATURES[c.type]!.hostile;
+      const mesh = hostile ? this.creatures : this.animals;
+      const idx = hostile ? nSprites : nAnimals;
+      if (idx >= cap) continue;
       const x = lerp(c.px, c.x);
       const y = lerp(c.py, c.y);
       const z = lerp(c.pz, c.z);
       this.dummy.position.set(x, y, z);
       const heading = Math.atan2(c.vx, c.vz);
-      this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
-      this.dummy.scale.setScalar(1);
+      if (hostile) this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
+      else this.dummy.rotation.set(0, heading, 0);
+      this.dummy.scale.setScalar(hostile ? 1 : 1.5);
+      if (!hostile) this.dummy.position.y += Math.abs(Math.sin(time * 9 + c.id)) * (c.state === 1 ? 0.5 : 0.08); // gallop bounce
       this.dummy.updateMatrix();
-      this.creatures.setMatrixAt(i, this.dummy.matrix);
+      mesh.setMatrixAt(idx, this.dummy.matrix);
       if (c.burnTicks > 0) this.tint.setRGB(1.8, 0.8, 0.45);
       else this.tint.setRGB(1, 1, 1);
-      this.creatures.setColorAt(i, this.tint);
+      mesh.setColorAt(idx, this.tint);
+      if (hostile) nSprites++;
+      else nAnimals++;
       if (c.burnTicks > 0 && this.rnd() < 0.5) this.particles.spawn(x, y + 1, z, 0, 3, 0, 0.5, 1.6 * this.flashScale, FIRE[0], FIRE[1], FIRE[2]);
     }
-    this.creatures.count = cn;
-    this.creatures.instanceMatrix.needsUpdate = true;
-    if (this.creatures.instanceColor) this.creatures.instanceColor.needsUpdate = true;
+    this.creatures.count = nSprites;
+    this.animals.count = nAnimals;
+    for (const m of [this.creatures, this.animals]) {
+      m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    }
 
     // Wells: beacon beam, spinning ring, and a stream of mana flowing to a drawing player.
     for (let i = 0; i < this.wellViews.length; i++) {
@@ -268,6 +340,7 @@ export class EntityRenderer {
       }
     }
 
+    this.structures.update(sim, camX, camZ, time, glow);
     this.particles.update(dt, glow);
     glow.end(pxScale);
   }
@@ -279,6 +352,9 @@ export class EntityRenderer {
   dispose(): void {
     this.glow.dispose();
     this.creatures.dispose();
+    this.animals.dispose();
+    this.animalGeom.dispose();
+    this.structures.dispose();
     this.creatureGeom.dispose();
     this.creatureMat.dispose();
     this.beamTex.dispose();

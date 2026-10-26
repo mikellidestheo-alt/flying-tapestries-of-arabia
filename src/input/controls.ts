@@ -1,6 +1,6 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_MOUND, ACTION_SPELL, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_MOUND, ACTION_SPELL, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -18,6 +18,7 @@ export class Controls {
   private originY = 0;
   private held = 0;
   private pressed = 0;
+  private upgradeBranch = -1;
   private keys = new Set<string>();
   private tiltRaw = 0;
   private tiltNeutral: number | null = null;
@@ -110,6 +111,7 @@ export class Controls {
       if (e.code === 'KeyC') this.pressed |= ACTION_CRATER;
       if (e.code === 'KeyV') this.pressed |= ACTION_MOUND;
       if (e.code === 'Space' || e.code === 'KeyF') this.pressed |= ACTION_SPELL;
+      if (e.code === 'KeyU') this.upgradeBranch = 1;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
@@ -157,6 +159,11 @@ export class Controls {
     this.tiltRaw = r;
   }
 
+  /** Ask the sim to upgrade the castle next tick (branch 1-3, or 0 when the tier has no choice). */
+  requestUpgrade(branch: number): void {
+    this.upgradeBranch = branch;
+  }
+
   recalibrateTilt(): void {
     this.tiltNeutral = null;
   }
@@ -165,6 +172,7 @@ export class Controls {
     this.keys.clear();
     this.held = 0;
     this.pressed = 0;
+    this.upgradeBranch = -1;
   }
 
   /** Sample once per sim tick. */
@@ -186,6 +194,13 @@ export class Controls {
 
     const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0);
     this.pressed = 0;
-    return { steer, throttle, actions };
+    let branch = 0;
+    let act = actions;
+    if (this.upgradeBranch >= 0) {
+      act |= ACTION_UPGRADE;
+      branch = this.upgradeBranch;
+      this.upgradeBranch = -1;
+    }
+    return { steer, throttle, actions: act, branch };
   }
 }

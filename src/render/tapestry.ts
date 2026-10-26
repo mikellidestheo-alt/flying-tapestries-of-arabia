@@ -5,14 +5,14 @@ import type { Element } from '../data/elements';
 import { wizardLook } from '../data/wizardLooks';
 import { buildWizard } from './wizardModel';
 
-function makeWeave(): THREE.CanvasTexture {
+function makeWeave(base = '#7a1730', accent = '#16706b'): THREE.CanvasTexture {
   const w = 256;
   const h = 160;
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#7a1730';
+  g.fillStyle = base;
   g.fillRect(0, 0, w, h);
   // Gold border bands with a diamond repeat.
   g.fillStyle = '#e9b44c';
@@ -20,7 +20,7 @@ function makeWeave(): THREE.CanvasTexture {
   g.fillRect(0, h - 10, w, 10);
   g.fillRect(0, 0, 10, h);
   g.fillRect(w - 10, 0, 10, h);
-  g.fillStyle = '#16706b';
+  g.fillStyle = accent;
   for (let x = 14; x < w - 14; x += 16) {
     g.beginPath();
     g.moveTo(x + 8, 14);
@@ -39,7 +39,7 @@ function makeWeave(): THREE.CanvasTexture {
   }
   // Central medallion: eight-pointed star.
   g.translate(w / 2, h / 2);
-  g.fillStyle = '#16706b';
+  g.fillStyle = accent;
   g.beginPath();
   g.arc(0, 0, 44, 0, Math.PI * 2);
   g.fill();
@@ -50,7 +50,7 @@ function makeWeave(): THREE.CanvasTexture {
     g.fillRect(-30, -30, 60, 60);
     g.restore();
   }
-  g.fillStyle = '#7a1730';
+  g.fillStyle = base;
   g.beginPath();
   g.arc(0, 0, 14, 0, Math.PI * 2);
   g.fill();
@@ -101,7 +101,7 @@ export class TapestryModel {
 
   private wizardMesh: THREE.Mesh | null = null;
 
-  constructor(wizard: Element = 'fire') {
+  constructor(wizard: Element = 'fire', clothBase = '#7a1730', clothAccent = '#16706b') {
     const geom = new THREE.PlaneGeometry(4.4, 2.8, SEG_X, SEG_Z);
     geom.rotateX(-Math.PI / 2);
     this.clothPos = geom.getAttribute('position') as THREE.BufferAttribute;
@@ -111,7 +111,7 @@ export class TapestryModel {
       this.baseX[i] = this.clothPos.getX(i);
       this.baseZ[i] = this.clothPos.getZ(i);
     }
-    const tex = makeWeave();
+    const tex = makeWeave(clothBase, clothAccent);
     const clothMat = new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide });
     this.cloth = new THREE.Mesh(geom, clothMat);
     this.body.add(this.cloth);

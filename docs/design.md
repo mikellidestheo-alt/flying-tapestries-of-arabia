@@ -28,7 +28,7 @@ Pure function `baseHeight(params, x, z)` (domain-warped ridged dunes + swell + d
 - Comeback: from `comeback.startMinute` trailing castles get an income bonus; at `suddenDeathMinute` the target share drops to `suddenDeathShare`.
 - Difficulty Easy/Normal/Hard scales rival aggression, enemy health, mana income.
 
-## Castle tiers and archers (M3)
+## Castle tiers and archers (M3, implemented)
 ~5 tiers in one table; visible growth, instanced archers with LOD, branches at certain tiers (more archers / tougher walls / faster mana). Archers target creatures and incoming rival projectiles, never the player. A destroyed castle drops a tier (unless last standing). Rivals use the same table.
 
 ## Wizards (M4)
@@ -48,3 +48,12 @@ One Durable Object per match, WebSocket, authoritative sim at 30 Hz, snapshots 1
 
 ## Accessibility
 Element colours are colour-blind-safe AND each has a distinct icon/shape; reduced-flashing option; readable text sizes. (M1 buttons already differ in shape: round Crater, rounded-square Mound.)
+
+## Rival AI (M3)
+Rivals pick a goal every ~0.3 s from candidates scored by personality weights (aggression, greed, defense, hunt, upgrade eagerness) and the chapter's AI level: nearest orbs, mana wells, hostile creatures, nests, enemy wizards, defending their castle, raiding enemy castles (more tempting as the match goes on), returning home to heal or upgrade. They steer and cast through the same `PlayerInput` path as humans. Difficulty scales rival aggression, accuracy, HP and income.
+
+## Chapter 2 city (M3)
+`terrain.city` in the chapter JSON defines districts: a noise mask flattens terrain to a plateau and a grid of deterministic buildings (heights, domes, canopies) fills it, leaving alleys. Buildings are part of the shared sim surface so flying and shots respect rooftops.
+
+## Offline (M3)
+`public/sw.js` is processed at build time (precache list + content hash). Run `node scripts/test-offline.cjs <url> <playwright path>` against `npm run preview` to verify offline play locally.

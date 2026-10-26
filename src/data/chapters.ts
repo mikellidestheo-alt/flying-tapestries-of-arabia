@@ -45,6 +45,8 @@ export interface ChapterConfig {
   terrain: TerrainParams;
   props: PropParams;
   structureKit: string;
+  structureStyle: { wall: string; shade: string; dome: string; trim: string; roof: string };
+  nest: { name: string; color: string; glow: string };
   creatureSet: string[];
   ambient: { sound: string; birds: boolean };
   music: { scale: string; rootMidi: number; tempoBpm: number; rhythm: string; motif: number[] };
@@ -101,6 +103,14 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(c.comeback.suddenDeathMinute > c.matchLengthMinutes - 3, 'sudden death should start near match end');
   need(c.terrain.waterLevel < c.terrain.baseHeight + c.terrain.swellAmplitude, 'terrain: waterLevel above land');
   need(c.creatureSet.length > 0, 'creatureSet empty');
+  for (const [k, v] of Object.entries(c.structureStyle)) need(HEX.test(v), `structureStyle.${k} must be #rrggbb`);
+  need(HEX.test(c.nest.color) && HEX.test(c.nest.glow), 'nest colours must be #rrggbb');
+  if (c.terrain.city) {
+    const city = c.terrain.city;
+    need(64 % city.cell === 0, 'city.cell must divide the 64-unit chunk size');
+    need(city.density > 0 && city.density <= 1, 'city.density must be 0-1');
+    need(city.minHeight < city.maxHeight, 'city heights inverted');
+  }
   return errs;
 }
 

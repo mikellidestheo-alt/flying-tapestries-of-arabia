@@ -5,7 +5,7 @@ Game: **Flying Tapestries of Arabia**, a 3D open-world flying/spellcasting game.
 ## Stack and platform
 - Three.js + TypeScript (strict) + Vite. Vitest, ESLint. TypeScript pinned to 5.9.x (typescript-eslint limit).
 - **Android Chrome, landscape only.** Touch is primary; keyboard/mouse is a dev convenience.
-- Solo works fully offline once loaded (service worker, M3). Co-op is online-only.
+- Solo works fully offline once loaded (service worker precaches the build, injected by `vite.config.ts`; verify with `scripts/test-offline.cjs`). Co-op is online-only.
 - Hosting: Cloudflare **Workers with static assets**, deployed by Cloudflare's Git integration. No GitHub Actions deploys, no API tokens.
 - **Free Cloudflare plan only** (SQLite-backed Durable Objects, hibernatable WebSockets where possible). Ask before anything that needs a paid plan.
 

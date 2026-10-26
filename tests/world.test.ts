@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CHAPTERS } from '../src/data/chapters';
 import simData from '../src/data/sim.json';
-import { CREATURES, SPELLS } from '../src/sim/combat';
+import { CREATURES, SPELLS, hurtCreature } from '../src/sim/combat';
 import { ACTION_SPELL, Sim, type PlayerInput } from '../src/sim/sim';
 
 const input = (steer = 0, throttle = 0, actions = 0): PlayerInput => ({ steer, throttle, actions });
@@ -155,5 +155,38 @@ describe('determinism of the whole world', () => {
     const s = make();
     run(s, 6000, (i) => input(0.2, 0.2, i % 13 === 0 ? ACTION_SPELL : 0));
     expect(s.events.length).toBeLessThanOrEqual(simData.caps.events);
+  });
+});
+
+describe('wild animals (neutral mana source)', () => {
+  const sandbox = () => new Sim({ terrain: CHAPTERS[0]!.terrain, creatureTypes: ['oryx'] });
+
+  it('flee from a nearby wizard and never attack', () => {
+    const s = sandbox();
+    const p = s.players[0]!;
+    s.spawnCreature('oryx', p.x + 30, p.z + 30);
+    const a = s.creatures[0]!;
+    const d0 = Math.hypot(a.x - p.x, a.z - p.z);
+    for (let i = 0; i < 90; i++) s.step([input(0, -1)]); // the wizard brakes to a hover
+    const alive = s.creatures.find((c) => c.id === a.id)!;
+    expect(Math.hypot(alive.x - p.x, alive.z - p.z)).toBeGreaterThan(d0 + 20);
+    expect(p.hp).toBe(simData.player.maxHp);
+    expect(s.events.some((e) => e.type === 'playerHit')).toBe(false);
+  });
+
+  it('give mana orbs when hunted, and the spawner keeps a small herd nearby', () => {
+    const s = sandbox();
+    const p = s.players[0]!;
+    s.spawnCreature('oryx', p.x + 400, p.z + 400); // far from the wizard, so its orbs are not absorbed
+    const a = s.creatures[0]!;
+    const orbs0 = s.orbs.length;
+    hurtCreature(s, a, 1000, 0);
+    expect(s.creatures.length).toBe(1); // removed on the next creature step
+    expect(s.events.some((e) => e.type === 'kill')).toBe(true);
+    expect(s.orbs.length).toBe(orbs0 + CREATURES.oryx!.orbCount);
+    expect(p.kills).toBe(1);
+    const herd = sandbox();
+    run(herd, 1200, () => input(0, -1));
+    expect(herd.creatures.filter((c) => c.type === 'oryx').length).toBeGreaterThan(0);
   });
 });

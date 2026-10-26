@@ -1,0 +1,5 @@
+{
+  "easy": { "label": "Easy", "rivalAggression": 0.55, "rivalAccuracy": 0.6, "rivalHp": 0.8, "enemyHp": 0.75, "enemyDamage": 0.7, "playerIncome": 1.3, "rivalIncome": 0.8 },
+  "normal": { "label": "Normal", "rivalAggression": 1, "rivalAccuracy": 0.8, "rivalHp": 1, "enemyHp": 1, "enemyDamage": 1, "playerIncome": 1, "rivalIncome": 1 },
+  "hard": { "label": "Hard", "rivalAggression": 1.35, "rivalAccuracy": 0.95, "rivalHp": 1.25, "enemyHp": 1.3, "enemyDamage": 1.25, "playerIncome": 0.85, "rivalIncome": 1.2 }
+}

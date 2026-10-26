@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import simData from '../data/sim.json';
 import type { ChapterConfig } from '../data/chapters';
-import { sampleChunkHeights, type Terrain } from '../sim/terrain';
+import { buildingCell, cityFactor, sampleChunkHeights, type Terrain } from '../sim/terrain';
+import { Mesher, lightingFromPalette, type Lighting } from './mesher';
 import { chunkProps } from '../sim/props';
 import { valueNoise2 } from '../sim/noise';
 import { Prng, hashInts } from '../sim/prng';
@@ -31,6 +32,7 @@ class Palette {
   ambient: THREE.Color;
   sunDir: THREE.Vector3;
   trunk = new THREE.Color('#6b4a2e');
+  paving: THREE.Color;
   frond: THREE.Color;
   constructor(c: ChapterConfig) {
     const p = c.palette;
@@ -43,6 +45,7 @@ class Palette {
     this.ambient = new THREE.Color(p.ambient);
     this.sunDir = new THREE.Vector3(...p.sunDir).normalize();
     this.frond = this.grass.clone().multiplyScalar(0.9);
+    this.paving = this.sand.clone().lerp(this.rock, 0.5);
   }
 }
 
@@ -98,12 +101,14 @@ export class TerrainRenderer {
     private quality: QualityPresetData,
   ) {
     this.pal = new Palette(chapter);
+    this.cityLight = lightingFromPalette(chapter.palette.sunDir, chapter.palette.sunLight, chapter.palette.ambient);
     this.seenEpoch = terrain.deltas.compactionEpoch;
     this.seenDeltaId = terrain.deltas.nextId - 1;
   }
 
   private qualityVersion = 0;
   private sunScratch = new THREE.Color();
+  private cityLight: Lighting;
 
   setQuality(q: QualityPresetData): void {
     this.quality = q;
@@ -229,6 +234,7 @@ export class TerrainRenderer {
     const L = pal.sunDir;
     const tmp = new THREE.Color();
     const base = new THREE.Color();
+    const city = this.chapter.terrain.city !== undefined;
     const ox = cx * CHUNK;
     const oz = cz * CHUNK;
     let minY = Infinity;
@@ -260,6 +266,14 @@ export class TerrainRenderer {
         base.copy(pal.sand).lerp(pal.bank, lush * 0.7).lerp(pal.grass, lush * lush);
         base.lerp(pal.rock, smooth(0.28, 0.5, slope) * (1 - lush * 0.8));
         base.lerp(pal.sandShade, wet * 0.6);
+        if (city) {
+          // Paved plaza under the district, with a faint cobble checker.
+          const cf = cityFactor(this.chapter.terrain, wx, wz);
+          if (cf > 0) {
+            const checker = (Math.floor(wx / 4) + Math.floor(wz / 4)) & 1;
+            base.lerp(pal.paving, smooth(0.05, 0.6, cf)).multiplyScalar(1 - 0.06 * checker * cf);
+          }
+        }
         // Cheap per-vertex sparkle so large dunes do not look flat.
         const sparkle = 1 + (valueNoise2(wx * 0.35, wz * 0.35, 5) - 0.5) * 0.12;
         const lit = smooth(0.0, 0.8, lam);
@@ -298,23 +312,30 @@ export class TerrainRenderer {
     let positions: Float32Array = pos;
     let colors: Float32Array = col;
     let index: THREE.BufferAttribute = this.index(n);
+    const extra = { pos: [] as number[], col: [] as number[], idx: [] as number[] };
     if (this.quality.props && lod <= 1) {
       const props = this.buildProps(cx, cz);
-      if (props.pos.length > 0) {
-        const vBase = total;
-        positions = new Float32Array(pos.length + props.pos.length);
-        positions.set(pos);
-        positions.set(props.pos, pos.length);
-        colors = new Float32Array(col.length + props.col.length);
-        colors.set(col);
-        colors.set(props.col, col.length);
-        const baseIdx = index.array as Uint32Array;
-        const merged = new Uint32Array(baseIdx.length + props.idx.length);
-        merged.set(baseIdx);
-        for (let i = 0; i < props.idx.length; i++) merged[baseIdx.length + i] = props.idx[i]! + vBase;
-        index = new THREE.BufferAttribute(merged, 1);
-        maxY += 14;
-      }
+      this.pushExtra(extra, props.pos, props.col, props.idx);
+    }
+    if (city) {
+      const b = this.buildCity(cx, cz, lod);
+      if (b.maxTop > maxY) maxY = b.maxTop;
+      this.pushExtra(extra, b.pos, b.col, b.idx);
+    }
+    if (extra.pos.length > 0) {
+      const vBase = total;
+      positions = new Float32Array(pos.length + extra.pos.length);
+      positions.set(pos);
+      positions.set(extra.pos, pos.length);
+      colors = new Float32Array(col.length + extra.col.length);
+      colors.set(col);
+      colors.set(extra.col, col.length);
+      const baseIdx = index.array as Uint32Array;
+      const merged = new Uint32Array(baseIdx.length + extra.idx.length);
+      merged.set(baseIdx);
+      for (let i = 0; i < extra.idx.length; i++) merged[baseIdx.length + i] = extra.idx[i]! + vBase;
+      index = new THREE.BufferAttribute(merged, 1);
+      maxY += 14;
     }
 
     const geom = new THREE.BufferGeometry();
@@ -343,6 +364,70 @@ export class TerrainRenderer {
     entry.dirty = false;
   }
 
+  private pushExtra(dst: { pos: number[]; col: number[]; idx: number[] }, pos: ArrayLike<number>, col: ArrayLike<number>, idx: ArrayLike<number>): void {
+    const base = dst.pos.length / 3;
+    for (let i = 0; i < pos.length; i++) dst.pos.push(pos[i]!);
+    for (let i = 0; i < col.length; i++) dst.col.push(col[i]!);
+    for (let i = 0; i < idx.length; i++) dst.idx.push(idx[i]! + base);
+  }
+
+  /** Terracotta buildings, canopies and lanterns for the chunk's city cells (chapter 2 style). */
+  private buildCity(cx: number, cz: number, lod: number): { pos: number[]; col: number[]; idx: number[]; maxTop: number } {
+    const p = this.chapter.terrain;
+    const city = p.city!;
+    const st = this.chapter.structureStyle;
+    const m = new Mesher(this.cityLight);
+    const detail = lod >= 2 ? 0 : this.quality.cityDetail;
+    const per = CHUNK / city.cell;
+    const ox = cx * CHUNK;
+    const oz = cz * CHUNK;
+    const wall = new THREE.Color(st.wall);
+    const roof = new THREE.Color(st.roof);
+    const tmp = new THREE.Color();
+    let maxTop = 0;
+    for (let j = 0; j < per; j++) {
+      for (let i = 0; i < per; i++) {
+        const b = buildingCell(p, cx * per + i, cz * per + j);
+        if (!b) continue;
+        const lx = b.cx - ox;
+        const lz = b.cz - oz;
+        const h = b.top - city.plateau;
+        const base = city.plateau;
+        if (b.top > maxTop) maxTop = b.top;
+        tmp.copy(wall).lerp(roof, 0.15 + b.tint * 0.5);
+        const body = `#${tmp.getHexString()}`;
+        m.box(lx, base + h / 2, lz, b.half * 2, h, b.half * 2, body, 0, st.roof);
+        if (detail >= 1) {
+          const t = 0.45;
+          for (const [dx, dz, sx, sz] of [[0, -b.half, b.half * 2, t], [0, b.half, b.half * 2, t], [-b.half, 0, t, b.half * 2], [b.half, 0, t, b.half * 2]] as const) {
+            m.box(lx + dx, base + h + 0.45, lz + dz, sx, 0.9, sz, st.wall);
+          }
+          m.box(lx, base + h * 0.55, lz + b.half + 0.03, b.half * 0.5, b.half * 0.8, 0.1, st.shade); // door/window slab
+        }
+        if (b.dome) {
+          m.dome(lx, base + h + (detail >= 1 ? 0.9 : 0), lz, b.half * 0.78, st.dome, detail >= 1 ? 8 : 6, detail >= 1 ? 3 : 2, 1.1);
+          if (detail >= 1) m.cylinder(lx, base + h + b.half * 0.9, lz, 0.12, 0.04, 1.8, 4, st.trim);
+        }
+        if (b.canopy && detail >= 1) {
+          const y = base + Math.min(4.6, h * 0.5);
+          const len = 3.4;
+          for (let k = 0; k < 4; k++) {
+            m.box(lx + b.half + len / 2, y - k * 0.04, lz - b.half * 0.8 + (k + 0.5) * ((b.half * 1.6) / 4), len, 0.18, (b.half * 1.6) / 4, k % 2 ? '#f4ead0' : '#c94a3a');
+          }
+          m.box(lx + b.half + len, y - 1.6, lz - b.half * 0.8, 0.14, 3.2, 0.14, st.shade);
+          m.box(lx + b.half + len, y - 1.6, lz + b.half * 0.8, 0.14, 3.2, 0.14, st.shade);
+        }
+        if (detail >= 2) {
+          m.box(lx - b.half - 0.2, base + 3.4, lz + b.half * 0.7, 0.12, 2.4, 0.12, st.shade);
+          m.box(lx - b.half - 0.2, base + 2.1, lz + b.half * 0.7, 0.55, 0.7, 0.55, '#ffd27a'); // lantern
+        }
+      }
+    }
+    const idx: number[] = [];
+    for (let i = 0; i < m.pos.length / 3; i++) idx.push(i);
+    return { pos: m.pos, col: m.col, idx, maxTop };
+  }
+
   /** Palms near water, rock spires in the open desert, merged into the chunk's geometry. */
   private buildProps(cx: number, cz: number): { pos: Float32Array; col: Float32Array; idx: number[] } {
     const pp = this.chapter.props;
@@ -364,8 +449,17 @@ export class TerrainRenderer {
     };
     const tri = (a: number, b: number, c: number) => idx.push(a, b, c);
 
+    const pads = this.terrain.pads;
     for (const p of list) {
       if (rng.next() > density) continue;
+      // Keep castle grounds clear of palms and rocks.
+      let onPad = false;
+      for (const pad of pads) {
+        const dx = p.x - pad.x;
+        const dz = p.z - pad.z;
+        if (dx * dx + dz * dz < (pad.r + 3) * (pad.r + 3)) onPad = true;
+      }
+      if (onPad) continue;
       const gy = this.terrain.heightAt(p.x, p.z);
       if (gy < water + 0.3) continue;
       const lx = p.x - ox;

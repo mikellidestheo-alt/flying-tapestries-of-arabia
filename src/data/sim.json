@@ -59,7 +59,8 @@
     "ringMax": 200,
     "despawnDistance": 320,
     "spawnEveryTicks": 60,
-    "firstSpawnTick": 45
+    "firstSpawnTick": 45,
+    "wildTarget": 5
   },
   "wells": {
     "firstTick": 600,

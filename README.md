@@ -2,15 +2,18 @@
 
 A modern 3D open-world flying and spellcasting game for Android phones, inspired by the classic magic-carpet genre. Fly a woven tapestry over golden dunes and oases, gather mana, grow a sandstone castle and duel rival wizards. All art, names and music are original and generated procedurally.
 
-> **Status:** early development. Milestone 1 (flight over deformable procedural terrain) is playable. See [docs/milestones.md](docs/milestones.md).
+> **Status:** early development. Milestone 3 is playable: two chapters, castles with archers, rival wizards, offline play. See [docs/milestones.md](docs/milestones.md).
 
 ## How to play (current build)
-- **Left thumb**: touch and drag anywhere on the left half of the screen. Left/right steers, up boosts, down brakes. Let go to cruise.
-- **Right buttons**: *Crater* digs a bowl in the ground ahead, *Mound* raises a hill. (Stand-ins for the earth spells coming in later milestones.)
-- **Pause** (top corner) opens settings: graphics quality, battery saver (30 fps), left-handed layout, tilt steering, vibration, debug overlay.
-- Desktop (dev only): WASD/arrows to fly, `C` crater, `V` mound.
+- **Goal:** capture the chapter's target share of all the mana (shown on the bar at the top) before the rival wizard does, or knock out every rival castle. Matches run about 10-14 minutes.
+- **Left thumb**: touch and drag anywhere on the left half. Left/right steers, up boosts, down brakes. Let go to cruise.
+- **Flame button** (right): throw a Fireball. It auto-aims a little at nearby targets.
+- **Gather mana**: fly into blue orbs, hover beside a glowing **mana well**, hunt wild **oryx**, destroy sprite **nests**, defeat creatures.
+- **Upgrade button** (appears near your castle): spend mana to grow your castle: more archers, stronger walls, more income.
+- **Pause** (top corner): settings (graphics quality, battery saver, left-handed layout, tilt steering, volume, difficulty lives in the chapter menu).
+- Desktop (dev only): WASD/arrows to fly, Space fireball, U upgrade.
 
-Best played on an Android phone in Chrome, landscape.
+Best played on an Android phone in Chrome, landscape. Works offline after the first load.
 
 ## Run locally
 ```bash

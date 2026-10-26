@@ -6,39 +6,72 @@
       "viewRadiusChunks": 7,
       "lod0Radius": 1,
       "lod1Radius": 3,
-      "lodResolutions": [32, 16, 8],
+      "lodResolutions": [
+        32,
+        16,
+        8
+      ],
       "props": true,
       "propDensity": 1.0,
       "pixelRatioCap": 1.5,
       "water": "shader",
       "chunkBuildsPerFrame": 2,
-      "caps": { "projectiles": 96, "orbs": 160, "creatures": 48, "archers": 64, "particles": 600 }
+      "caps": {
+        "projectiles": 96,
+        "orbs": 160,
+        "creatures": 48,
+        "archers": 64,
+        "particles": 600
+      },
+      "cityDetail": 2
     },
     "medium": {
       "label": "Medium",
       "viewRadiusChunks": 5,
       "lod0Radius": 1,
       "lod1Radius": 2,
-      "lodResolutions": [28, 14, 7],
+      "lodResolutions": [
+        28,
+        14,
+        7
+      ],
       "props": true,
       "propDensity": 0.7,
       "pixelRatioCap": 1.25,
       "water": "shader",
       "chunkBuildsPerFrame": 2,
-      "caps": { "projectiles": 64, "orbs": 100, "creatures": 32, "archers": 40, "particles": 350 }
+      "caps": {
+        "projectiles": 64,
+        "orbs": 100,
+        "creatures": 32,
+        "archers": 40,
+        "particles": 350
+      },
+      "cityDetail": 1
     },
     "low": {
       "label": "Low",
       "viewRadiusChunks": 4,
       "lod0Radius": 0,
       "lod1Radius": 2,
-      "lodResolutions": [24, 12, 6],
+      "lodResolutions": [
+        24,
+        12,
+        6
+      ],
       "props": true,
       "propDensity": 0.4,
       "pixelRatioCap": 1.0,
       "water": "flat",
       "chunkBuildsPerFrame": 1,
-      "caps": { "projectiles": 40, "orbs": 60, "creatures": 20, "archers": 24, "particles": 150 }
+      "caps": {
+        "projectiles": 40,
+        "orbs": 60,
+        "creatures": 20,
+        "archers": 24,
+        "particles": 150
+      },
+      "cityDetail": 0
     }
   },
   "governor": {

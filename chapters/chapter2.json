@@ -27,7 +27,7 @@
   "terrain": {
     "seed": 2202,
     "baseHeight": 18,
-    "swellAmplitude": 14,
+    "swellAmplitude": 10,
     "swellScale": 0.0018,
     "duneAmplitude": 9,
     "duneScale": 0.012,
@@ -40,7 +40,19 @@
     "oasisThreshold": 0.65,
     "oasisSoftness": 0.18,
     "oasisDepth": 6,
-    "oasisRim": 3.2
+    "oasisRim": 3.2,
+    "city": {
+      "scale": 0.0042,
+      "threshold": 0.5,
+      "softness": 0.07,
+      "plateau": 22,
+      "cell": 16,
+      "density": 0.86,
+      "minHeight": 5,
+      "maxHeight": 19,
+      "canopyChance": 0.3,
+      "domeChance": 0.22
+    }
   },
   "props": {
     "candidatesPerChunk": 22,
@@ -50,7 +62,8 @@
   "structureKit": "terracotta-bazaar",
   "creatureSet": [
     "lantern-wisp",
-    "rooftop-jackal"
+    "dust-sprite",
+    "oryx"
   ],
   "ambient": {
     "sound": "market-murmur",
@@ -86,5 +99,17 @@
     "trailingIncomeBonus": 0.35,
     "suddenDeathMinute": 13,
     "suddenDeathShare": 0.4
+  },
+  "structureStyle": {
+    "wall": "#e7b98a",
+    "shade": "#a65b3c",
+    "dome": "#2f8f8a",
+    "trim": "#f0c05a",
+    "roof": "#c1623a"
+  },
+  "nest": {
+    "name": "Lantern Obelisk",
+    "color": "#7a4a3a",
+    "glow": "#ffb347"
   }
 }

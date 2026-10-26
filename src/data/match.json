@@ -1,0 +1,28 @@
+{
+  "minTotalForWin": 450,
+  "hardEndAfterSuddenDeathMinutes": 3,
+  "starterOrbs": 12,
+  "starterOrbRadius": 55,
+  "castlePadRadius": 24,
+  "castleSiteDistance": 760,
+  "castleSiteStep": 70,
+  "castleHitPadding": 2,
+  "nests": {
+    "count": 3,
+    "minDistance": 260,
+    "maxDistance": 620,
+    "hp": 160,
+    "spawnEveryTicks": 360,
+    "wakeRadius": 170,
+    "maxSpawned": 3,
+    "rewardMana": 70,
+    "rewardOrbs": 5,
+    "radius": 5,
+    "height": 9,
+    "respawnAfterTicks": 2400
+  },
+  "wizardHitRadius": 2.6,
+  "wizardMaxHp": 100,
+  "wizardRespawnManaLoss": 0.3,
+  "winAfterMinutes": 6
+}

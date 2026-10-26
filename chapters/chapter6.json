@@ -96,5 +96,17 @@
     "trailingIncomeBonus": 0.5,
     "suddenDeathMinute": 16,
     "suddenDeathShare": 0.3
+  },
+  "structureStyle": {
+    "wall": "#f0b07a",
+    "shade": "#a85a6a",
+    "dome": "#2a8f9c",
+    "trim": "#e0b552",
+    "roof": "#c9743f"
+  },
+  "nest": {
+    "name": "Sprite Obelisk",
+    "color": "#8a6a3a",
+    "glow": "#ffd27a"
   }
 }

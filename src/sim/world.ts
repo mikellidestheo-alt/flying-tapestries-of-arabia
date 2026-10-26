@@ -6,6 +6,8 @@ import { CREATURES, hurtCreature } from './combat';
 import type { PlayerState, Sim } from './sim';
 import { SIM_DT, SIM_TICK_RATE } from './sim';
 import { baseHeight } from './terrain';
+import { DIFFICULTIES } from './match';
+import matchData from '../data/match.json';
 
 const P = simData.player;
 
@@ -13,6 +15,7 @@ function nearestPlayer(sim: Sim, x: number, y: number, z: number): { p: PlayerSt
   let best = sim.players[0]!;
   let bd = Infinity;
   for (const p of sim.players) {
+    if (!p.active || p.hp <= 0) continue;
     const dx = p.x - x;
     const dy = p.y - y;
     const dz = p.z - z;
@@ -31,21 +34,30 @@ export function stepCreatures(sim: Sim): void {
   const sp = simData.creatureSpawning;
   const list = sim.creatures;
 
-  // Spawn keeps a few wild creatures around the player(s), out of sight.
+  // Spawning keeps a few hostile creatures AND a few neutral wild animals around the wizards, out of sight.
   if (sim.tick >= sp.firstSpawnTick && sim.tick % sp.spawnEveryTicks === 0 && list.length < simData.caps.creatures) {
-    let near = 0;
+    let hostile = 0;
+    let wild = 0;
     const lim = sp.despawnDistance * sp.despawnDistance;
     for (const c of list) {
       const { d2 } = nearestPlayer(sim, c.x, c.y, c.z);
-      if (d2 < lim) near++;
+      if (d2 >= lim) continue;
+      if (CREATURES[c.type]!.hostile) hostile++;
+      else wild++;
     }
-    if (near < sp.targetNear * sim.players.length && sim.creatureTypes.length > 0) {
+    const hostileTypes = sim.creatureTypes.filter((t) => CREATURES[t]!.hostile);
+    const wildTypes = sim.creatureTypes.filter((t) => !CREATURES[t]!.hostile);
+    const n = sim.players.length;
+    let pool: string[] = [];
+    if (hostile < sp.targetNear * n && hostileTypes.length > 0 && (wild >= sp.wildTarget * n || wildTypes.length === 0 || sim.rng.next() < 0.6)) pool = hostileTypes;
+    else if (wild < sp.wildTarget * n && wildTypes.length > 0) pool = wildTypes;
+    if (pool.length > 0) {
       const target = sim.players[sim.rng.int(0, sim.players.length)]!;
       const a = sim.rng.range(0, 6.2831853);
       const r = sim.rng.range(sp.ringMin, sp.ringMax);
       const x = target.x + dcos(a) * r;
       const z = target.z + dsin(a) * r;
-      sim.spawnCreature(sim.creatureTypes[sim.rng.int(0, sim.creatureTypes.length)]!, x, z);
+      sim.spawnCreature(pool[sim.rng.int(0, pool.length)]!, x, z);
     }
   }
 
@@ -69,7 +81,10 @@ export function stepCreatures(sim: Sim): void {
     const dist = Math.sqrt(d2);
     if (dist > simData.creatureSpawning.despawnDistance) continue; // too far: despawn
 
-    if (c.state === CREATURE_WANDER) {
+    if (!def.hostile) {
+      // Wild animal: wander, bolt away from any wizard that gets close, never attack.
+      c.state = dist < def.fleeRange ? CREATURE_CHASE : CREATURE_WANDER;
+    } else if (c.state === CREATURE_WANDER) {
       if (dist < def.aggroRange) c.state = CREATURE_CHASE;
     } else if (dist > def.leashRange) {
       c.state = CREATURE_WANDER;
@@ -81,7 +96,13 @@ export function stepCreatures(sim: Sim): void {
     let tz: number;
     let speed: number;
     let ty: number;
-    if (c.state === CREATURE_CHASE) {
+    if (c.state === CREATURE_CHASE && !def.hostile) {
+      // Flee: run directly away from the nearest wizard.
+      tx = c.x + (c.x - target.x);
+      tz = c.z + (c.z - target.z);
+      speed = def.speed;
+      ty = T.surfaceAt(c.x, c.z) + def.hover;
+    } else if (c.state === CREATURE_CHASE) {
       tx = target.x;
       tz = target.z;
       speed = dist > def.attackRange * 0.7 ? def.speed : 0;
@@ -111,18 +132,20 @@ export function stepCreatures(sim: Sim): void {
     }
     c.x += c.vx * SIM_DT;
     c.z += c.vz * SIM_DT;
-    const floor = T.surfaceAt(c.x, c.z) + 1.5;
-    const bob = dsin(sim.tick * 0.12 + c.id) * 0.6;
+    const floor = T.surfaceAt(c.x, c.z) + (def.hover > 0 ? 1.5 : 0.9);
+    const bob = def.hover > 0 ? dsin(sim.tick * 0.12 + c.id) * 0.6 : 0;
     c.y += (Math.max(floor, ty + bob) - c.y) * 0.12;
     if (c.y < floor) c.y = floor;
 
     // Attack.
     if (c.cd > 0) c.cd--;
-    if (c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.attackRange && target.invuln === 0) {
-      target.hp -= def.attackDamage;
+    if (def.hostile && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.attackRange && target.invuln === 0) {
+      const dmg = def.attackDamage * (sim.setup ? DIFFICULTIES[sim.setup.difficulty].enemyDamage : 1);
+      target.hp -= dmg;
+      target.lastHitBy = -1;
       c.cd = def.attackCooldownTicks;
       target.invuln = Math.max(target.invuln, 6);
-      sim.emit('playerHit', target.x, target.y, target.z, def.attackDamage);
+      if (!target.isRival) sim.emit('playerHit', target.x, target.y, target.z, dmg);
     }
     list[w++] = c;
   }
@@ -180,8 +203,8 @@ export function stepOrbs(sim: Sim): void {
     if (p.mana < P.maxMana) {
       const dist = Math.sqrt(d2);
       if (dist < P.absorbRadius) {
-        p.mana = Math.min(P.maxMana, p.mana + orb.value);
-        sim.emit('orb', orb.x, orb.y, orb.z, orb.value);
+        sim.gainMana(p, orb.value);
+        if (!p.isRival) sim.emit('orb', orb.x, orb.y, orb.z, orb.value);
         continue;
       }
       if (dist < P.magnetRadius) {
@@ -232,12 +255,12 @@ export function stepWells(sim: Sim): void {
       } else {
         // Players channelling the well: hover close and the pool fills.
         for (const p of sim.players) {
+          if (!p.active) continue;
           const dx = p.x - well.x;
           const dz = p.z - well.z;
           if (dx * dx + dz * dz > W.drawRadius * W.drawRadius || p.y - well.y > W.drawMaxHeight) continue;
           if (p.mana >= P.maxMana) continue;
-          const amount = Math.min(W.drawPerSecond / SIM_TICK_RATE, well.reserve, P.maxMana - p.mana);
-          p.mana += amount;
+          const amount = sim.gainMana(p, Math.min(W.drawPerSecond / SIM_TICK_RATE, well.reserve));
           well.reserve -= amount;
           p.drawing = well.id;
           if (sim.tick % 10 === 0) sim.emit('wellDraw', well.x, well.y, well.z, amount);
@@ -254,9 +277,38 @@ export function stepWells(sim: Sim): void {
 
 export function stepPlayerVitals(sim: Sim): void {
   for (const p of sim.players) {
+    if (!p.active) continue;
     if (p.invuln > 0) p.invuln--;
     if (p.spellCd > 0) p.spellCd--;
-    if (p.hp <= 0) sim.respawn(p);
-    else if (p.hp < P.maxHp) p.hp = clamp(p.hp + P.hpRegenPerSecond * SIM_DT, 0, P.maxHp);
+    const max = sim.maxHpFor(p);
+    if (p.hp <= 0) {
+      sim.emit('wizardDown', p.x, p.y, p.z, sim.players.indexOf(p));
+      sim.respawn(p);
+    } else if (p.hp < max) p.hp = clamp(p.hp + P.hpRegenPerSecond * SIM_DT, 0, max);
+  }
+}
+
+// ---------------------------------------------------------------- nests (hostile structures)
+/** Nests wake when a wizard comes near, spawn guard creatures, and come back after a while. */
+export function stepNests(sim: Sim): void {
+  const cfg = matchData.nests;
+  for (const s of sim.structures) {
+    if (!s.alive) {
+      if (sim.tick >= s.respawnAt) {
+        s.alive = true;
+        s.hp = s.max;
+      }
+      continue;
+    }
+    if (s.spawnCd > 0) s.spawnCd--;
+    const guards = sim.creatureTypes.filter((t) => CREATURES[t]!.hostile);
+    if (s.spawnCd > 0 || guards.length === 0) continue;
+    const { d2 } = nearestPlayer(sim, s.x, s.y, s.z);
+    if (d2 > cfg.wakeRadius * cfg.wakeRadius) continue;
+    let alive = 0;
+    for (const c of sim.creatures) if (c.nest === s.id) alive++;
+    if (alive >= cfg.maxSpawned) continue;
+    sim.spawnCreature(guards[sim.rng.int(0, guards.length)]!, s.x + sim.rng.range(-6, 6), s.z + sim.rng.range(-6, 6), s.id);
+    s.spawnCd = cfg.spawnEveryTicks;
   }
 }
