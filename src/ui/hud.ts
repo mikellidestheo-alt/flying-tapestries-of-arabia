@@ -41,6 +41,7 @@ export class Hud {
   private foeFill = $<HTMLElement>('#foeFill');
   private upgrade = $<HTMLButtonElement>('#btnUpgrade');
   private upgradeCost = $<HTMLElement>('#upgradeCost');
+  private deposit = $<HTMLElement>('#btnDeposit');
   private branchPicker = $<HTMLElement>('#branchPicker');
   private branchOptions = $<HTMLElement>('#branchOptions');
   private branchTitle = $<HTMLElement>('#branchTitle');
@@ -187,18 +188,19 @@ export class Hud {
       const near = d < castleData.upgradeRadius + 10;
       const up = nextUpgrade(mine);
       const stats = castleStats(mine.tier, mine.branches);
-      const infoKey = d < 110 ? `${mine.tier}|${Math.floor(mine.bank)}|${Math.round(mine.hp)}|${mine.branches.join()}` : '';
+      const infoKey = d < 110 ? `${mine.tier}|${Math.floor(mine.bank)}|${Math.round(mine.hp)}|${mine.branches.join()}|${Math.floor(mana)}` : '';
       if (infoKey !== this.last.castle) {
         this.last.castle = infoKey;
         this.castleInfo.classList.toggle('hidden', infoKey === '');
         if (infoKey) {
-          this.castleInfo.innerHTML = `<b>${tierDef(mine.tier).name}</b> (tier ${mine.tier})<br>Archers ${stats.archers} · Walls ${Math.round(mine.hp)}/${mine.maxHp}<br>Income ${stats.income.toFixed(1)}/s · Bank ${Math.floor(mine.bank)}`;
+          this.castleInfo.innerHTML = `<b>${tierDef(mine.tier).name}</b> (tier ${mine.tier})<br>Archers ${stats.archers} · Walls ${Math.round(mine.hp)}/${mine.maxHp}<br>Income ${stats.income.toFixed(1)}/s · Bank ${Math.floor(mine.bank)}${up ? `<br>Next: ${up.cost} (bank + mana ${Math.floor(mine.bank + mana)})` : ''}`;
         }
       }
       const upKey = near && up ? `${up.cost}|${Math.floor(Math.min(mine.bank + mana, 9999))}` : '';
       if (upKey !== this.last.up) {
         this.last.up = upKey;
         this.upgrade.classList.toggle('hidden', !(near && up));
+        this.deposit.classList.toggle('hidden', !(near && up));
         if (near && up) {
           const can = mine.bank + mana >= up.cost;
           this.upgrade.classList.toggle('cant', !can);

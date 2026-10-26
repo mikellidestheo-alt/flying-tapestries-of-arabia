@@ -24,8 +24,12 @@
       "kind": 1
     },
     "aimAssist": {
-      "range": 170,
-      "cosMin": 0.94
+      "range": 200,
+      "cosMin": 0.86,
+      "distanceWeight": 0.18,
+      "homingStrength": 0.16,
+      "homingMaxAngle": 0.9,
+      "homingRange": 150
     },
     "structureMult": 1.0,
     "interceptHp": 16

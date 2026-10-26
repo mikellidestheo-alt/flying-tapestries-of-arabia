@@ -101,11 +101,11 @@
     "suddenDeathShare": 0.4
   },
   "structureStyle": {
-    "wall": "#e7b98a",
-    "shade": "#a65b3c",
-    "dome": "#2f8f8a",
+    "wall": "#e2a878",
+    "shade": "#a8603c",
+    "dome": "#2a9d8f",
     "trim": "#f0c05a",
-    "roof": "#c1623a"
+    "roof": "#c9743f"
   },
   "nest": {
     "name": "Lantern Obelisk",

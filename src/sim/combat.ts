@@ -26,6 +26,9 @@ interface Target {
   z: number;
   vx: number;
   vz: number;
+  /** 1 creature, 2 wizard (index + 1), 3 nest; used for light homing in flight. */
+  kind: number;
+  id: number;
 }
 
 export function tryCast(sim: Sim, playerIndex: number): boolean {
@@ -44,8 +47,9 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
   const oz = p.z + fz * 2.5;
 
   // Aim assist: lead the hostile target closest to the aim line, within a forward cone.
+  // Score favours targets near the aim line, and gently prefers closer ones.
   let best: Target | null = null;
-  let bestCos = def.aimAssist.cosMin;
+  let bestScore = -Infinity;
   const consider = (t: Target) => {
     const dx = t.x - ox;
     const dy = t.y - oy;
@@ -53,14 +57,18 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
     const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (d > def.aimAssist.range || d < 1) return;
     const cos = (dx * fx + dz * fz) / d;
-    if (cos > bestCos) {
-      bestCos = cos;
+    if (cos < def.aimAssist.cosMin) return;
+    const score = cos - (d / def.aimAssist.range) * def.aimAssist.distanceWeight;
+    if (score > bestScore) {
+      bestScore = score;
       best = t;
     }
   };
-  for (const c of sim.creatures) consider(c);
-  for (const s of sim.structures) if (s.alive) consider({ x: s.x, y: s.y + 4, z: s.z, vx: 0, vz: 0 });
-  for (const w of sim.players) if (w.active && w.hp > 0 && w.faction !== p.faction) consider(w);
+  for (const c of sim.creatures) consider({ x: c.x, y: c.y, z: c.z, vx: c.vx, vz: c.vz, kind: 1, id: c.id });
+  for (const s of sim.structures) if (s.alive) consider({ x: s.x, y: s.y + 4, z: s.z, vx: 0, vz: 0, kind: 3, id: s.id });
+  sim.players.forEach((w, i) => {
+    if (w.active && w.hp > 0 && w.faction !== p.faction) consider({ x: w.x, y: w.y, z: w.z, vx: w.vx, vz: w.vz, kind: 2, id: i + 1 });
+  });
 
   let vx = fx * def.speed;
   let vz = fz * def.speed;
@@ -82,7 +90,7 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
   }
   const proj: Projectile = {
     id: sim.nextId++, owner: playerIndex, faction: p.faction, hp: def.interceptHp, spell: id,
-    x: ox, y: oy, z: oz, px: ox, py: oy, pz: oz, vx, vy, vz, travelled: 0,
+    x: ox, y: oy, z: oz, px: ox, py: oy, pz: oz, vx, vy, vz, travelled: 0, tk: tgt ? tgt.kind : 0, tid: tgt ? tgt.id : 0,
   };
   sim.projectiles.push(proj);
   sim.emit('cast', ox, oy, oz, playerIndex);
@@ -186,6 +194,40 @@ function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, gro
   sim.emit('impact', x, y, z, proj.owner);
 }
 
+/** Light guidance: bend the bolt's velocity a little toward its (moving) target, never a hard lock. */
+function homeIn(sim: Sim, p: Projectile, def: SpellDef): void {
+  let tx: number;
+  let ty: number;
+  let tz: number;
+  if (p.tk === 1) {
+    const c = sim.creatures.find((q) => q.id === p.tid);
+    if (!c || c.hp <= 0) return;
+    tx = c.x; ty = c.y; tz = c.z;
+  } else if (p.tk === 2) {
+    const w = sim.players[(p.tid ?? 0) - 1];
+    if (!w || !w.active || w.hp <= 0) return;
+    tx = w.x; ty = w.y; tz = w.z;
+  } else {
+    const s = sim.structures.find((q) => q.id === p.tid);
+    if (!s || !s.alive) return;
+    tx = s.x; ty = s.y + 4; tz = s.z;
+  }
+  const dx = tx - p.x;
+  const dz = tz - p.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  if (dist < 1 || dist > def.aimAssist.homingRange) return;
+  const sp = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
+  if (sp < 1) return;
+  const cos = (p.vx * dx + p.vz * dz) / (sp * dist);
+  if (cos < Math.cos(def.aimAssist.homingMaxAngle)) return; // already past it: let it fly
+  const k = def.aimAssist.homingStrength;
+  const t = dist / sp;
+  p.vx += ((dx / dist) * sp - p.vx) * k;
+  p.vz += ((dz / dist) * sp - p.vz) * k;
+  const needVy = (ty - p.y + 0.5 * def.gravity * t * t) / Math.max(0.05, t);
+  p.vy += (needVy - p.vy) * k;
+}
+
 export function stepProjectiles(sim: Sim): void {
   const list = sim.projectiles;
   const T = sim.terrain;
@@ -200,6 +242,7 @@ export function stepProjectiles(sim: Sim): void {
     p.px = p.x;
     p.py = p.y;
     p.pz = p.z;
+    if (p.tk) homeIn(sim, p, def);
     p.vy -= def.gravity * SIM_DT;
     p.x += p.vx * SIM_DT;
     p.y += p.vy * SIM_DT;

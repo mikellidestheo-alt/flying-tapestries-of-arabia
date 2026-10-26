@@ -11,7 +11,7 @@ import {
   type Castle, type Creature, type Faction, type Orb, type Projectile, type SimEvent, type SimEventType, type Structure, type Well,
 } from './entities';
 import { CREATURES, creatureHp, stepProjectiles, tryCast } from './combat';
-import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryUpgrade } from './castles';
+import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryDeposit, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
 import { stepCreatures, stepNests, stepOrbs, stepPlayerVitals, stepWells } from './world';
@@ -25,6 +25,7 @@ export const ACTION_CRATER = 1;
 export const ACTION_MOUND = 2;
 export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
+export const ACTION_DEPOSIT = 16;
 
 export interface PlayerInput {
   /** -1 (left) .. 1 (right) */
@@ -242,6 +243,7 @@ export class Sim {
       this.stepPlayer(p, input);
       if ((input.actions | 0) & ACTION_SPELL) tryCast(this, i);
       if ((input.actions | 0) & ACTION_UPGRADE) tryUpgrade(this, p, input);
+      if ((input.actions | 0) & ACTION_DEPOSIT) tryDeposit(this, p);
     }
     stepProjectiles(this);
     stepCreatures(this);

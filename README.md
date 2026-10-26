@@ -9,7 +9,7 @@ A modern 3D open-world flying and spellcasting game for Android phones, inspired
 - **Left thumb**: touch and drag anywhere on the left half. Left/right steers, up boosts, down brakes. Let go to cruise.
 - **Flame button** (right): throw a Fireball. It auto-aims a little at nearby targets.
 - **Gather mana**: fly into blue orbs, hover beside a glowing **mana well**, hunt wild **oryx**, destroy sprite **nests**, defeat creatures.
-- **Upgrade button** (appears near your castle): spend mana to grow your castle: more archers, stronger walls, more income.
+- **Upgrade button** (appears near your castle): spend mana to grow your castle: more archers, stronger walls, more income. Your own mana pool holds at most 200, so for the bigger upgrades hold **Deposit** near the castle to move mana into the castle bank (the bank can hold 900 and also fills slowly by itself).
 - **Pause** (top corner): settings (graphics quality, battery saver, left-handed layout, tilt steering, volume, difficulty lives in the chapter menu).
 - Desktop (dev only): WASD/arrows to fly, Space fireball, U upgrade.
 

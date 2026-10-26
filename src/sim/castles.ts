@@ -151,6 +151,19 @@ export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolea
   return true;
 }
 
+/** Move mana from the wizard's pool into the castle bank (hold near your castle). The pool is capped, the bank is not, so this is how big upgrades get paid for. */
+export function tryDeposit(sim: Sim, p: PlayerState): boolean {
+  const c = sim.castles.find((q) => q.faction === p.faction);
+  if (!c || c.ruined || p.mana <= 0 || c.bank >= castleData.bankCap) return false;
+  const dx = p.x - c.x;
+  const dz = p.z - c.z;
+  if (dx * dx + dz * dz > castleData.upgradeRadius * castleData.upgradeRadius) return false;
+  const amount = Math.min(p.mana, castleData.depositPerSecond / SIM_TICK_RATE, castleData.bankCap - c.bank);
+  p.mana -= amount;
+  c.bank += amount; // already counted in the faction's captured share when it was collected
+  return true;
+}
+
 export function refreshObstacle(sim: Sim, c: Castle): void {
   const b = castleBounds(c.tier);
   const o = sim.terrain.obstacles.find((q) => q.id === c.id);

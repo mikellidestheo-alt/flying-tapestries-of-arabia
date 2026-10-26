@@ -93,11 +93,11 @@
     "suddenDeathShare": 0.35
   },
   "structureStyle": {
-    "wall": "#e0a07a",
-    "shade": "#9a4f4a",
-    "dome": "#2a8f9c",
-    "trim": "#e0b552",
-    "roof": "#c9743f"
+    "wall": "#e0a47a",
+    "shade": "#a85a4a",
+    "dome": "#3a8fb0",
+    "trim": "#f0c060",
+    "roof": "#c46a4a"
   },
   "nest": {
     "name": "Sprite Obelisk",

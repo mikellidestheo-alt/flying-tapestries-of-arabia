@@ -31,6 +31,9 @@ export interface Projectile {
   vy: number;
   vz: number;
   travelled: number;
+  /** Homing target kind (0 none, 1 creature, 2 wizard index+1, 3 nest) and id. */
+  tk?: number;
+  tid?: number;
 }
 
 export const CREATURE_WANDER = 0;

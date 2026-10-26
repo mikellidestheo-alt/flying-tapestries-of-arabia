@@ -83,7 +83,8 @@ export function buildCastleGeometry(tier: number, faction: number, style: Castle
     return m.toGeometry();
   }
 
-  // Curtain wall with battlements and a gate.
+  const dark = '#2b1d14';
+  // Curtain wall: sandstone with pointed (Arabian) merlons, and a pointed-arch gate.
   const segs = 14;
   const seg = (2 * Math.PI * v.wallRadius) / segs;
   for (let i = 0; i < segs; i++) {
@@ -91,40 +92,82 @@ export function buildCastleGeometry(tier: number, faction: number, style: Castle
     const x = Math.cos(a) * v.wallRadius;
     const z = Math.sin(a) * v.wallRadius;
     const isGate = i === 0;
-    m.box(x, v.wallHeight / 2, z, seg * 1.04, v.wallHeight, 1.5, isGate ? style.shade : style.wall, -a - Math.PI / 2, style.roof);
-    if (!isGate) m.box(x, v.wallHeight + 0.5, z, seg * 0.45, 1, 1.7, style.wall, -a - Math.PI / 2);
+    const rot = -a - Math.PI / 2;
+    m.box(x, v.wallHeight / 2, z, seg * 1.04, v.wallHeight, 1.5, style.wall, rot, style.roof);
+    m.box(x, v.wallHeight * 0.88, z, seg * 1.05, 0.35, 1.7, style.trim, rot); // gold-tan cornice band
+    if (isGate) {
+      m.box(x * 1.02, v.wallHeight * 0.38, z * 1.02, 3.0, v.wallHeight * 0.76, 1.6, dark, rot);
+      m.archWindow(x * 1.04, v.wallHeight * 0.2, z * 1.04, 3.0, v.wallHeight * 1.3, Math.PI / 2 - a, dark);
+    } else {
+      // Pointed merlons: little pyramids along the parapet.
+      const n = Math.max(2, Math.round(seg / 2.2));
+      for (let k = 0; k < n; k++) {
+        const u = (k + 0.5) / n - 0.5;
+        const mx = x + Math.cos(a + Math.PI / 2) * u * seg;
+        const mz = z + Math.sin(a + Math.PI / 2) * u * seg;
+        m.cylinder(mx, v.wallHeight + 0.35, mz, 0.55, 0.0, 1.5, 4, style.wall);
+      }
+    }
   }
-  // Keep and its great dome.
-  m.box(0, v.keepHeight / 2, 0, v.keepSize, v.keepHeight, v.keepSize, style.wall, 0.25, style.roof);
-  m.box(0, v.keepHeight * 0.3, 0, v.keepSize * 1.08, 1, v.keepSize * 1.08, style.trim, 0.25);
+  // Keep: sandstone block with arched windows, a cornice and a great onion dome.
+  const kr = 0.25;
+  m.box(0, v.keepHeight / 2, 0, v.keepSize, v.keepHeight, v.keepSize, style.wall, kr, style.roof);
+  m.box(0, v.keepHeight * 0.32, 0, v.keepSize * 1.08, 0.7, v.keepSize * 1.08, style.trim, kr);
+  m.box(0, v.keepHeight - 0.3, 0, v.keepSize * 1.1, 0.6, v.keepSize * 1.1, style.trim, kr);
+  for (let f = 0; f < 4; f++) {
+    const fa = kr + f * (Math.PI / 2);
+    const off = v.keepSize / 2 + 0.03;
+    for (const u of [-0.22, 0.22]) {
+      const wx = Math.sin(fa) * off + Math.cos(fa) * u * v.keepSize;
+      const wz = Math.cos(fa) * off - Math.sin(fa) * u * v.keepSize;
+      m.archWindow(wx, v.keepHeight * 0.62, wz, 1.0, 2.4, fa, dark);
+    }
+  }
   let domesLeft = v.domes;
   if (domesLeft > 0) {
-    m.dome(0, v.keepHeight, 0, v.keepSize * 0.62, style.dome, 10, 4, 1.05);
-    m.cylinder(0, v.keepHeight + v.keepSize * 0.62, 0, 0.3, 0.05, 2.6, 5, style.trim);
+    m.cylinder(0, v.keepHeight, 0, v.keepSize * 0.5, v.keepSize * 0.46, 1.2, 12, style.trim);
+    m.onion(0, v.keepHeight + 1.2, 0, v.keepSize * 0.5, style.dome, 12);
+    m.cylinder(0, v.keepHeight + 1.2 + v.keepSize * 0.95, 0, 0.22, 0.04, 3.2, 5, style.trim);
+    m.dome(0, v.keepHeight + 1.2 + v.keepSize * 0.95 + 2.6, 0, 0.45, style.trim, 6, 2, 1);
     domesLeft--;
   }
-  // Corner towers topped with domes.
+  // Round corner towers: balcony ring, onion dome, gilded finial.
   const towers = towerRing(v.towers, v.wallRadius, 0.5);
   for (const t of towers) {
-    m.cylinder(t.x, 0, t.z, 2.1, 1.9, v.towerHeight, 10, style.wall, style.roof);
-    m.cylinder(t.x, v.towerHeight - 1.2, t.z, 2.5, 2.5, 0.7, 10, style.trim);
+    m.cylinder(t.x, 0, t.z, 2.2, 1.9, v.towerHeight, 12, style.wall, style.roof);
+    m.cylinder(t.x, v.towerHeight * 0.55, t.z, 2.0, 2.0, 0.45, 12, style.trim);
+    m.cylinder(t.x, v.towerHeight - 1.3, t.z, 2.9, 2.9, 0.6, 12, style.trim); // projecting balcony
+    for (let k = 0; k < 6; k++) { // balcony balusters
+      const ba = (k / 6) * Math.PI * 2;
+      m.box(t.x + Math.cos(ba) * 2.75, v.towerHeight - 0.55, t.z + Math.sin(ba) * 2.75, 0.18, 0.9, 0.18, style.wall);
+    }
+    m.archWindow(t.x + Math.cos(t.a) * 2.15, v.towerHeight * 0.38, t.z + Math.sin(t.a) * 2.15, 0.9, 2.2, Math.PI / 2 - t.a, dark);
     if (domesLeft > 0) {
-      m.dome(t.x, v.towerHeight, t.z, 2.1, style.dome, 8, 3, 1.1);
+      m.cylinder(t.x, v.towerHeight - 0.7, t.z, 2.0, 1.7, 0.7, 12, style.wall);
+      m.onion(t.x, v.towerHeight, t.z, 1.9, style.dome, 10);
+      m.cylinder(t.x, v.towerHeight + 3.4, t.z, 0.14, 0.03, 1.7, 4, style.trim);
       domesLeft--;
     }
   }
-  // Extra small domes on the keep roof.
+  // Extra small onion domes on the keep roof.
   for (const t of towerRing(domesLeft, v.keepSize * 0.42, 0.9)) {
     m.cylinder(t.x, v.keepHeight, t.z, 1.1, 1.0, 0.8, 8, style.wall);
-    m.dome(t.x, v.keepHeight + 0.8, t.z, 1.1, style.dome, 8, 3, 1.1);
+    m.onion(t.x, v.keepHeight + 0.8, t.z, 1.0, style.dome, 8);
   }
-  // Minarets: slender spires beside the keep.
-  for (const t of towerRing(v.minarets, v.keepSize * 0.9, 0.2)) {
-    m.cylinder(t.x, 0, t.z, 0.8, 0.6, v.keepHeight + 8, 8, style.wall);
-    m.cylinder(t.x, v.keepHeight + 4, t.z, 1.15, 1.15, 0.5, 8, style.trim);
-    m.cylinder(t.x, v.keepHeight + 7.6, t.z, 1.1, 1.1, 0.5, 8, style.trim);
-    m.dome(t.x, v.keepHeight + 8, t.z, 1.0, style.dome, 8, 3, 1.4);
-    m.cylinder(t.x, v.keepHeight + 9.2, t.z, 0.12, 0.05, 1.6, 4, style.trim);
+  // Minarets: slender fluted shafts with two balconies and a pointed cap.
+  for (const t of towerRing(v.minarets, v.keepSize * 0.95, 0.2)) {
+    const top = v.keepHeight + 8;
+    m.cylinder(t.x, 0, t.z, 0.9, 0.62, top, 10, style.wall);
+    for (const yy of [top * 0.55, top * 0.9]) {
+      m.cylinder(t.x, yy, t.z, 1.35, 1.35, 0.45, 10, style.trim);
+      for (let k = 0; k < 5; k++) {
+        const ba = (k / 5) * Math.PI * 2;
+        m.box(t.x + Math.cos(ba) * 1.25, yy + 0.7, t.z + Math.sin(ba) * 1.25, 0.14, 0.8, 0.14, style.wall);
+      }
+    }
+    m.cylinder(t.x, top, t.z, 0.8, 0.8, 0.6, 10, style.wall);
+    m.cylinder(t.x, top + 0.6, t.z, 0.95, 0.0, 2.6, 10, style.dome); // pencil-point cap
+    m.cylinder(t.x, top + 3.1, t.z, 0.08, 0.03, 1.2, 4, style.trim);
   }
   // Banners in the faction's colour AND shape.
   const poleSpots = towers.length > 0 ? towers.map((t) => ({ x: t.x, y: v.towerHeight + (v.domes > 0 ? 2.2 : 0), z: t.z })) : [];

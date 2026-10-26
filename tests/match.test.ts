@@ -6,7 +6,7 @@ import { matchSetupFromChapter } from '../src/data/matchSetup';
 import { BRANCHES, MAX_TIER, TIERS, archerDps, castleStats, damageCastle, nextUpgrade } from '../src/sim/castles';
 import { SPELLS } from '../src/sim/combat';
 import { factionShare, incomeMultiplier } from '../src/sim/match';
-import { ACTION_SPELL, ACTION_UPGRADE, Sim, type PlayerInput } from '../src/sim/sim';
+import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, Sim, type PlayerInput } from '../src/sim/sim';
 import { buildingTopAt } from '../src/sim/terrain';
 
 const input = (steer = 0, throttle = 0, actions = 0, branch = 0): PlayerInput => ({ steer, throttle, actions, branch });
@@ -399,5 +399,79 @@ describe('rooftop flight in the Spice Bazaar', () => {
       s.step([input(Math.sin(t / 70) * 0.8, 0.8)]);
       expect(p.y).toBeGreaterThanOrEqual(s.terrain.surfaceAt(p.x, p.z) + 2.2 - 1e-6);
     }
+  });
+});
+
+describe('depositing mana into the castle bank', () => {
+  it('lets a capped (200) mana pool pay for the 300/520 upgrades', () => {
+    const s = make();
+    const { c, p } = atCastle(s);
+    c.tier = 3;
+    c.branches = ['archers'];
+    c.bank = 0;
+    p.mana = 200;
+    s.step([input(0, -1, ACTION_UPGRADE, 1)]); // tier 4 costs 300: pool alone (200) is not enough
+    expect(c.tier).toBe(3);
+    for (let i = 0; i < 90; i++) {
+      p.x = c.x; p.z = c.z + 10; p.y = c.y + 30; p.vx = p.vz = 0;
+      s.step([input(0, -1, ACTION_DEPOSIT)]);
+    }
+    expect(c.bank).toBeGreaterThan(100);
+    p.mana = 200; // gathered more orbs meanwhile
+    s.step([input(0, -1, ACTION_UPGRADE)]);
+    expect(c.tier).toBe(4);
+  });
+
+  it('only works near your own castle and never exceeds the bank cap', () => {
+    const s = make();
+    const { c, p } = atCastle(s);
+    p.mana = 100;
+    p.x += 300;
+    s.step([input(0, -1, ACTION_DEPOSIT)]);
+    expect(p.mana).toBe(100);
+    p.x = c.x;
+    p.z = c.z + 10;
+    c.bank = castleData.bankCap - 1;
+    for (let i = 0; i < 20; i++) {
+      p.x = c.x; p.z = c.z + 10; p.vx = p.vz = 0;
+      s.step([input(0, -1, ACTION_DEPOSIT)]);
+    }
+    expect(c.bank).toBeLessThanOrEqual(castleData.bankCap + 0.2); // plus a little passive income
+  });
+});
+
+describe('guided aim', () => {
+  const shoot = (offAngle: number, dist = 90) => {
+    const s = make();
+    const p = s.players[0]!;
+    p.x = 0; p.z = 0; p.y = s.terrain.surfaceAt(0, 0) + 10; p.heading = 0; p.mana = 200; p.invuln = 9999; p.speed = 9; p.vx = p.vz = 0;
+    s.spawnCreature('dust-sprite', Math.sin(offAngle) * dist, Math.cos(offAngle) * dist);
+    const c = s.creatures[0]!;
+    c.state = 0; c.wanderUntil = 1e9; c.wx = c.x; c.wz = c.z; c.homeX = c.x; c.homeZ = c.z;
+    c.y = p.y;
+    const hp0 = c.hp;
+    s.step([input(0, -1, ACTION_SPELL)]);
+    const tracked = s.projectiles[0]?.tk ?? 0;
+    for (let i = 0; i < 90; i++) {
+      c.x = Math.sin(offAngle) * dist; c.z = Math.cos(offAngle) * dist; c.y = p.y; // hold the target still
+      s.step([input(0, -1)]);
+    }
+    return { hit: s.events.some((e) => e.type === 'hit' && Math.abs(e.x - c.x) < 6), tracked, hp0, hp: c.hp };
+  };
+
+  it('a target 20 degrees off the aim line is picked up and hit', () => {
+    const r = shoot(0.35);
+    expect(r.tracked).toBe(1);
+    expect(r.hit).toBe(true);
+  });
+
+  it('a target 25 degrees off still gets hit thanks to the light homing', () => {
+    expect(shoot(-0.44).hit).toBe(true);
+  });
+
+  it('a target far off to the side (60 degrees) is ignored, not magnetised', () => {
+    const r = shoot(1.05);
+    expect(r.tracked).toBe(0);
+    expect(r.hit).toBe(false);
   });
 });

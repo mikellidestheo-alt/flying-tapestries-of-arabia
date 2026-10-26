@@ -114,6 +114,36 @@ export class Mesher {
     }
   }
 
+  /** Bulbous onion dome (the classic Arabian silhouette) ending in a point. */
+  onion(cx: number, y0: number, cz: number, r: number, color: string | THREE.Color, segs = 10): void {
+    const prof: [number, number][] = [[0.78, 0], [1.0, 0.22], [1.04, 0.4], [0.82, 0.6], [0.5, 0.78], [0.22, 0.92], [0, 1.08]];
+    const h = r * 1.9;
+    for (let j = 0; j < prof.length - 1; j++) {
+      const [r0, t0] = prof[j]!;
+      const [r1, t1] = prof[j + 1]!;
+      for (let i = 0; i < segs; i++) {
+        const a0 = (i / segs) * Math.PI * 2;
+        const a1 = ((i + 1) / segs) * Math.PI * 2;
+        const A: Vec3 = [cx + Math.cos(a0) * r0 * r, y0 + t0 * h, cz + Math.sin(a0) * r0 * r];
+        const B: Vec3 = [cx + Math.cos(a1) * r0 * r, y0 + t0 * h, cz + Math.sin(a1) * r0 * r];
+        const C: Vec3 = [cx + Math.cos(a1) * r1 * r, y0 + t1 * h, cz + Math.sin(a1) * r1 * r];
+        const D: Vec3 = [cx + Math.cos(a0) * r1 * r, y0 + t1 * h, cz + Math.sin(a0) * r1 * r];
+        this.tri(B, A, D, color);
+        if (r1 > 0.001) this.tri(B, D, C, color);
+      }
+    }
+  }
+
+  /** Pointed (ogee-like) arch opening on a wall face: a dark recess with a triangular head. `rot` faces +z rotated about Y. */
+  archWindow(cx: number, cy: number, cz: number, w: number, h: number, rot: number, color: string | THREE.Color): void {
+    const cs = Math.cos(rot);
+    const sn = Math.sin(rot);
+    const P = (x: number, y: number, dz = 0): Vec3 => [cx + x * cs + dz * sn, cy + y, cz - x * sn + dz * cs];
+    const d = 0.06;
+    this.quad(P(-w / 2, -h / 2, d), P(w / 2, -h / 2, d), P(w / 2, h * 0.15, d), P(-w / 2, h * 0.15, d), color);
+    this.tri(P(-w / 2, h * 0.15, d), P(w / 2, h * 0.15, d), P(0, h / 2, d), color);
+  }
+
   /** Append another mesher's triangles translated by (dx, dy, dz). */
   append(other: Mesher, dx = 0, dy = 0, dz = 0): void {
     for (let i = 0; i < other.pos.length; i += 3) this.pos.push(other.pos[i]! + dx, other.pos[i + 1]! + dy, other.pos[i + 2]! + dz);
@@ -130,5 +160,7 @@ export class Mesher {
 }
 
 export function lightingFromPalette(sunDir: [number, number, number], sunLight: string, ambient: string): Lighting {
-  return { sunDir: new THREE.Vector3(...sunDir).normalize(), sun: new THREE.Color(sunLight), ambient: new THREE.Color(ambient) };
+  // Shaded faces pick up warm bounce light from the sand, so sandstone stays sandy in shadow.
+  const sun = new THREE.Color(sunLight);
+  return { sunDir: new THREE.Vector3(...sunDir).normalize(), sun, ambient: new THREE.Color(ambient).lerp(sun, 0.55) };
 }

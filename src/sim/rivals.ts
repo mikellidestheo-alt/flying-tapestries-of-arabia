@@ -7,7 +7,7 @@ import { clamp, datan2, wrapAngle } from './dmath';
 import { nextUpgrade } from './castles';
 import { SPELLS, spellFor } from './combat';
 import { DIFFICULTIES } from './match';
-import { ACTION_SPELL, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
+import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
 
 export type Personality = keyof typeof rivalData.personalities;
 const AI = rivalData.ai;
@@ -226,6 +226,8 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
     if (up && dist(p.x, p.z, castle.x, castle.z) < castleData.upgradeRadius - 4 && castle.bank + p.mana >= up.cost) {
       actions |= ACTION_UPGRADE;
       branch = ai.branchPick;
+    } else if (up && dist(p.x, p.z, castle.x, castle.z) < castleData.upgradeRadius - 4 && p.mana > 120) {
+      actions |= ACTION_DEPOSIT; // top up the bank towards a big upgrade
     }
   }
   return { steer, throttle, actions, branch };

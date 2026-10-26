@@ -65,3 +65,8 @@ Fixed: terrain planner re-sorted ~225 candidates every frame (now only on chunk-
 6. Win once to unlock **Rooftops of the Spice Bazaar**: fly low over the roofs; shots burst on rooftops.
 7. **Offline test:** with the game loaded once online, switch on airplane mode, fully close Chrome, reopen the link: the game should still load and play. (Tip: open Chrome menu > "Add to Home screen" for a fullscreen app icon.)
 8. Check FPS and warmth on High in both chapters with the debug overlay (chapter 2 draws more triangles: about 60-70k).
+
+### M3 follow-up (phone feedback, 2026-10-26)
+- Max mana: pool caps at 200; bigger upgrades are paid via the castle bank. New **Deposit** button (hold near your castle) moves mana into the bank; HUD shows what you still need.
+- Castles restyled in Arabian architecture (onion domes, balconied towers/minarets, pointed merlons, arched windows) with warmer sandstone colours.
+- Guided aim: wider, smarter auto-target cone plus light homing. Tests: 106 passing.
