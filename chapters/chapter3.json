@@ -1,0 +1,95 @@
+{
+  "id": "rose-canyons",
+  "number": 3,
+  "name": "Canyons of Rose Stone",
+  "tagline": "Carved red cliffs and echoing tombs.",
+  "palette": {
+    "skyTop": "#2f5f9a",
+    "skyMid": "#e8967a",
+    "horizon": "#ffc89a",
+    "sun": "#ffe9c0",
+    "fog": "#e3a284",
+    "sand": "#e0a07a",
+    "sandShade": "#9a4f4a",
+    "rock": "#b0524a",
+    "grass": "#6a8a40",
+    "bank": "#a0a058",
+    "waterShallow": "#4fc8c0",
+    "waterDeep": "#245f86",
+    "sunDir": [
+      -0.5,
+      0.4,
+      -0.77
+    ],
+    "sunLight": "#ffd0a0",
+    "ambient": "#7a5a80"
+  },
+  "terrain": {
+    "seed": 3303,
+    "baseHeight": 24,
+    "swellAmplitude": 22,
+    "swellScale": 0.0018,
+    "duneAmplitude": 30,
+    "duneScale": 0.006,
+    "duneWarp": 60,
+    "duneSharpness": 3,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 4,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.68,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 6,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.55,
+    "rockChance": 0.3
+  },
+  "structureKit": "rose-tombs",
+  "creatureSet": [
+    "canyon-wraith",
+    "stone-bat"
+  ],
+  "ambient": {
+    "sound": "canyon-echo",
+    "birds": false
+  },
+  "music": {
+    "scale": "nahawand",
+    "rootMidi": 48,
+    "tempoBpm": 104,
+    "rhythm": "baladi",
+    "motif": [
+      0,
+      2,
+      3,
+      2,
+      4,
+      3,
+      2
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Idris Stonebinder",
+      "personality": "aggressive"
+    },
+    {
+      "id": "r2",
+      "name": "Samira of the Echoes",
+      "personality": "greedy"
+    }
+  ],
+  "targetShare": 0.45,
+  "matchLengthMinutes": 13,
+  "aiLevel": 0.55,
+  "comeback": {
+    "startMinute": 9,
+    "trailingIncomeBonus": 0.4,
+    "suddenDeathMinute": 14,
+    "suddenDeathShare": 0.35
+  }
+}

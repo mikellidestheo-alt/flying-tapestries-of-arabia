@@ -1,0 +1,100 @@
+{
+  "id": "sunken-sand-city",
+  "number": 5,
+  "name": "The Sunken Sand City",
+  "tagline": "Ruins under a roaring sandstorm.",
+  "palette": {
+    "skyTop": "#b07a4a",
+    "skyMid": "#d9a066",
+    "horizon": "#e6b87a",
+    "sun": "#ffe0a0",
+    "fog": "#cf9a62",
+    "sand": "#d9ab6c",
+    "sandShade": "#8a5e3a",
+    "rock": "#8c6244",
+    "grass": "#7a8a40",
+    "bank": "#a89a50",
+    "waterShallow": "#6fc0b0",
+    "waterDeep": "#2f6a7a",
+    "sunDir": [
+      -0.4,
+      0.5,
+      -0.77
+    ],
+    "sunLight": "#ffd090",
+    "ambient": "#8a6a4a"
+  },
+  "terrain": {
+    "seed": 5505,
+    "baseHeight": 12,
+    "swellAmplitude": 12,
+    "swellScale": 0.0018,
+    "duneAmplitude": 20,
+    "duneScale": 0.0075,
+    "duneWarp": 80,
+    "duneSharpness": 2,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 4,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.7,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 6,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.55,
+    "rockChance": 0.25
+  },
+  "structureKit": "buried-ruins",
+  "creatureSet": [
+    "sand-wraith",
+    "ruin-golem"
+  ],
+  "ambient": {
+    "sound": "sandstorm",
+    "birds": false
+  },
+  "music": {
+    "scale": "hijaz",
+    "rootMidi": 47,
+    "tempoBpm": 112,
+    "rhythm": "saidi",
+    "motif": [
+      0,
+      1,
+      0,
+      4,
+      3,
+      1,
+      0
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Qasim Sandstorm",
+      "personality": "aggressive"
+    },
+    {
+      "id": "r2",
+      "name": "Layla Coinhand",
+      "personality": "greedy"
+    },
+    {
+      "id": "r3",
+      "name": "Old Bashir",
+      "personality": "defensive"
+    }
+  ],
+  "targetShare": 0.38,
+  "matchLengthMinutes": 14,
+  "aiLevel": 0.8,
+  "comeback": {
+    "startMinute": 10,
+    "trailingIncomeBonus": 0.45,
+    "suddenDeathMinute": 15,
+    "suddenDeathShare": 0.3
+  }
+}

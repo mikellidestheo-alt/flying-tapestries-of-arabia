@@ -1,0 +1,20 @@
+{
+  "tickRate": 30,
+  "maxFrameSteps": 5,
+  "chunkSize": 64,
+  "deltas": {
+    "maxDeltas": 256,
+    "softLimit": 160,
+    "compactEveryTicks": 150,
+    "compactMinAgeTicks": 300,
+    "compactPairsPerPass": 8,
+    "compactWindow": 32,
+    "maxRadius": 40
+  },
+  "debugTools": {
+    "cooldownTicks": 10,
+    "targetDistance": 30,
+    "crater": { "radius": 11, "amount": -7, "kind": 1 },
+    "mound": { "radius": 13, "amount": 6, "kind": 0 }
+  }
+}

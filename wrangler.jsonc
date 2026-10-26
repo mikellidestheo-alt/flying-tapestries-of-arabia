@@ -1,0 +1,12 @@
+{
+  // Cloudflare Workers with static assets (see docs/decisions.md).
+  // M1 is a static site only. The co-op Durable Object (server/) is added in M6.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "flying-tapestries-of-arabia",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Plain static site: unknown paths fall back to index.html.
+    "not_found_handling": "single-page-application"
+  }
+}

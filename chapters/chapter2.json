@@ -1,0 +1,90 @@
+{
+  "id": "spice-bazaar",
+  "number": 2,
+  "name": "Rooftops of the Spice Bazaar",
+  "tagline": "Terracotta roofs, canopies and lantern light.",
+  "palette": {
+    "skyTop": "#6b3d7a",
+    "skyMid": "#e0805a",
+    "horizon": "#ffb06a",
+    "sun": "#ffe2a8",
+    "fog": "#e79b6a",
+    "sand": "#d98a5c",
+    "sandShade": "#8e4a3a",
+    "rock": "#a5523c",
+    "grass": "#6f8f3a",
+    "bank": "#b0a050",
+    "waterShallow": "#5fd0c0",
+    "waterDeep": "#2a6f8f",
+    "sunDir": [
+      -0.6,
+      0.28,
+      -0.75
+    ],
+    "sunLight": "#ffc690",
+    "ambient": "#8a5a7a"
+  },
+  "terrain": {
+    "seed": 2202,
+    "baseHeight": 18,
+    "swellAmplitude": 14,
+    "swellScale": 0.0018,
+    "duneAmplitude": 9,
+    "duneScale": 0.012,
+    "duneWarp": 60,
+    "duneSharpness": 2,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 4,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.64,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 6,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.55,
+    "rockChance": 0.18
+  },
+  "structureKit": "terracotta-bazaar",
+  "creatureSet": [
+    "lantern-wisp",
+    "rooftop-jackal"
+  ],
+  "ambient": {
+    "sound": "market-murmur",
+    "birds": false
+  },
+  "music": {
+    "scale": "bayati",
+    "rootMidi": 52,
+    "tempoBpm": 100,
+    "rhythm": "saidi",
+    "motif": [
+      0,
+      2,
+      1,
+      0,
+      3,
+      2,
+      1
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Karim the Spice Baron",
+      "personality": "defensive"
+    }
+  ],
+  "targetShare": 0.6,
+  "matchLengthMinutes": 12,
+  "aiLevel": 0.4,
+  "comeback": {
+    "startMinute": 8,
+    "trailingIncomeBonus": 0.35,
+    "suddenDeathMinute": 13,
+    "suddenDeathShare": 0.4
+  }
+}

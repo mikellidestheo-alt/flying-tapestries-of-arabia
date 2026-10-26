@@ -1,0 +1,58 @@
+{
+  "pixelRatioCap": 1.5,
+  "presets": {
+    "high": {
+      "label": "High",
+      "viewRadiusChunks": 7,
+      "lod0Radius": 1,
+      "lod1Radius": 3,
+      "lodResolutions": [32, 16, 8],
+      "props": true,
+      "propDensity": 1.0,
+      "pixelRatioCap": 1.5,
+      "water": "shader",
+      "chunkBuildsPerFrame": 2,
+      "caps": { "projectiles": 96, "orbs": 160, "creatures": 48, "archers": 64, "particles": 600 }
+    },
+    "medium": {
+      "label": "Medium",
+      "viewRadiusChunks": 5,
+      "lod0Radius": 1,
+      "lod1Radius": 2,
+      "lodResolutions": [28, 14, 7],
+      "props": true,
+      "propDensity": 0.7,
+      "pixelRatioCap": 1.25,
+      "water": "shader",
+      "chunkBuildsPerFrame": 2,
+      "caps": { "projectiles": 64, "orbs": 100, "creatures": 32, "archers": 40, "particles": 350 }
+    },
+    "low": {
+      "label": "Low",
+      "viewRadiusChunks": 4,
+      "lod0Radius": 0,
+      "lod1Radius": 2,
+      "lodResolutions": [24, 12, 6],
+      "props": true,
+      "propDensity": 0.4,
+      "pixelRatioCap": 1.0,
+      "water": "flat",
+      "chunkBuildsPerFrame": 1,
+      "caps": { "projectiles": 40, "orbs": 60, "creatures": 20, "archers": 24, "particles": 150 }
+    }
+  },
+  "governor": {
+    "targetFps": 60,
+    "batteryFps": 30,
+    "windowFrames": 45,
+    "settleFrames": 60,
+    "downThreshold": 1.18,
+    "upThreshold": 0.72,
+    "upHoldWindows": 4,
+    "minRenderScale": 0.5,
+    "downStep": 0.1,
+    "upStep": 0.05,
+    "minRadiusScale": 0.6,
+    "radiusStep": 0.2
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "cruiseSpeed": 24,
+  "maxSpeed": 42,
+  "minSpeed": 9,
+  "accel": 18,
+  "decel": 26,
+  "maxTurnRate": 1.9,
+  "turnResponse": 5.5,
+  "highSpeedTurnScale": 0.55,
+  "grip": 2.6,
+  "hoverHeight": 6.5,
+  "boostLift": 4.5,
+  "lookAheadSeconds": 0.7,
+  "springK": 12,
+  "springDamping": 0.9,
+  "minClearance": 2.2,
+  "maxAltitude": 140,
+  "bankMax": 0.55
+}

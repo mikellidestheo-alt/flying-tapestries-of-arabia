@@ -1,0 +1,90 @@
+{
+  "id": "oasis-dawn",
+  "number": 1,
+  "name": "Oasis Dawn",
+  "tagline": "Palm oases, dunes and a rising sun.",
+  "palette": {
+    "skyTop": "#3f4f9a",
+    "skyMid": "#c9739a",
+    "horizon": "#ffc785",
+    "sun": "#fff0c4",
+    "fog": "#f4b98a",
+    "sand": "#f0c985",
+    "sandShade": "#b9754a",
+    "rock": "#9c5d46",
+    "grass": "#5f9a45",
+    "bank": "#8fb04f",
+    "waterShallow": "#4fd1c5",
+    "waterDeep": "#1d6d9c",
+    "sunDir": [
+      -0.55,
+      0.32,
+      -0.77
+    ],
+    "sunLight": "#ffdca8",
+    "ambient": "#7a6a9c"
+  },
+  "terrain": {
+    "seed": 1101,
+    "baseHeight": 14,
+    "swellAmplitude": 9,
+    "swellScale": 0.0018,
+    "duneAmplitude": 16,
+    "duneScale": 0.0075,
+    "duneWarp": 60,
+    "duneSharpness": 2,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 4,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.56,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 6,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.55,
+    "rockChance": 0.1
+  },
+  "structureKit": "sandstone-oasis",
+  "creatureSet": [
+    "dust-sprite",
+    "sand-scarab"
+  ],
+  "ambient": {
+    "sound": "desert-wind-soft",
+    "birds": true
+  },
+  "music": {
+    "scale": "hijaz",
+    "rootMidi": 50,
+    "tempoBpm": 92,
+    "rhythm": "maqsum",
+    "motif": [
+      0,
+      1,
+      4,
+      3,
+      4,
+      1,
+      0
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Zafira the Dustcaller",
+      "personality": "greedy"
+    }
+  ],
+  "targetShare": 0.6,
+  "matchLengthMinutes": 11,
+  "aiLevel": 0.25,
+  "comeback": {
+    "startMinute": 7,
+    "trailingIncomeBonus": 0.35,
+    "suddenDeathMinute": 12,
+    "suddenDeathShare": 0.4
+  }
+}

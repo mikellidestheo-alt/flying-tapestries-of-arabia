@@ -1,0 +1,95 @@
+{
+  "id": "pearl-harbour",
+  "number": 4,
+  "name": "Pearl Harbour by Moonlight",
+  "tagline": "A night coast of dhows and lighthouse minarets.",
+  "palette": {
+    "skyTop": "#0b1536",
+    "skyMid": "#1f2f66",
+    "horizon": "#5a6fa8",
+    "sun": "#cfe0ff",
+    "fog": "#2c3d70",
+    "sand": "#8c93b0",
+    "sandShade": "#40476e",
+    "rock": "#4d557c",
+    "grass": "#3f6a6a",
+    "bank": "#5f8a8a",
+    "waterShallow": "#3fa6c0",
+    "waterDeep": "#0f2f66",
+    "sunDir": [
+      0.4,
+      0.5,
+      -0.76
+    ],
+    "sunLight": "#a8c0ff",
+    "ambient": "#4a5a9a"
+  },
+  "terrain": {
+    "seed": 4404,
+    "baseHeight": 8,
+    "swellAmplitude": 8,
+    "swellScale": 0.0018,
+    "duneAmplitude": 10,
+    "duneScale": 0.0075,
+    "duneWarp": 60,
+    "duneSharpness": 2,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 6,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.5,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 9,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.4,
+    "rockChance": 0.1
+  },
+  "structureKit": "moonlit-harbour",
+  "creatureSet": [
+    "tide-djinn",
+    "night-gull"
+  ],
+  "ambient": {
+    "sound": "waves-night",
+    "birds": false
+  },
+  "music": {
+    "scale": "bayati",
+    "rootMidi": 45,
+    "tempoBpm": 88,
+    "rhythm": "maqsum",
+    "motif": [
+      0,
+      1,
+      2,
+      4,
+      2,
+      1,
+      0
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Captain Nur al-Bahr",
+      "personality": "aggressive"
+    },
+    {
+      "id": "r2",
+      "name": "Hamid the Lamplighter",
+      "personality": "defensive"
+    }
+  ],
+  "targetShare": 0.45,
+  "matchLengthMinutes": 13,
+  "aiLevel": 0.65,
+  "comeback": {
+    "startMinute": 9,
+    "trailingIncomeBonus": 0.4,
+    "suddenDeathMinute": 14,
+    "suddenDeathShare": 0.35
+  }
+}

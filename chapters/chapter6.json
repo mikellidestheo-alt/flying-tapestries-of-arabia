@@ -1,0 +1,100 @@
+{
+  "id": "sultans-sky-palace",
+  "number": 6,
+  "name": "The Sultan's Sky Palace",
+  "tagline": "Floating domes and bridges at sunset.",
+  "palette": {
+    "skyTop": "#3a2a7a",
+    "skyMid": "#d9507a",
+    "horizon": "#ffb060",
+    "sun": "#fff0b0",
+    "fog": "#e88a7a",
+    "sand": "#f0b07a",
+    "sandShade": "#a85a6a",
+    "rock": "#9a5a7a",
+    "grass": "#6aa05a",
+    "bank": "#a0b060",
+    "waterShallow": "#6fd8d0",
+    "waterDeep": "#3a5a9a",
+    "sunDir": [
+      -0.7,
+      0.25,
+      -0.67
+    ],
+    "sunLight": "#ffb878",
+    "ambient": "#8a5a9a"
+  },
+  "terrain": {
+    "seed": 6606,
+    "baseHeight": 10,
+    "swellAmplitude": 10,
+    "swellScale": 0.0018,
+    "duneAmplitude": 14,
+    "duneScale": 0.0075,
+    "duneWarp": 60,
+    "duneSharpness": 2,
+    "detailAmplitude": 0.9,
+    "detailScale": 0.05,
+    "waterLevel": 4,
+    "oasisScale": 0.0026,
+    "oasisThreshold": 0.6,
+    "oasisSoftness": 0.12,
+    "oasisDepth": 6,
+    "oasisRim": 3.2
+  },
+  "props": {
+    "candidatesPerChunk": 22,
+    "palmChance": 0.55,
+    "rockChance": 0.1
+  },
+  "structureKit": "sky-palace",
+  "creatureSet": [
+    "cloud-serpent",
+    "palace-guardian"
+  ],
+  "ambient": {
+    "sound": "high-wind",
+    "birds": false
+  },
+  "music": {
+    "scale": "nahawand",
+    "rootMidi": 50,
+    "tempoBpm": 120,
+    "rhythm": "baladi",
+    "motif": [
+      0,
+      2,
+      4,
+      5,
+      4,
+      2,
+      0
+    ]
+  },
+  "rivals": [
+    {
+      "id": "r1",
+      "name": "Vizier Azhar",
+      "personality": "defensive"
+    },
+    {
+      "id": "r2",
+      "name": "Dalia Skyblade",
+      "personality": "aggressive"
+    },
+    {
+      "id": "r3",
+      "name": "The Sultan's Shadow",
+      "personality": "greedy"
+    }
+  ],
+  "targetShare": 0.38,
+  "matchLengthMinutes": 15,
+  "aiLevel": 1.0,
+  "comeback": {
+    "startMinute": 10,
+    "trailingIncomeBonus": 0.5,
+    "suddenDeathMinute": 16,
+    "suddenDeathShare": 0.3
+  }
+}
