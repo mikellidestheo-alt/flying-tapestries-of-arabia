@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a1030" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Flying Tapestries of Arabia - fly a magic tapestry over a golden Arabian fantasy world." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Flying Tapestries of Arabia</title>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <div id="ui" class="">
+      <div id="stickZone"></div>
+      <div id="stick" class="hidden"><div id="stickKnob"></div></div>
+      <div id="stickHint"></div>
+
+      <div id="debug" class="hidden"></div>
+
+      <button id="pauseBtn" aria-label="Pause" type="button">
+        <svg viewBox="0 0 24 24" width="26" height="26"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
+      </button>
+
+      <div id="actions">
+        <button id="btnMound" class="act" type="button" aria-label="Raise mound">
+          <svg viewBox="0 0 24 24" width="34" height="34"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>
+          <span>Mound</span>
+        </button>
+        <button id="btnCrater" class="act" type="button" aria-label="Dig crater">
+          <svg viewBox="0 0 24 24" width="34" height="34"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+          <span>Crater</span>
+        </button>
+      </div>
+
+      <div id="toast" class="hidden"></div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+      <div class="card">
+        <h1>Flying Tapestries<br />of Arabia</h1>
+        <p class="sub">Fly a magic tapestry over a golden world.</p>
+        <button id="startBtn" class="primary" type="button">Tap to fly</button>
+        <p class="tiny" id="startInfo"></p>
+      </div>
+    </div>
+
+    <div id="pauseScreen" class="overlay hidden">
+      <div class="card wide">
+        <h2>Paused</h2>
+        <div class="row"><button id="resumeBtn" class="primary" type="button">Resume</button></div>
+        <div id="settings"></div>
+      </div>
+    </div>
+
+    <div id="rotate" class="overlay hidden"><div class="card"><h2>Rotate your phone</h2><p class="sub">This game is played in landscape.</p></div></div>
+    <div id="fatal" class="overlay hidden"><div class="card"><h2>Something went wrong</h2><p class="sub" id="fatalMsg"></p><button class="primary" type="button" onclick="location.reload()">Reload</button></div></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

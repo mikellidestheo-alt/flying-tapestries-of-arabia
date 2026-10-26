@@ -36,9 +36,9 @@ describe('seeded terrain', () => {
     );
     expect(sums).toMatchInlineSnapshot(`
       [
-        1942746239,
-        226335888,
-        1578549888,
+        1015187425,
+        305421907,
+        616193947,
       ]
     `);
   });
@@ -82,5 +82,16 @@ describe('deterministic maths', () => {
     const a = new Prng(42);
     const b = new Prng(42);
     for (let i = 0; i < 100; i++) expect(a.next()).toBe(b.next());
+  });
+});
+
+describe('spawn', () => {
+  it('every chapter spawns on dry land, deterministically', async () => {
+    const { findSpawn, baseHeight } = await import('../src/sim/terrain');
+    for (const ch of CHAPTERS) {
+      const a = findSpawn(ch.terrain);
+      expect(a).toEqual(findSpawn(ch.terrain));
+      expect(baseHeight(ch.terrain, a.x, a.z)).toBeGreaterThan(ch.terrain.waterLevel + 2);
+    }
   });
 });

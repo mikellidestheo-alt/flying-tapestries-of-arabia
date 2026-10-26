@@ -1,0 +1,10 @@
+{
+  "name": "Flying Tapestries of Arabia",
+  "short_name": "Tapestries",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1a1030",
+  "theme_color": "#1a1030",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -4,7 +4,7 @@ import simData from '../data/sim.json';
 import flightData from '../data/flight.json';
 import { clamp, dcos, dsin, wrapAngle } from './dmath';
 import { DeltaStore, DELTA_BUMP, DELTA_CRATER } from './deltas';
-import { Terrain, type TerrainParams } from './terrain';
+import { Terrain, findSpawn, type TerrainParams } from './terrain';
 
 export const SIM_DT = 1 / simData.tickRate;
 export const SIM_TICK_RATE = simData.tickRate;
@@ -62,11 +62,12 @@ export class Sim {
     this.flight = opts.flight ?? flightData;
     this.terrain = new Terrain(opts.terrain, new DeltaStore(simData.deltas));
     const count = opts.playerCount ?? 1;
+    const spawn = findSpawn(opts.terrain);
     for (let i = 0; i < count; i++) {
-      const x = i * 8;
-      const y = this.terrain.surfaceAt(x, 0) + this.flight.hoverHeight;
+      const x = spawn.x + i * 8;
+      const y = this.terrain.surfaceAt(x, spawn.z) + this.flight.hoverHeight;
       this.players.push({
-        x, y, z: 0, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0,
+        x, y, z: spawn.z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0,
       });
     }
     this.prevPlayers = this.players.map(clonePlayer);

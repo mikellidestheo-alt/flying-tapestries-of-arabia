@@ -36,9 +36,9 @@
     "detailAmplitude": 0.9,
     "detailScale": 0.05,
     "waterLevel": 6,
-    "oasisScale": 0.0026,
-    "oasisThreshold": 0.5,
-    "oasisSoftness": 0.12,
+    "oasisScale": 0.004,
+    "oasisThreshold": 0.53,
+    "oasisSoftness": 0.18,
     "oasisDepth": 9,
     "oasisRim": 3.2
   },

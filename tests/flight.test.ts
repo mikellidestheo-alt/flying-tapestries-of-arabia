@@ -18,19 +18,21 @@ describe('flight', () => {
 
   it('cruises forward and reaches cruise speed', () => {
     const s = make();
+    const start = { ...s.players[0]! };
     for (let i = 0; i < 120; i++) s.step([input()]);
     const p = s.players[0]!;
     expect(p.speed).toBeCloseTo(flight.cruiseSpeed, 3);
-    expect(p.z).toBeGreaterThan(50);
-    expect(Math.abs(p.x)).toBeLessThan(1);
+    expect(p.z - start.z).toBeGreaterThan(50);
+    expect(Math.abs(p.x - start.x)).toBeLessThan(1);
   });
 
   it('steering right turns clockwise (heading decreases) with momentum', () => {
     const s = make();
+    const startX = s.players[0]!.x;
     for (let i = 0; i < 20; i++) s.step([input(1)]);
     const p = s.players[0]!;
     expect(p.heading).toBeLessThan(-0.2);
-    expect(p.x).toBeLessThan(0); // right of +z is -x
+    expect(p.x - startX).toBeLessThan(0); // right of +z is -x
   });
 
   it('boost is faster than brake', () => {
@@ -65,7 +67,7 @@ describe('flight', () => {
     s.step([input(0, 0, ACTION_CRATER)]);
     expect(s.terrain.deltas.list.length).toBe(1);
     const d = s.terrain.deltas.list[0]!;
-    expect(d.z).toBeGreaterThan(20);
+    expect(d.z - s.players[0]!.z).toBeGreaterThan(20);
     for (let i = 0; i < 12; i++) s.step([input()]);
     s.step([input(0, 0, ACTION_CRATER)]);
     expect(s.terrain.deltas.list.length).toBe(2);

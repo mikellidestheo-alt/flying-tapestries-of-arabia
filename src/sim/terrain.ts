@@ -1,5 +1,5 @@
 // Procedural terrain: a pure function of (params, deltas). No state, no Math.random.
-import { lerp, smoothstep } from './dmath';
+import { dcos, dsin, lerp, smoothstep } from './dmath';
 import { fbm2 } from './noise';
 import { DeltaStore, deltaHeight, type TerrainDelta } from './deltas';
 
@@ -51,7 +51,7 @@ export function baseHeight(p: TerrainParams, x: number, z: number): number {
   const basin = p.waterLevel - p.oasisDepth * o + detail * p.detailAmplitude * 0.4;
   const bank = p.waterLevel + p.oasisRim * (1 - o);
   const oasis = o > 0.55 ? basin : lerp(bank, basin, smoothstep(0, 0.55, o));
-  return lerp(desert, oasis, smoothstep(0, 0.35, o));
+  return lerp(desert, oasis, smoothstep(0, 0.6, o));
 }
 
 export class Terrain {
@@ -129,3 +129,25 @@ export function checksumFloats(values: Float32Array): number {
   return h >>> 0;
 }
 
+
+/**
+ * Deterministic spawn point: the first dry spot near an oasis on an outward spiral from the
+ * origin (falls back to any dry land). Same answer on every device and in the Durable Object.
+ */
+export function findSpawn(p: TerrainParams): { x: number; z: number } {
+  let fallback: { x: number; z: number } | null = null;
+  const golden = 2.399963229728653; // golden angle (rad)
+  for (let i = 0; i < 400; i++) {
+    const r = 28 * Math.sqrt(i);
+    const a = i * golden;
+    // Spiral using table-free deterministic trig (ESLint bans Math.sin/cos in the sim).
+    const x = r * dcos(a);
+    const z = r * dsin(a);
+    const h = baseHeight(p, x, z);
+    if (h < p.waterLevel + 2.5) continue;
+    fallback ??= { x, z };
+    const o = oasisFactor(p, x, z);
+    if (o > 0.05 && o < 0.5 && h < p.waterLevel + p.oasisRim + 4) return { x, z };
+  }
+  return fallback ?? { x: 0, z: 0 };
+}
