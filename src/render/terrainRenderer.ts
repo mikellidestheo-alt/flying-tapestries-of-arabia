@@ -89,7 +89,8 @@ export class TerrainRenderer {
   private seenDeltaId = 0;
   private seenEpoch = 0;
   private wanted: { cx: number; cz: number; lod: number; dist: number; rebuild: boolean }[] = [];
-  triangles = 0;
+  private planKey = '';
+  private pending = 0;
 
   constructor(
     private terrain: Terrain,
@@ -101,8 +102,12 @@ export class TerrainRenderer {
     this.seenDeltaId = terrain.deltas.nextId - 1;
   }
 
+  private qualityVersion = 0;
+  private sunScratch = new THREE.Color();
+
   setQuality(q: QualityPresetData): void {
     this.quality = q;
+    this.qualityVersion++;
     for (const c of this.chunks.values()) c.dirty = true;
   }
 
@@ -117,14 +122,15 @@ export class TerrainRenderer {
   }
 
   /** Mark chunks overlapping new/changed deltas for rebuild. */
-  private syncDeltas(): void {
+  private syncDeltas(): boolean {
     const store = this.terrain.deltas;
     if (store.compactionEpoch !== this.seenEpoch) {
       this.seenEpoch = store.compactionEpoch;
       this.seenDeltaId = store.nextId - 1;
       for (const c of this.chunks.values()) c.dirty = true;
-      return;
+      return true;
     }
+    if (store.nextId - 1 === this.seenDeltaId) return false;
     const list = store.list;
     for (let i = list.length - 1; i >= 0; i--) {
       const d = list[i]!;
@@ -142,6 +148,7 @@ export class TerrainRenderer {
       }
     }
     this.seenDeltaId = store.nextId - 1;
+    return true;
   }
 
   /**
@@ -149,10 +156,16 @@ export class TerrainRenderer {
    * the quality preset) so the frame time stays flat.
    */
   update(x: number, z: number, radiusScale: number, budget?: number): void {
-    this.syncDeltas();
+    const deltasChanged = this.syncDeltas();
     const R = Math.max(2, Math.round(this.quality.viewRadiusChunks * radiusScale));
     const pcx = Math.floor(x / CHUNK);
     const pcz = Math.floor(z / CHUNK);
+    // Nothing to plan unless the player crossed a chunk border, the view/quality changed,
+    // terrain changed, or a previous plan still has chunks queued. Saves a per-frame
+    // scan + sort of up to ~225 candidates.
+    const key2 = `${pcx},${pcz},${R},${this.qualityVersion}`;
+    if (!deltasChanged && this.pending === 0 && key2 === this.planKey) return;
+    this.planKey = key2;
 
     // Drop chunks that fell out of range (with hysteresis).
     for (const [k, c] of this.chunks) {
@@ -177,6 +190,7 @@ export class TerrainRenderer {
         else if (e.lod !== lod || e.dirty) this.wanted.push({ cx, cz, lod, dist: dist - 0.5, rebuild: true });
       }
     }
+    this.pending = this.wanted.length;
     if (this.wanted.length === 0) return;
     this.wanted.sort((a, b) => a.dist - b.dist);
     const n = budget ?? this.quality.chunkBuildsPerFrame;
@@ -184,6 +198,7 @@ export class TerrainRenderer {
       const w = this.wanted[i]!;
       this.build(w.cx, w.cz, w.lod);
     }
+    this.pending = Math.max(0, this.wanted.length - n);
   }
 
   /** Build everything in range now (used before the first frame). */
@@ -248,7 +263,7 @@ export class TerrainRenderer {
         // Cheap per-vertex sparkle so large dunes do not look flat.
         const sparkle = 1 + (valueNoise2(wx * 0.35, wz * 0.35, 5) - 0.5) * 0.12;
         const lit = smooth(0.0, 0.8, lam);
-        tmp.copy(pal.ambient).multiplyScalar(0.55).add(pal.sun.clone().multiplyScalar(0.95 * lit));
+        tmp.copy(pal.ambient).multiplyScalar(0.55).add(this.sunScratch.copy(pal.sun).multiplyScalar(0.95 * lit));
         const vi = j * (n + 1) + i;
         col[vi * 3] = Math.min(1, base.r * tmp.r * sparkle * 1.35);
         col[vi * 3 + 1] = Math.min(1, base.g * tmp.g * sparkle * 1.35);
@@ -357,7 +372,7 @@ export class TerrainRenderer {
       const lz = p.z - oz;
       const s = p.scale;
       if (p.kind === 'palm') {
-        const h = 6.5 * s;
+        const h = 5.2 * s;
         const r0 = 0.45 * s;
         const r1 = 0.25 * s;
         const lean = 0.8 * s;

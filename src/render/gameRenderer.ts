@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import simData from '../data/sim.json';
 import flight from '../data/flight.json';
 import type { ChapterConfig } from '../data/chapters';
+import type { Element } from '../data/elements';
 import type { QualityPreset } from '../save';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
@@ -35,6 +36,7 @@ export class GameRenderer {
   private renderScale = 1;
   private radiusScale = 1;
   private camPos = new THREE.Vector3();
+  private camDesired = new THREE.Vector3();
   private camHeading = 0;
   private camReady = false;
   private roll = 0;
@@ -45,6 +47,7 @@ export class GameRenderer {
     private sim: Sim,
     private chapter: ChapterConfig,
     quality: QualityPreset,
+    wizard: Element = 'fire',
   ) {
     this.preset = PRESETS[quality];
     this.renderer = new THREE.WebGLRenderer({
@@ -65,7 +68,7 @@ export class GameRenderer {
     this.scene.add(this.sky.mesh);
     this.water = new Water(chapter, this.preset.water as 'shader' | 'flat');
     this.scene.add(this.water.mesh);
-    this.tapestry = new TapestryModel();
+    this.tapestry = new TapestryModel(wizard);
     this.scene.add(this.tapestry.root, this.tapestry.shadow);
 
     // Two lights, only for the tapestry and wizard (terrain lighting is baked).
@@ -97,6 +100,10 @@ export class GameRenderer {
     this.water.setMode(this.preset.water as 'shader' | 'flat');
     this.applyFog();
     this.resize();
+  }
+
+  setWizard(e: Element): void {
+    this.tapestry.setWizard(e);
   }
 
   setScales(renderScale: number, radiusScale: number): void {
@@ -169,7 +176,7 @@ export class GameRenderer {
     this.camHeading += wrapAngle(heading - this.camHeading) * (1 - Math.exp(-3.2 * dt));
     const back = 13 + speedFrac * 4;
     const up = 5.5 + speedFrac * 1.5;
-    const desired = new THREE.Vector3(x - Math.sin(this.camHeading) * back, y + up, z - Math.cos(this.camHeading) * back);
+    const desired = this.camDesired.set(x - Math.sin(this.camHeading) * back, y + up, z - Math.cos(this.camHeading) * back);
     const floor = this.sim.terrain.surfaceAt(desired.x, desired.z) + 2.5;
     if (desired.y < floor) desired.y = floor;
     this.camPos.lerp(desired, 1 - Math.exp(-7 * dt));

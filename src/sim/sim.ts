@@ -74,7 +74,7 @@ export class Sim {
   }
 
   step(inputs: readonly PlayerInput[]): void {
-    this.prevPlayers = this.players.map(clonePlayer);
+    for (let i = 0; i < this.players.length; i++) Object.assign(this.prevPlayers[i]!, this.players[i]);
     this.tick++;
     for (let i = 0; i < this.players.length; i++) {
       this.stepPlayer(this.players[i]!, inputs[i] ?? NEUTRAL_INPUT);

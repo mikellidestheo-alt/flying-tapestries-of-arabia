@@ -21,7 +21,20 @@ export class Controls {
   private keys = new Set<string>();
   private tiltRaw = 0;
   private tiltNeutral: number | null = null;
-  tiltEnabled = false;
+  private tiltOn = false;
+  private motionHandler = (e: DeviceMotionEvent) => this.onMotion(e);
+
+  get tiltEnabled(): boolean {
+    return this.tiltOn;
+  }
+
+  /** The motion listener only exists while tilt steering is on (it fires ~60 times a second). */
+  set tiltEnabled(on: boolean) {
+    if (on === this.tiltOn) return;
+    this.tiltOn = on;
+    if (on) window.addEventListener('devicemotion', this.motionHandler);
+    else window.removeEventListener('devicemotion', this.motionHandler);
+  }
   tiltInvert = false;
   onPress: (() => void) | null = null;
 
@@ -99,7 +112,6 @@ export class Controls {
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
 
-    window.addEventListener('devicemotion', (e) => this.onMotion(e));
   }
 
   private bindButton(sel: string, bit: number): void {

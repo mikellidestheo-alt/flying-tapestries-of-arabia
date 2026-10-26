@@ -1,0 +1,48 @@
+{
+  "wizards": {
+    "fire": {
+      "name": "Rashid",
+      "gender": "man",
+      "robe": "#d9482b",
+      "sash": "#f3c969",
+      "headwear": "#f6ead2",
+      "trim": "#c1272d",
+      "skin": "#b9835a",
+      "gem": "#ff7a2a",
+      "beard": true
+    },
+    "water": {
+      "name": "Yasmin",
+      "gender": "woman",
+      "robe": "#1f6fa8",
+      "sash": "#e9f3f7",
+      "headwear": "#2aa7b8",
+      "trim": "#f3c969",
+      "skin": "#c99468",
+      "gem": "#5ee0ff",
+      "beard": false
+    },
+    "earth": {
+      "name": "Tariq",
+      "gender": "man",
+      "robe": "#8a6a32",
+      "sash": "#3f7d4a",
+      "headwear": "#3f7d4a",
+      "trim": "#e0b552",
+      "skin": "#8a5a3c",
+      "gem": "#9be36a",
+      "beard": true
+    },
+    "air": {
+      "name": "Farah",
+      "gender": "woman",
+      "robe": "#7d6ad0",
+      "sash": "#f5f1ff",
+      "headwear": "#efeaff",
+      "trim": "#a99cf0",
+      "skin": "#d4a47a",
+      "gem": "#d6c8ff",
+      "beard": false
+    }
+  }
+}

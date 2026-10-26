@@ -8,7 +8,7 @@
   "turnResponse": 5.5,
   "highSpeedTurnScale": 0.55,
   "grip": 2.6,
-  "hoverHeight": 6.5,
+  "hoverHeight": 8.5,
   "boostLift": 4.5,
   "lookAheadSeconds": 0.7,
   "springK": 12,

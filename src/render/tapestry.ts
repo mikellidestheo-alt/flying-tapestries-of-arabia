@@ -1,6 +1,9 @@
 // The player's flying tapestry: a woven cloth (procedural canvas texture, no files) with a
 // simple wizard, a glow, and a blob shadow.
 import * as THREE from 'three';
+import type { Element } from '../data/elements';
+import { wizardLook } from '../data/wizardLooks';
+import { buildWizard } from './wizardModel';
 
 function makeWeave(): THREE.CanvasTexture {
   const w = 256;
@@ -96,7 +99,9 @@ export class TapestryModel {
   private glow: THREE.Mesh;
   private disposables: { dispose(): void }[] = [];
 
-  constructor(wizardColor = '#e8602c') {
+  private wizardMesh: THREE.Mesh | null = null;
+
+  constructor(wizard: Element = 'fire') {
     const geom = new THREE.PlaneGeometry(4.4, 2.8, SEG_X, SEG_Z);
     geom.rotateX(-Math.PI / 2);
     this.clothPos = geom.getAttribute('position') as THREE.BufferAttribute;
@@ -112,19 +117,7 @@ export class TapestryModel {
     this.body.add(this.cloth);
     this.disposables.push(geom, clothMat, tex);
 
-    // Wizard: robe, head, pointed hat. Element colour so it reads at a glance.
-    const robeMat = new THREE.MeshLambertMaterial({ color: wizardColor });
-    const skinMat = new THREE.MeshLambertMaterial({ color: '#e0b090' });
-    const hatMat = new THREE.MeshLambertMaterial({ color: '#2b2a5a' });
-    const robe = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.3, 8), robeMat);
-    robe.position.set(0, 0.8, 0.1);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), skinMat);
-    head.position.set(0, 1.62, 0.1);
-    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 8), hatMat);
-    hat.position.set(0, 2.15, 0.1);
-    hat.rotation.x = -0.25;
-    this.body.add(robe, head, hat);
-    this.disposables.push(robe.geometry, head.geometry, hat.geometry, robeMat, skinMat, hatMat);
+    this.setWizard(wizard);
     this.root.add(this.body);
 
     // Soft additive glow under the cloth (cheap fake bloom).
@@ -152,6 +145,19 @@ export class TapestryModel {
     this.disposables.push(shTex, shMat, shGeom);
   }
 
+  /** Swap the rider (turbaned man or headscarfed woman, per element). */
+  setWizard(element: Element): void {
+    if (this.wizardMesh) {
+      this.body.remove(this.wizardMesh);
+      this.wizardMesh.geometry.dispose();
+      (this.wizardMesh.material as THREE.Material).dispose();
+    }
+    this.wizardMesh = buildWizard(wizardLook(element));
+    this.wizardMesh.position.set(0, 0.05, 0.1);
+    this.wizardMesh.scale.setScalar(1.25);
+    this.body.add(this.wizardMesh);
+  }
+
   /** `time` in seconds drives the cloth ripple; `flutter` grows with speed. */
   update(time: number, flutter: number, roll: number, pitch: number): void {
     const amp = 0.08 + 0.12 * flutter;
@@ -169,5 +175,9 @@ export class TapestryModel {
 
   dispose(): void {
     for (const d of this.disposables) d.dispose();
+    if (this.wizardMesh) {
+      this.wizardMesh.geometry.dispose();
+      (this.wizardMesh.material as THREE.Material).dispose();
+    }
   }
 }

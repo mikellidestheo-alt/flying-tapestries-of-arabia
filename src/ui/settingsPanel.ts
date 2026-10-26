@@ -1,3 +1,5 @@
+import { ELEMENTS, type Element } from '../data/elements';
+import { wizardLook } from '../data/wizardLooks';
 import type { QualityPreset, Settings } from '../save';
 
 type Change = (patch: Partial<Settings>, reapply?: 'quality' | 'auto') => void;
@@ -8,6 +10,7 @@ export class SettingsPanel {
     private host: HTMLElement,
     private get: () => Settings,
     private change: Change,
+    private wizard: { get: () => Element; set: (e: Element) => void },
   ) {
     this.render();
   }
@@ -19,6 +22,13 @@ export class SettingsPanel {
   private render(): void {
     const s = this.get();
     this.host.replaceChildren();
+    this.segRow(
+      'Wizard',
+      'Look only for now: every wizard throws fireballs until the full spell kits arrive.',
+      ELEMENTS.map((e) => [e, wizardLook(e).name] as [string, string]),
+      this.wizard.get(),
+      (v) => this.wizard.set(v as Element),
+    );
     this.segRow('Graphics quality', 'Auto picks for your phone. The game also adapts on the fly.', [
       ['auto', 'Auto'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low'],
     ], s.qualityAuto ? 'auto' : s.quality, (v) => {

@@ -1,5 +1,6 @@
 // Game loop: fixed-timestep sim + interpolated rendering + quality governor.
 import { getChapter } from '../data/chapters';
+import { ELEMENTS, type Element } from '../data/elements';
 import { Controls } from '../input/controls';
 import { enterFullscreen, releaseWakeLock, requestWakeLock, vibrate } from '../platform';
 import { GameRenderer } from '../render/gameRenderer';
@@ -28,19 +29,28 @@ export class Game {
   private lastRender = 0;
   private acc = 0;
   private time = 0;
+  private idleDraw = 0;
+  private cpuAvg = 0;
 
   constructor(private canvas: HTMLCanvasElement) {
     // Chapter 1 is the only playable chapter in M1.
     const chapter = getChapter(0);
     this.sim = new Sim({ terrain: chapter.terrain });
     if (!hasSavedSettings()) this.save.settings.quality = guessPreset();
-    this.renderer = new GameRenderer(canvas, this.sim, chapter, this.save.settings.quality);
+    this.renderer = new GameRenderer(canvas, this.sim, chapter, this.save.settings.quality, this.wizardElement());
     this.controls = new Controls(this.ui);
     this.controls.onPress = () => {
       if (this.save.settings.haptics) vibrate(12);
     };
     this.debug = new DebugOverlay($('#debug'));
-    this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r));
+    this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r), {
+      get: () => this.wizardElement(),
+      set: (e) => {
+        this.save.progress.wizard = e;
+        this.renderer.setWizard(e);
+        writeSave(this.save);
+      },
+    });
     this.applySettings();
     this.bindUi();
     $('#startInfo').textContent = `Quality: ${PRESETS[this.save.settings.quality].label}${this.save.settings.qualityAuto ? ' (auto)' : ''}`;
@@ -56,6 +66,11 @@ export class Game {
     });
     this.running = true;
     requestAnimationFrame((t) => this.loop(t));
+  }
+
+  private wizardElement(): Element {
+    const w = this.save.progress.wizard;
+    return (ELEMENTS as readonly string[]).includes(w) ? (w as Element) : 'fire';
   }
 
   private bindUi(): void {
@@ -131,10 +146,14 @@ export class Game {
     this.lastRender = now;
 
     if (this.paused) {
-      // Keep the scene drawn behind the pause menu at a trickle.
-      if (!this.started) this.renderer.render(1, 1 / 60, 0);
+      // Behind the start/pause screens the scene is static: redraw only twice a second.
+      if (!this.started && now - this.idleDraw > 500) {
+        this.idleDraw = now;
+        this.renderer.render(1, 1 / 60, 0);
+      }
       return;
     }
+    const cpuStart = performance.now();
     const dt = Math.min(0.1, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     this.time += dt;
@@ -149,12 +168,15 @@ export class Game {
     if (steps === simData.maxFrameSteps) this.acc = 0; // spiral-of-death guard
 
     this.renderer.render(this.acc / SIM_DT, dt, this.time);
+    // JS time spent on the main thread this frame (sim + scene update + draw submission).
+    this.cpuAvg += (performance.now() - cpuStart - this.cpuAvg) * 0.05;
 
     if (this.governor.sample(frameMs)) {
       this.renderer.setScales(this.governor.renderScale, this.governor.radiusScale);
     }
     this.debug.frame(now, frameMs, {
-      stats: this.renderer.stats,
+      stats: () => this.renderer.stats,
+      cpuMs: this.cpuAvg,
       renderScale: this.governor.renderScale,
       radiusScale: this.governor.radiusScale,
       preset: s.qualityAuto ? `${s.quality} (auto)` : s.quality,
