@@ -16,7 +16,7 @@ class Builder {
     this.e.set(rot[0], rot[1], rot[2]);
     this.q.setFromEuler(this.e);
     this.m.compose(new THREE.Vector3(...pos), this.q, new THREE.Vector3(...scale));
-    let geo = g.index ? g.toNonIndexed() : g.clone();
+    const geo = g.index ? g.toNonIndexed() : g.clone();
     g.dispose();
     geo.deleteAttribute('uv');
     geo.applyMatrix4(this.m);
@@ -30,7 +30,6 @@ class Builder {
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     this.parts.push(geo);
-    geo = null as unknown as THREE.BufferGeometry;
   }
 
   build(): THREE.BufferGeometry {
