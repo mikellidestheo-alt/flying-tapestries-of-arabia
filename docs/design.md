@@ -5,6 +5,9 @@ Full design for **Flying Tapestries of Arabia**. (CLAUDE.md holds only rules; th
 ## Pitch
 Fly a woven tapestry over deformable open-world terrain in a golden-hour Arabian fantasy. Gather mana from creatures, structures and orbs; spend it on castle upgrades and spells; beat rival wizards to a chapter's target share of the world's mana (or be the last castle standing). Solo, or online 2-player doubles co-op.
 
+## Characters
+Four wizards, all in an Arabian style: men wear wrapped turbans with a jewel, women wear headscarves draped over the shoulders; robes and sashes in element colours. The jewel on the headwear differs in shape per element (flame / drop / block / ring) so colour is never the only cue. Rivals and castle archers reuse the same builder with their own looks.
+
 ## Core loop
 Fly -> kill creatures / destroy enemy structures / absorb orbs -> mana -> upgrade castle (archers, walls, income) and cast spells -> capture the target mana share. The castle is base and respawn point.
 
@@ -13,6 +16,12 @@ Momentum flight: steer (turn rate with inertia, slower when fast), throttle (bra
 
 ## Terrain (M1, implemented)
 Pure function `baseHeight(params, x, z)` (domain-warped ridged dunes + swell + detail + oasis basins) plus a capped list of deltas (bump / crater). 64-unit chunks, three LODs with skirts, props merged into chunk geometry, baked vertex lighting. Params per chapter in `chapters/chapterN.json`. Delta policy: cap 256, merge-nearest-old compaction, monotonic ids, `compactionEpoch` for renderers.
+
+## Mana sources
+- **Mana orbs**: ambient clusters that spawn around you; creatures drop them when killed. Absorbed by flying close (magnet pull).
+- **Mana wells** (M2): glowing wells that appear at random, last about 2 minutes and hold a finite reserve. Hover beside one to drain it into your pool. A light beam marks it from afar and a HUD arrow points the way.
+- **Wild animals** (planned, M3 with chapter creature sets): neutral herds per chapter that flee when you approach; hunting them yields mana. Distinct from hostile creatures (dust sprites etc.).
+- Kills of hostile creatures, and (from M3) destroying enemy structures.
 
 ## Match rules
 - Target mana share per chapter (lower with more rivals), 10-15 min matches.

@@ -5,8 +5,8 @@ Checkpoints: M1, M3, M5c, M6.
 | Milestone | Status |
 |---|---|
 | Setup | done |
-| M1 Flight + terrain | done - awaiting phone test (checkpoint) |
-| M2 Spell, orbs, enemy, music layer 1 | not started |
+| M1 Flight + terrain | done - phone tested OK (60 fps High, low heat) |
+| M2 Spell, orbs, enemy, music layer 1 | done |
 | M3 Castle, archers, rivals, win, chapters 1-2, offline | not started |
 | M4 Four wizards + balance | not started |
 | M5a Chapters 3-4 | not started |
@@ -36,3 +36,16 @@ Checkpoints: M1, M3, M5c, M6.
 5. Pause (top-right) -> Settings: switch quality, Battery saver, Left-handed (layout should mirror), Debug overlay. Note FPS in each quality level.
 6. Leave it flying ~2 minutes: frame rate should stay steady; note if the phone gets warm or the governor shows scale dropping (debug overlay "scale").
 7. Screen should not dim while playing (wake lock).
+
+### M1 phone result (user report)
+Works well: 60 fps on High for 2 minutes, very little heat. Feedback applied: Arabian wizards (turbans / headscarves), efficiency double-check, wells + wild animals noted for the final game.
+
+### Efficiency double-check (after M1)
+Fixed: terrain planner re-sorted ~225 candidates every frame (now only on chunk-border crossing / terrain change / queued work); per-vertex `Color.clone()` garbage in chunk builds; per-frame Vector3 allocation; per-tick player array allocation; `devicemotion` listener firing ~60/s even with tilt off (now attached only while tilt is on); start/pause screens redrew at 60 fps (now 2 Hz). Measured in Node: sim tick 0.009 ms, high-detail chunk height grid 0.76 ms. Scene cost: ~57 draw calls, 35k tris (High, with entities). The debug overlay now shows `cpu` ms (JS time per frame) so you can see main-thread cost on the phone.
+
+### M2 (2026-10-26): spell, orbs, enemy, music layer 1
+**Built:** Fireball (data-driven spell table, aim assist with target leading, burn DoT, scorch crater delta); mana pool + HUD (HP, mana, spell button with cooldown ring); mana orbs (ambient spawns + creature drops, magnet pull); Dust Sprite enemy (wander / chase / attack, burn, drops orbs); **mana wells** (random temporary reserves, beam, HUD arrow, drain by hovering); player damage, knock-out and respawn with mana penalty; bounded event log feeding VFX, audio and HUD; one-draw-call glow layer + capped particle pool; instanced creatures; four Arabian wizards; procedural music (oud pluck, ney flute, darbuka maqsum/saidi/baladi, drone, maqam scales, OGG drop-in hook); synthesized SFX; music/SFX sliders + mute; reduced-flashing wiring.
+**Tests:** 64 passing (adds world/combat/determinism with all entity systems, music planner, perf guards).
+**Bundle:** JS 627 KB raw / **160 KB gzip** (budget 300); total ~164 KB gzip.
+**Notes:** non-fire wizards throw Fireballs until M4. Combat music layer + adaptive layers are M5c.
+**Phone checklist (M2):** (1) Tap to fly: you should hear the drone, drum and oud within a second. (2) Press the flame button: whoosh, bolt, impact boom, scorch crater. (3) Fly at the glowing blue orbs: chimes rise in pitch as you chain them. (4) Dust sprites spawn around you; shoot them (aim assist helps), they drop orbs. If one touches you it hurts and the screen flashes red. (5) After ~20 s a mana well appears: follow the arrow, hover beside the beam and watch mana fill. (6) Settings: change the wizard (turbans/headscarves), try music/effects sliders and mute. (7) Check FPS and warmth with the debug overlay on (see the `cpu` figure).

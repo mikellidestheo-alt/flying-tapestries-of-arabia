@@ -8,6 +8,8 @@ import type { QualityPreset } from '../save';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 import { GLOBAL_PIXEL_RATIO_CAP, PRESETS, type QualityPresetData } from './quality';
+import { EntityRenderer } from './entityRenderer';
+import type { SimEvent } from '../sim/entities';
 import { Sky } from './sky';
 import { TapestryModel } from './tapestry';
 import { TerrainRenderer } from './terrainRenderer';
@@ -21,6 +23,7 @@ export interface RenderStats {
   chunks: number;
   deltas: number;
   pixelRatio: number;
+  particles: number;
 }
 
 export class GameRenderer {
@@ -31,6 +34,7 @@ export class GameRenderer {
   private sky: Sky;
   private water: Water;
   private tapestry: TapestryModel;
+  private entities: EntityRenderer;
   private fog: THREE.Fog;
   private preset: QualityPresetData;
   private renderScale = 1;
@@ -70,6 +74,8 @@ export class GameRenderer {
     this.scene.add(this.water.mesh);
     this.tapestry = new TapestryModel(wizard);
     this.scene.add(this.tapestry.root, this.tapestry.shadow);
+    this.entities = new EntityRenderer(quality);
+    this.scene.add(this.entities.group);
 
     // Two lights, only for the tapestry and wizard (terrain lighting is baked).
     const sun = new THREE.DirectionalLight(chapter.palette.sunLight, 2.2);
@@ -96,10 +102,23 @@ export class GameRenderer {
 
   setQuality(q: QualityPreset): void {
     this.preset = PRESETS[q];
+    this.entities.setQuality(q);
     this.terrain.setQuality(this.preset);
     this.water.setMode(this.preset.water as 'shader' | 'flat');
     this.applyFog();
     this.resize();
+  }
+
+  handleEvent(e: SimEvent): void {
+    this.entities.handleEvent(e);
+  }
+
+  setReducedFlashing(on: boolean): void {
+    this.entities.setReducedFlashing(on);
+  }
+
+  get camHeadingValue(): number {
+    return this.camHeading;
   }
 
   setWizard(e: Element): void {
@@ -131,6 +150,7 @@ export class GameRenderer {
       chunks: this.terrain.chunkCount,
       deltas: this.sim.terrain.deltas.list.length,
       pixelRatio: this.renderer.getPixelRatio(),
+      particles: this.entities.particleCount,
     };
   }
 
@@ -188,6 +208,8 @@ export class GameRenderer {
       this.camera.updateProjectionMatrix();
     }
 
+    const pxScale = this.renderer.domElement.height / (2 * Math.tan((this.camera.fov * Math.PI) / 360));
+    this.entities.update(this.sim, alpha, dt, time, pxScale, this.camPos.x, this.camPos.z);
     this.sky.update(this.camera, this.camera.far * 0.9);
     this.water.update(this.camPos.x, this.camPos.z, this.camera.far * 2.5, time);
     this.renderer.render(this.scene, this.camera);
@@ -198,6 +220,7 @@ export class GameRenderer {
     this.sky.dispose();
     this.water.dispose();
     this.tapestry.dispose();
+    this.entities.dispose();
     this.renderer.dispose();
   }
 }

@@ -29,6 +29,9 @@ export class SettingsPanel {
       this.wizard.get(),
       (v) => this.wizard.set(v as Element),
     );
+    this.sliderRow('Music volume', s.musicVolume, (v) => this.change({ musicVolume: v }));
+    this.sliderRow('Effects volume', s.sfxVolume, (v) => this.change({ sfxVolume: v }));
+    this.switchRow('Mute all sound', 'Silences music and effects.', s.muted, (v) => this.change({ muted: v }));
     this.segRow('Graphics quality', 'Auto picks for your phone. The game also adapts on the fly.', [
       ['auto', 'Auto'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low'],
     ], s.qualityAuto ? 'auto' : s.quality, (v) => {
@@ -54,6 +57,19 @@ export class SettingsPanel {
     row.appendChild(l);
     this.host.appendChild(row);
     return row;
+  }
+
+  private sliderRow(label: string, value: number, set: (v: number) => void): void {
+    const row = this.row(label, '');
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '100';
+    input.value = String(Math.round(value * 100));
+    input.className = 'slider';
+    input.setAttribute('aria-label', label);
+    input.addEventListener('input', () => set(Number(input.value) / 100));
+    row.appendChild(input);
   }
 
   private switchRow(label: string, hint: string, on: boolean, set: (v: boolean) => void): void {

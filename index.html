@@ -23,16 +23,24 @@
         <svg viewBox="0 0 24 24" width="26" height="26"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
       </button>
 
+      <div id="hud">
+        <div class="bar hp" title="Health"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 21 C4 14 2 10 2 7 a5 5 0 0 1 10 -1 a5 5 0 0 1 10 1 c0 3 -2 7 -10 14z" fill="currentColor"/></svg><div class="track"><i id="hpFill"></i></div></div>
+        <div class="bar mana" title="Mana"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/></svg><div class="track"><i id="manaFill"></i></div><b id="manaText">0</b></div>
+      </div>
+      <div id="wellGuide" class="hidden"><svg id="wellArrow" viewBox="0 0 24 24" width="30" height="30"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg><span id="wellDist"></span></div>
+
+      <div id="devTools">
+        <button id="btnMound" class="act small" type="button" aria-label="Raise mound (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg></button>
+        <button id="btnCrater" class="act small" type="button" aria-label="Dig crater (dev)"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button>
+      </div>
       <div id="actions">
-        <button id="btnMound" class="act" type="button" aria-label="Raise mound">
-          <svg viewBox="0 0 24 24" width="34" height="34"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>
-          <span>Mound</span>
-        </button>
-        <button id="btnCrater" class="act" type="button" aria-label="Dig crater">
-          <svg viewBox="0 0 24 24" width="34" height="34"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-          <span>Crater</span>
+        <button id="btnSpell" class="act spell" type="button" aria-label="Cast fireball">
+          <svg viewBox="0 0 24 24" width="44" height="44"><path d="M12 1.5c1.2 4.2 6.3 6.2 6.3 12.2a6.3 6.3 0 0 1-12.6 0c0-3.1 1.9-5.1 3.2-7 .2 1.9 1 3 2.2 3.4 1.3-2.7.2-5.2.9-8.6z" fill="currentColor"/></svg>
+          <span id="spellCost">12</span>
+          <i id="spellCd"></i>
         </button>
       </div>
+      <div id="vignette"></div>
 
       <div id="toast" class="hidden"></div>
     </div>

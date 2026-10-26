@@ -32,7 +32,7 @@ The repo is PUBLIC. Never commit secrets, tokens or personal data. Assume anyone
 - Instanced meshes for villagers, archers, orbs, projectiles, domes. Chunked terrain with LOD. Fog + sky gradient hide draw distance. Blob shadows, **no shadow maps**.
 - Fake glow (additive sprites) on Low/Medium; real post-process bloom only on High (M5c). Cheap water fallback (Low). Sandstorm/fog: few large low-overdraw layers.
 - Pixel ratio capped at 1.5; adaptive governor lowers render scale then view distance. Presets High/Medium/Low auto-picked on first launch. Battery saver = 30 fps.
-- Hard per-preset caps on live entities (`src/data/quality.json` `caps`), enforced in code.
+- Hard caps on live entities. Sim caps are single constants in `src/data/sim.json` `caps` (same for every device, because quality never changes the sim). Per-preset caps in `src/data/quality.json` limit what is DRAWN and particles.
 - Debug overlay (settings): FPS, frame time, entity counts, latency.
 - JS bundle budget: <= 300 KB gzip (`npm run size`). Report size after every milestone.
 - Benchmark: Snapdragon 7s Gen 4 class phone holds 30-60 fps. High-end reference: Pixel 10 Pro XL.

@@ -1,12 +1,15 @@
 // Game loop: fixed-timestep sim + interpolated rendering + quality governor.
-import { getChapter } from '../data/chapters';
+import { getChapter, type ChapterConfig } from '../data/chapters';
 import { ELEMENTS, type Element } from '../data/elements';
 import { Controls } from '../input/controls';
 import { enterFullscreen, releaseWakeLock, requestWakeLock, vibrate } from '../platform';
 import { GameRenderer } from '../render/gameRenderer';
 import { GOVERNOR, PRESETS, QualityGovernor, guessPreset } from '../render/quality';
 import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } from '../save';
-import { SIM_DT, Sim } from '../sim/sim';
+import { ACTION_SPELL, SIM_DT, Sim } from '../sim/sim';
+import { GameAudio } from '../audio/gameAudio';
+import { Hud } from '../ui/hud';
+import { SPELLS, spellFor } from '../sim/combat';
 import { DebugOverlay } from '../ui/debugOverlay';
 import { SettingsPanel } from '../ui/settingsPanel';
 import simData from '../data/sim.json';
@@ -15,7 +18,13 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)
 
 export class Game {
   private save: SaveData = loadSave();
-  private sim: Sim;
+  /** Exposed for dev tooling only. */
+  sim: Sim;
+  private chapter: ChapterConfig;
+  private audio = new GameAudio();
+  private hud!: Hud;
+  private lastSeq = 0;
+  private hudAt = 0;
   private renderer!: GameRenderer;
   private controls: Controls;
   private governor = new QualityGovernor(GOVERNOR.targetFps);
@@ -35,12 +44,18 @@ export class Game {
   constructor(private canvas: HTMLCanvasElement) {
     // Chapter 1 is the only playable chapter in M1.
     const chapter = getChapter(0);
-    this.sim = new Sim({ terrain: chapter.terrain });
+    this.chapter = chapter;
+    this.sim = new Sim({ terrain: chapter.terrain, creatureTypes: chapter.creatureSet });
     if (!hasSavedSettings()) this.save.settings.quality = guessPreset();
     this.renderer = new GameRenderer(canvas, this.sim, chapter, this.save.settings.quality, this.wizardElement());
     this.controls = new Controls(this.ui);
-    this.controls.onPress = () => {
+    this.hud = new Hud();
+    this.controls.onPress = (bit) => {
       if (this.save.settings.haptics) vibrate(12);
+      if (bit === ACTION_SPELL) {
+        const p = this.sim.players[0]!;
+        if (p.mana < SPELLS[spellFor()]!.manaCost) this.audio.denied();
+      }
     };
     this.debug = new DebugOverlay($('#debug'));
     this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r), {
@@ -64,6 +79,7 @@ export class Game {
       e.preventDefault();
       this.fatal('The graphics context was lost. Please reload.');
     });
+    if (import.meta.env.DEV) (window as unknown as { __game: Game }).__game = this; // dev/testing hook
     this.running = true;
     requestAnimationFrame((t) => this.loop(t));
   }
@@ -77,6 +93,7 @@ export class Game {
     $('#startBtn').addEventListener('click', () => {
       void enterFullscreen();
       void requestWakeLock();
+      this.audio.start(this.chapter);
       $('#startScreen').classList.add('hidden');
       this.started = true;
       this.resume();
@@ -101,6 +118,10 @@ export class Game {
     this.ui.classList.toggle('lefty', s.leftHanded);
     this.controls.tiltEnabled = s.tilt;
     this.debug.setVisible(s.debugOverlay);
+    this.ui.classList.toggle('dev', s.debugOverlay);
+    this.audio.setVolumes(s.musicVolume, s.sfxVolume, s.muted);
+    this.renderer.setReducedFlashing(s.reducedFlashing);
+    this.hud.reducedFlashing = s.reducedFlashing;
     this.governor.setTargetFps(s.batterySaver ? GOVERNOR.batteryFps : GOVERNOR.targetFps);
     if (qualityChanged) {
       this.governor.renderScale = 1;
@@ -114,6 +135,7 @@ export class Game {
     if (!this.started || this.paused) return;
     this.paused = true;
     this.controls.releaseAll();
+    this.audio.pause();
     void releaseWakeLock();
     this.panel.refresh();
     $('#pauseScreen').classList.remove('hidden');
@@ -126,7 +148,28 @@ export class Game {
     this.governor.reset();
     this.controls.recalibrateTilt();
     $('#pauseScreen').classList.add('hidden');
+    this.audio.resume();
     void requestWakeLock();
+  }
+
+  /** Fan new sim events out to VFX, audio and HUD (the sim keeps a bounded event log). */
+  private dispatchEvents(): void {
+    const ev = this.sim.events;
+    let i = ev.length;
+    while (i > 0 && ev[i - 1]!.seq > this.lastSeq) i--;
+    const p = this.sim.players[0]!;
+    const listener = { x: p.x, z: p.z, heading: p.heading };
+    for (; i < ev.length; i++) {
+      const e = ev[i]!;
+      this.lastSeq = e.seq;
+      this.renderer.handleEvent(e);
+      this.audio.handle(e, listener, this.time);
+      if (e.type === 'wellSpawn') this.hud.showToast('A mana well appeared! Follow the arrow and hover beside it.');
+      else if (e.type === 'playerHit') {
+        this.hud.damageFlash();
+        if (this.save.settings.haptics) vibrate(40);
+      } else if (e.type === 'respawn') this.hud.showToast('You were knocked out. Some mana was lost.');
+    }
   }
 
   private fatal(msg: string): void {
@@ -166,8 +209,13 @@ export class Game {
       steps++;
     }
     if (steps === simData.maxFrameSteps) this.acc = 0; // spiral-of-death guard
+    if (steps > 0) this.dispatchEvents();
 
     this.renderer.render(this.acc / SIM_DT, dt, this.time);
+    if (now - this.hudAt > 100) {
+      this.hudAt = now;
+      this.hud.update(this.sim, this.sim.players[0]!.heading);
+    }
     // JS time spent on the main thread this frame (sim + scene update + draw submission).
     this.cpuAvg += (performance.now() - cpuStart - this.cpuAvg) * 0.05;
 

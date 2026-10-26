@@ -1,6 +1,6 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_MOUND, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_MOUND, ACTION_SPELL, type PlayerInput } from '../sim/sim';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -36,7 +36,7 @@ export class Controls {
     else window.removeEventListener('devicemotion', this.motionHandler);
   }
   tiltInvert = false;
-  onPress: (() => void) | null = null;
+  onPress: ((bit: number) => void) | null = null;
 
   private stick: HTMLElement;
   private knob: HTMLElement;
@@ -102,12 +102,14 @@ export class Controls {
 
     this.bindButton('#btnCrater', ACTION_CRATER);
     this.bindButton('#btnMound', ACTION_MOUND);
+    this.bindButton('#btnSpell', ACTION_SPELL);
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
       this.keys.add(e.code);
       if (e.code === 'KeyC') this.pressed |= ACTION_CRATER;
       if (e.code === 'KeyV') this.pressed |= ACTION_MOUND;
+      if (e.code === 'Space' || e.code === 'KeyF') this.pressed |= ACTION_SPELL;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
@@ -121,7 +123,7 @@ export class Controls {
       this.held |= bit;
       this.pressed |= bit;
       el.classList.add('down');
-      this.onPress?.();
+      this.onPress?.(bit);
       e.preventDefault();
       e.stopPropagation();
     });
@@ -182,7 +184,7 @@ export class Controls {
       steer = Math.max(-1, Math.min(1, shape(Math.abs(t) < 0.06 ? 0 : t))) * (this.tiltInvert ? -1 : 1);
     }
 
-    const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0);
+    const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0);
     this.pressed = 0;
     return { steer, throttle, actions };
   }
