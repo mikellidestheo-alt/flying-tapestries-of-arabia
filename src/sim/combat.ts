@@ -219,7 +219,7 @@ function homeIn(sim: Sim, p: Projectile, def: SpellDef): void {
   const sp = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
   if (sp < 1) return;
   const cos = (p.vx * dx + p.vz * dz) / (sp * dist);
-  if (cos < Math.cos(def.aimAssist.homingMaxAngle)) return; // already past it: let it fly
+  if (cos < dcos(def.aimAssist.homingMaxAngle)) return; // already past it: let it fly
   const k = def.aimAssist.homingStrength;
   const t = dist / sp;
   p.vx += ((dx / dist) * sp - p.vx) * k;
