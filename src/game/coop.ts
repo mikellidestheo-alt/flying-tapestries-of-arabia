@@ -247,7 +247,9 @@ export class CoopController {
 
   private async share(): Promise<void> {
     if (!this.net) return;
-    const url = `${location.origin}${location.pathname}?room=${this.net.room}`;
+    // From the downloaded single file the invite must point at the website (a link to a local file is useless to a friend).
+    const site = location.protocol === 'file:' || location.protocol === 'content:' ? 'https://flying-tapestries-of-arabia.mikellidestheo.workers.dev/' : `${location.origin}${location.pathname}`;
+    const url = `${site}?room=${this.net.room}`;
     try {
       if (navigator.share) await navigator.share({ title: 'Flying Tapestries of Arabia', text: `Join my co-op room ${this.net.room}`, url });
       else {

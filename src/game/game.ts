@@ -100,6 +100,7 @@ export class Game {
     });
     this.applySettings();
     this.bindUi();
+    if (location.protocol === 'file:' || location.protocol === 'content:') $('#downloadLink').classList.add('hidden');
     $('#startInfo').textContent = `Quality: ${PRESETS[this.save.settings.quality].label}${this.save.settings.qualityAuto ? ' (auto)' : ''}`;
     window.addEventListener('resize', () => this.renderer.resize());
     window.addEventListener('orientationchange', () => setTimeout(() => this.renderer.resize(), 200));

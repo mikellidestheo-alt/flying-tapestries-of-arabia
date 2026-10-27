@@ -8,15 +8,26 @@ import { NET } from '../src/net/protocol';
 
 const CODE_RE = new RegExp(`^[${NET.roomCodeAlphabet}]{${NET.roomCodeLength}}$`);
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+function json(body: unknown, status = 200, request?: Request): Response {
+  const headers: Record<string, string> = { 'content-type': 'application/json', 'cache-control': 'no-store' };
+  // The downloadable single-file game is opened from the device (Origin "null"): let it read the answer.
+  if (request?.headers.get('Origin') === 'null') headers['access-control-allow-origin'] = 'null';
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
-/** Same-origin only: another website must not be able to drive our rooms from a visitor's browser. */
+/**
+ * Same-origin only: another website must not be able to drive our rooms from a visitor's browser.
+ * Exception: the downloadable single-file game (a local file) sends Origin "null"; it is allowed, and the same rate
+ * limits, room codes and budgets apply to it as to everyone else.
+ */
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get('Origin');
-  if (!origin) return true; // non-browser clients (tests, curl) send none; the rate limits still apply
-  return new URL(origin).host === new URL(request.url).host;
+  if (!origin || origin === 'null') return true; // non-browser clients (tests, curl) send none
+  try {
+    return new URL(origin).host === new URL(request.url).host;
+  } catch {
+    return false;
+  }
 }
 
 async function ipHash(request: Request): Promise<string> {
@@ -31,10 +42,10 @@ export default {
     const gate = env.GATE.get(env.GATE.idFromName('gate'));
 
     if (url.pathname === '/api/room' && request.method === 'POST') {
-      if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403);
+      if (!sameOrigin(request)) return json({ error: 'forbidden' }, 403, request);
       const res = await gate.fetch('https://gate/issue', { method: 'POST', body: JSON.stringify({ ip: await ipHash(request) }) });
       const body = (await res.json()) as { ok: boolean; code: string };
-      return json(body.ok ? { code: body.code } : { error: body.code }, body.ok ? 200 : body.code === 'rate_limited' ? 429 : 503);
+      return json(body.ok ? { code: body.code } : { error: body.code }, body.ok ? 200 : body.code === 'rate_limited' ? 429 : 503, request);
     }
 
     if (url.pathname.startsWith('/ws/')) {

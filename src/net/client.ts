@@ -1,6 +1,9 @@
 // Browser WebSocket client for co-op: room creation over HTTP, then one socket per player.
 import { NET, PROTOCOL_VERSION, type ClientMsg, type ServerMsg } from './protocol';
 
+/** Empty for the normal site (same origin). The downloadable single-file build points this at the live server. */
+const COOP_ORIGIN: string = (import.meta.env.VITE_COOP_ORIGIN as string | undefined) ?? '';
+
 export type CloseInfo = { clean: boolean; reason: string };
 
 export class NetClient {
@@ -20,7 +23,7 @@ export class NetClient {
   /** Ask the server for a fresh room code. */
   static async createRoom(): Promise<{ ok: true; code: string } | { ok: false; error: string }> {
     try {
-      const res = await fetch('/api/room', { method: 'POST' });
+      const res = await fetch(`${COOP_ORIGIN}/api/room`, { method: 'POST' });
       const body = (await res.json()) as { code?: string; error?: string };
       if (res.ok && body.code) return { ok: true, code: body.code };
       return { ok: false, error: body.error ?? `http_${res.status}` };
@@ -37,10 +40,10 @@ export class NetClient {
     this.room = room.toUpperCase();
     this.intentional = false;
     return new Promise((resolve, reject) => {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       let ws: WebSocket;
       try {
-        ws = new WebSocket(`${proto}://${location.host}/ws/${this.room}`);
+        const origin = COOP_ORIGIN || location.origin;
+        ws = new WebSocket(`${origin.replace(/^http/, 'ws')}/ws/${this.room}`);
       } catch (e) {
         reject(e);
         return;

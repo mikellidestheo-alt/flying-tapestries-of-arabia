@@ -51,7 +51,7 @@ export function vibrate(ms: number): void {
 }
 
 export function registerServiceWorker(): void {
-  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator) || location.protocol === 'file:' || location.protocol === 'content:') return;
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => undefined);
   });
