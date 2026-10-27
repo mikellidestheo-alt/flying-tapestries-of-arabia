@@ -133,7 +133,7 @@ export class Sim {
   readonly creatureTypes: string[];
   readonly spawn: { x: number; z: number };
   readonly setup: MatchSetup | undefined;
-  match: MatchState = { status: 'playing', reason: '', targetShare: 1, suddenDeath: false, shares: [], endTick: 0 };
+  match: MatchState = { status: 'playing', reason: '', targetShare: 1, suddenDeath: false, winner: -1, shares: [], endTick: 0 };
   private flight: FlightTuning;
 
   constructor(opts: SimOptions) {
@@ -216,7 +216,7 @@ export class Sim {
       refreshObstacle(this, castle);
     }
     this.match = {
-      status: 'playing', reason: '', targetShare: setup.targetShare, suddenDeath: false,
+      status: 'playing', reason: '', targetShare: setup.targetShare, suddenDeath: false, winner: -1,
       shares: this.factions.map(() => 1 / count), endTick: 0,
     };
   }

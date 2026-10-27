@@ -1,5 +1,6 @@
 // Facade the game talks to: owns the engine, music and sfx, and turns sim events into sound.
 import type { ChapterConfig } from '../data/chapters';
+import type { Element } from '../data/elements';
 import type { SimEvent } from '../sim/entities';
 import { AudioEngine } from './engine';
 import { MusicDirector } from './music';
@@ -63,13 +64,34 @@ export class GameAudio {
     return Math.abs(e.x - l.x) < 0.01 && Math.abs(e.z - l.z) < 0.01;
   }
 
-  handle(e: SimEvent, l: Listener, now: number): void {
+  handle(e: SimEvent, l: Listener, now: number, elementOf: (owner: number) => Element = () => 'fire'): void {
     if (!this.engine.ready || !this.spec) return;
     this.clock = now;
     const { pan, gain } = this.place(e, l);
     switch (e.type) {
-      case 'cast': this.sfx.castFire(0, 0.7); break;
-      case 'impact': if (e.v >= 0) this.sfx.impactFire(pan, gain); break;
+      case 'cast': {
+        const el = elementOf(e.v);
+        if (el === 'water') this.sfx.castWater(pan, 0.7);
+        else if (el === 'earth') this.sfx.castEarth(pan, 0.8);
+        else if (el === 'air') this.sfx.castAir(pan, 0.6);
+        else this.sfx.castFire(pan, 0.7);
+        break;
+      }
+      case 'impact': {
+        if (e.v < 0) break;
+        const el = elementOf(e.v);
+        if (el === 'water') this.sfx.impactWater(pan, gain);
+        else if (el === 'earth') this.sfx.impactEarth(pan, gain);
+        else if (el === 'air') this.sfx.impactAir(pan, gain);
+        else this.sfx.impactFire(pan, gain);
+        break;
+      }
+      case 'chain': this.sfx.chain(pan, gain, elementOf(e.v) === 'water'); break;
+      case 'nova': this.sfx.nova(gain); break;
+      case 'wallRaised': this.sfx.wall(pan, gain); break;
+      case 'dash': this.sfx.dash(gain); break;
+      case 'zoneStart': this.sfx.zoneStart(pan, gain); break;
+      case 'quake': this.sfx.quake(pan, gain); break;
       case 'monsterFire': this.sfx.monsterFire(pan, gain); break;
       case 'bounty': if (this.isLocal(e, l)) this.sfx.bounty(degreeHz(this.spec, 0), 0.9); break;
       case 'spellUpgrade': if (this.isLocal(e, l)) this.sfx.weaponUp(0.9); break;

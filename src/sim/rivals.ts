@@ -199,7 +199,7 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
   let throttle = AI.cruiseThrottle;
   if (combat) {
     if (d < AI.orbitDistance * 0.85) {
-      desired = toGoal + ai.orbitDir * 1.45;
+      desired = toGoal + ai.orbitDir * 0.42; // circle in a wide arc, keeping the target inside the aim-assist cone
       throttle = 0.15;
     } else throttle = 0.5;
   } else if (ai.goal === 'well') {
@@ -217,7 +217,10 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
   if (combat && p.mana >= def.manaCost) {
     let range = AI.combatRange;
     if (ai.goal === 'castle') range = AI.castleAttackRange;
-    const aligned = Math.abs(wrapAngle(p.heading - toGoal)) < 0.3;
+    // Only fire when the target is inside this spell's own aim-assist cone.
+    const cosMin = def.aimAssist?.cosMin ?? 0.86;
+    const coneAngle = datan2(Math.sqrt(1 - cosMin * cosMin), cosMin);
+    const aligned = Math.abs(wrapAngle(p.heading - toGoal)) < coneAngle * 0.92;
     if (d < range && aligned && sim.rng.next() < diff.rivalAccuracy * (0.5 + 0.5 * setup.aiLevel)) actions |= ACTION_SPELL;
   }
   // Buy better weapons when flush: aggressive rivals do it first.
@@ -232,7 +235,7 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
       if (w.active && w.faction !== p.faction && w.hp > 0) nearest = Math.min(nearest, dist(w.x, w.z, p.x, p.z));
     }
     for (const c of sim.creatures) if (CREATURES[c.type]!.hostile) nearest = Math.min(nearest, dist(c.x, c.z, p.x, p.z));
-    const aimedAtGoal = combat && Math.abs(wrapAngle(p.heading - toGoal)) < 0.3;
+    const aimedAtGoal = combat && Math.abs(wrapAngle(p.heading - toGoal)) < 0.5;
     switch (p.element) {
       case 'fire': // rain fire on a target (or a castle) that is in range
         if (aimedAtGoal && d < 90 && d > 18) actions |= ACTION_SIGNATURE;

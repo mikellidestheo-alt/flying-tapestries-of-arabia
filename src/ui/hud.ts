@@ -3,6 +3,7 @@ import castleData from '../data/castles.json';
 import simData from '../data/sim.json';
 import { BRANCHES, castleStats, nextUpgrade, tierDef } from '../sim/castles';
 import { nextSpellUpgrade, primaryDef, signatureDef } from '../sim/combat';
+import { primaryIcon, signatureIcon, weaponIcon } from './icons';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 
@@ -43,6 +44,10 @@ export class Hud {
   private upgradeCost = $<HTMLElement>('#upgradeCost');
   private deposit = $<HTMLElement>('#btnDeposit');
   private weapon = $<HTMLElement>('#btnWeapon');
+  private sigBtn = $<HTMLElement>('#btnSig');
+  private sigCd = $<HTMLElement>('#sigCd');
+  private sigCost = $<HTMLElement>('#sigCost');
+  private lastSig = { cd: -1, nomana: false };
   private weaponCost = $<HTMLElement>('#weaponCost');
   private palaceInfo = $<HTMLElement>('#palaceInfo');
   private branchPicker = $<HTMLElement>('#branchPicker');
@@ -71,6 +76,15 @@ export class Hud {
   startMatch(sim: Sim): void {
     this.sim = sim;
     this.closePicker();
+    // Element-specific icons (distinct shapes) and signature cost.
+    const me = sim.players[0]!;
+    $('#ui').setAttribute('data-el', me.element);
+    $('#spellIcon').innerHTML = primaryIcon(me.element, 44);
+    $('#weaponIcon').innerHTML = weaponIcon(me.element, 26);
+    $('#sigIcon').innerHTML = signatureIcon(me.element, 34);
+    this.sigCost.textContent = String(signatureDef(me).manaCost);
+    this.sigBtn.setAttribute('aria-label', `${signatureDef(me).name} (${signatureDef(me).manaCost} mana)`);
+    this.lastSig = { cd: -1, nomana: false };
     this.shareBar.replaceChildren();
     this.segs = sim.factions.map((f) => {
       const seg = document.createElement('i');
@@ -133,6 +147,17 @@ export class Hud {
       this.spellBtn.classList.toggle('nomana', nomana);
     }
 
+    const sig = signatureDef(p);
+    const sigCd = Math.round((p.sigCd / sig.cooldownTicks) * 100);
+    if (sigCd !== this.lastSig.cd) {
+      this.lastSig.cd = sigCd;
+      this.sigCd.style.setProperty('--cd', `${sigCd}%`);
+    }
+    const sigNo = p.mana < sig.manaCost;
+    if (sigNo !== this.lastSig.nomana) {
+      this.lastSig.nomana = sigNo;
+      this.sigBtn.classList.toggle('nomana', sigNo);
+    }
     // Weapon tier pips, spell cost, and the weapon-upgrade button.
     const up = nextSpellUpgrade(p.element, p.spellTier);
     const can = !!up && p.mana >= up.cost;

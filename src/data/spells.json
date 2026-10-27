@@ -131,11 +131,11 @@
       "homingMaxAngle": 0.9,
       "homingRange": 150
     },
-    "structureMult": 0.8,
+    "structureMult": 1.25,
     "speed": 95,
     "gravity": 3,
-    "area": 4,
-    "hitRadius": 1.5,
+    "area": 4.5,
+    "hitRadius": 1.9,
     "effects": [
       {
         "type": "slow",
@@ -154,7 +154,7 @@
       15
     ],
     "name": "Frost Chain",
-    "damage": 17.8,
+    "damage": 17.5,
     "manaCost": 12,
     "cooldownTicks": 13,
     "tierNames": [
@@ -165,8 +165,8 @@
     "tiers": [
       {
         "speed": 98,
-        "area": 4.5,
-        "hitRadius": 1.7,
+        "area": 5,
+        "hitRadius": 2.1,
         "effects": [
           {
             "type": "slow",
@@ -185,15 +185,15 @@
           14
         ],
         "name": "Glacial Chain",
-        "damage": 21.3,
+        "damage": 21,
         "manaCost": 14,
         "cooldownTicks": 12,
         "upgradeCost": 90
       },
       {
         "speed": 100,
-        "area": 5,
-        "hitRadius": 1.9,
+        "area": 5.5,
+        "hitRadius": 2.3,
         "effects": [
           {
             "type": "slow",
@@ -216,7 +216,7 @@
           13
         ],
         "name": "Absolute Zero",
-        "damage": 24,
+        "damage": 23.7,
         "manaCost": 18,
         "cooldownTicks": 12,
         "upgradeCost": 180
@@ -238,9 +238,9 @@
     },
     "speed": 52,
     "gravity": 14,
-    "area": 8,
+    "area": 7,
     "hitRadius": 2.2,
-    "structureMult": 2.6,
+    "structureMult": 1.6,
     "effects": [],
     "terrain": {
       "radius": 8,
@@ -253,7 +253,7 @@
       22
     ],
     "name": "Boulder",
-    "damage": 47.9,
+    "damage": 49.7,
     "manaCost": 20,
     "cooldownTicks": 22,
     "tierNames": [
@@ -264,9 +264,9 @@
     "tiers": [
       {
         "speed": 55,
-        "area": 9.5,
+        "area": 8,
         "hitRadius": 2.4,
-        "structureMult": 2.7,
+        "structureMult": 1.7,
         "effects": [
           {
             "type": "slow",
@@ -285,16 +285,16 @@
           21
         ],
         "name": "Granite Boulder",
-        "damage": 61.8,
+        "damage": 65.3,
         "manaCost": 25,
         "cooldownTicks": 21,
         "upgradeCost": 90
       },
       {
         "speed": 58,
-        "area": 11,
+        "area": 9,
         "hitRadius": 2.6,
-        "structureMult": 2.8,
+        "structureMult": 1.8,
         "effects": [
           {
             "type": "slow",
@@ -318,7 +318,7 @@
           20
         ],
         "name": "Quake Boulder",
-        "damage": 63.4,
+        "damage": 67,
         "manaCost": 30,
         "cooldownTicks": 20,
         "upgradeCost": 180
@@ -331,7 +331,7 @@
     "gravity": 0,
     "area": 2,
     "falloff": 0.3,
-    "interceptHp": 6,
+    "interceptHp": 30,
     "aimAssist": {
       "range": 200,
       "cosMin": 0.9,
@@ -340,7 +340,7 @@
       "homingMaxAngle": 0.9,
       "homingRange": 150
     },
-    "structureMult": 0.7,
+    "structureMult": 0.95,
     "effects": [],
     "speed": 190,
     "hitRadius": 1.2,

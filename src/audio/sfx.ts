@@ -158,6 +158,112 @@ export class Sfx {
     if (win) this.noise(o.ctx, o.dest, t + 0.5, 0.8, 6000, 3000, 1, 0.15);
   }
 
+  /** Water: a bubbling, rising glide with a splash of filtered noise. */
+  castWater(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sine', 300, 900, 0.22, 0.3);
+    this.tone(o.ctx, o.dest, t + 0.05, 'sine', 500, 1400, 0.18, 0.18);
+    this.noise(o.ctx, o.dest, t, 0.25, 1800, 5000, 3, 0.2);
+  }
+
+  impactWater(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.4, 3000, 700, 1.2, 0.55);
+    this.tone(o.ctx, o.dest, t, 'triangle', 900, 300, 0.25, 0.3); // icy crack
+    this.tone(o.ctx, o.dest, t + 0.06, 'sine', 1800, 1200, 0.3, 0.12);
+  }
+
+  /** Earth: a deep thud, grinding rumble. */
+  castEarth(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sine', 90, 45, 0.35, 0.7);
+    this.noise(o.ctx, o.dest, t, 0.35, 300, 120, 0.8, 0.45);
+  }
+
+  impactEarth(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sine', 70, 28, 0.7, 1.0);
+    this.noise(o.ctx, o.dest, t, 0.7, 700, 90, 0.7, 0.9);
+    this.noise(o.ctx, o.dest, t + 0.08, 0.3, 2500, 800, 2, 0.3); // flying rock
+  }
+
+  /** Air: a sharp electric zap. */
+  castAir(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sawtooth', 2400, 300, 0.1, 0.22);
+    this.noise(o.ctx, o.dest, t, 0.1, 6000, 2500, 2, 0.5);
+  }
+
+  impactAir(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.18, 7000, 1500, 1.5, 0.7);
+    this.tone(o.ctx, o.dest, t, 'square', 1500, 200, 0.14, 0.2);
+    this.tone(o.ctx, o.dest, t + 0.1, 'sine', 80, 50, 0.35, 0.4); // thunder rumble
+  }
+
+  /** Arc between targets (chain lightning / frost chain). */
+  chain(pan: number, gain: number, icy: boolean): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    if (icy) this.tone(o.ctx, o.dest, t, 'triangle', 1600, 700, 0.12, 0.2);
+    else this.tone(o.ctx, o.dest, t, 'sawtooth', 3000, 500, 0.08, 0.16);
+    this.noise(o.ctx, o.dest, t, 0.1, 5000, 3000, 2, 0.25);
+  }
+
+  /** Frost Nova: a cold, rising whoosh. */
+  nova(gain: number): void {
+    const o = this.out(0, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.6, 600, 6000, 1, 0.6);
+    this.tone(o.ctx, o.dest, t, 'sine', 400, 1600, 0.5, 0.25);
+  }
+
+  wall(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sine', 60, 35, 0.8, 0.9);
+    this.noise(o.ctx, o.dest, t, 0.8, 500, 100, 0.8, 0.8);
+  }
+
+  dash(gain: number): void {
+    const o = this.out(0, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.55, 400, 5000, 0.9, 0.7);
+    this.tone(o.ctx, o.dest, t, 'sine', 300, 900, 0.4, 0.15);
+  }
+
+  zoneStart(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.noise(o.ctx, o.dest, t, 0.9, 800, 2500, 0.7, 0.55);
+    this.tone(o.ctx, o.dest, t, 'sawtooth', 140, 70, 0.8, 0.2);
+  }
+
+  quake(pan: number, gain: number): void {
+    const o = this.out(pan, gain);
+    if (!o) return;
+    const t = o.ctx.currentTime;
+    this.tone(o.ctx, o.dest, t, 'sine', 55, 28, 0.9, 1.0);
+    this.noise(o.ctx, o.dest, t, 0.9, 400, 80, 0.7, 0.8);
+  }
+
   /** Evil genie firing: a dark, hollow whoosh. */
   monsterFire(pan: number, gain: number): void {
     const o = this.out(pan, gain);

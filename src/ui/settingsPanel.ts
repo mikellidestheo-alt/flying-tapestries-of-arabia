@@ -24,7 +24,7 @@ export class SettingsPanel {
     this.host.replaceChildren();
     this.segRow(
       'Wizard',
-      'Look only for now: every wizard throws fireballs until the full spell kits arrive.',
+      'Each wizard has its own attack (3 tiers) and signature spell. Changes apply to your next match.',
       ELEMENTS.map((e) => [e, wizardLook(e).name] as [string, string]),
       this.wizard.get(),
       (v) => this.wizard.set(v as Element),

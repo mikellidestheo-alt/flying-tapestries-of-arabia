@@ -312,7 +312,7 @@ export class Game {
       const e = ev[i]!;
       this.lastSeq = e.seq;
       this.renderer.handleEvent(e);
-      this.audio.handle(e, listener, this.time);
+      this.audio.handle(e, listener, this.time, (o) => sim.players[o]?.element ?? 'fire');
       switch (e.type) {
         case 'wellSpawn': this.hud.showToast('A mana well appeared! Check the compass and hover beside it.'); break;
         case 'playerHit':

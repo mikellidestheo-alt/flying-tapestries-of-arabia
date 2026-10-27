@@ -8,7 +8,7 @@ Checkpoints: M1, M3, M5c, M6.
 | M1 Flight + terrain | done - phone tested OK (60 fps High, low heat) |
 | M2 Spell, orbs, enemy, music layer 1 | done |
 | M3 Castle, archers, rivals, win, chapters 1-2, offline | done - awaiting phone test (checkpoint) |
-| M4 Four wizards + balance | not started |
+| M4 Four wizards + balance | done |
 | M5a Chapters 3-4 | not started |
 | M5b Chapters 5-6 | not started |
 | M5c Polish, hub, accessibility, stress test | not started |
@@ -79,3 +79,10 @@ Fixed: terrain planner re-sorted ~225 candidates every frame (now only on chunk-
 - **Palace win:** tier-5 castle + chapter mana target wins outright (HUD shows progress). Match length in autopilot sims: 9-13 min.
 - **Evil genies:** ranged monsters (curse bolts, can be shot down by archers), 45 mana each.
 - Tests: 124 passing. Bundle: 181 KB gzip JS (budget 300).
+
+### M4 (2026-10-27): four wizards, spell table, balance, AI-vs-AI
+**Built:** four wizard kits (primary attack x 3 tiers + signature) in one spell table; sim mechanics for chain, slow, freeze, burn on wizards, Firestorm zones, Frost Nova, Stone Wall (terrain deltas), Quake aftershock, Gale Dash, swept fast bolts; per-element projectile, impact, status and zone VFX; per-element synthesized SFX; distinct-shape icons (colour-blind safe); signature button; rival AI that uses each kit; co-op combos defined in the table (M6); balance model + solver + report (`npm run balance`).
+**Four players every chapter** (changed from 1/1/2/2/3/3 at the user's request).
+**Tests:** 162 passing + the win-rate test (balance per tier within 5%, utility ranges, kit mechanics, determinism with all four elements, AI-vs-AI win rates fire 20.8 / water 27.1 / earth 29.2 / air 22.9%).
+**Bundle:** 186.9 KB gzip JS (budget 300 KB).
+**Phone checklist (M4):** (1) Pick each wizard in the chapter menu and play a few minutes: do the four feel different? (2) Attack button + signature button beside it (cooldown ring). Fire: Firestorm where you aim. Water: Frost Nova slows everything near; chain bolts arc between enemies; tier 3 freezes. Earth: heavy boulders, Stone Wall raises a barrier ahead. Air: fast long-range bolts, Gale Dash speed burst (also breaks freezes). (3) Buy weapon tiers II and III. (4) Check the new sounds and effects, reduced-flashing option. (5) FPS / cpu / warmth readings with several effects on screen.

@@ -91,8 +91,8 @@ button.primary:active { transform: scale(0.97); }
 #foeInfo { position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--safe-t) + 90px); width: 200px; font: 700 13px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; pointer-events: none; }
 #foeInfo .track { height: 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.6); overflow: hidden; margin-top: 2px; }
 #foeInfo .track i { display: block; height: 100%; width: 100%; transform-origin: left; background: #ff6b6b; }
-.act.upg { position: absolute; right: calc(var(--safe-r) + 142px); bottom: calc(var(--safe-b) + 28px); width: 86px; height: 86px; color: #ffe08a; border-color: #ffe08a; background: rgba(40, 30, 10, 0.65); font-size: 12px; }
-#ui.lefty .act.upg { right: auto; left: calc(var(--safe-l) + 142px); }
+.act.upg { position: absolute; right: calc(var(--safe-r) + 240px); bottom: calc(var(--safe-b) + 28px); width: 86px; height: 86px; color: #ffe08a; border-color: #ffe08a; background: rgba(40, 30, 10, 0.65); font-size: 12px; }
+#ui.lefty .act.upg { right: auto; left: calc(var(--safe-l) + 240px); }
 .act.upg.cant { color: #9a9ab5; border-color: #8a8aa8; }
 .act.upg span { margin-top: 2px; text-align: center; line-height: 1.05; }
 #branchPicker { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(10, 6, 24, 0.55); z-index: 6; }
@@ -123,9 +123,9 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 #endShares .r .track i { display: block; height: 100%; }
 #endShares .r b { width: 44px; text-align: right; }
 #pauseScreen .row:first-child { gap: 10px; flex-wrap: wrap; }
-.act.dep { position: absolute; right: calc(var(--safe-r) + 240px); bottom: calc(var(--safe-b) + 28px); width: 78px; height: 78px; color: #5fd8ff; border-color: #5fd8ff; background: rgba(10, 30, 50, 0.65); font-size: 11px; }
+.act.dep { position: absolute; right: calc(var(--safe-r) + 336px); bottom: calc(var(--safe-b) + 28px); width: 78px; height: 78px; color: #5fd8ff; border-color: #5fd8ff; background: rgba(10, 30, 50, 0.65); font-size: 11px; }
 .act.dep span { text-align: center; line-height: 1.05; margin-top: 2px; }
-#ui.lefty .act.dep { right: auto; left: calc(var(--safe-l) + 240px); }
+#ui.lefty .act.dep { right: auto; left: calc(var(--safe-l) + 336px); }
 /* Terrain tools + weapon upgrade sit right above the fire button. */
 #sideTools { position: absolute; right: calc(var(--safe-r) + 20px); bottom: calc(var(--safe-b) + 140px); display: flex; flex-direction: row-reverse; gap: 10px; pointer-events: none; }
 #ui.lefty #sideTools { right: auto; left: calc(var(--safe-l) + 20px); flex-direction: row; }
@@ -139,3 +139,14 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 .act.wpn.hidden, #sideTools .hidden { display: none; }
 #palaceInfo { font: 600 11px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; opacity: 0.9; }
 .act.spell em { position: absolute; top: 6px; font: 800 12px system-ui, sans-serif; font-style: normal; color: #ffd58a; letter-spacing: 1px; }
+
+.act.sig { position: absolute; right: calc(var(--safe-r) + 140px); bottom: calc(var(--safe-b) + 28px); width: 84px; height: 84px; color: #bfe9ff; border-color: #bfe9ff; background: rgba(14, 24, 52, 0.65); font-size: 13px; }
+#ui.lefty .act.sig { right: auto; left: calc(var(--safe-l) + 140px); }
+.act.sig i { position: absolute; inset: 0; background: conic-gradient(rgba(0, 0, 0, 0.55) var(--cd, 0%), transparent 0); pointer-events: none; }
+.act.sig span { color: #fff; }
+.act.sig.nomana { color: #8a8aa8; border-color: #8a8aa8; }
+#spellIcon svg, #sigIcon svg, #weaponIcon svg { display: block; }
+#ui[data-el="fire"] .act.spell { color: #ffb25a; border-color: #ffd58a; background: rgba(60, 20, 20, 0.6); }
+#ui[data-el="water"] .act.spell { color: #6fd6ff; border-color: #bfeaff; background: rgba(10, 36, 62, 0.65); }
+#ui[data-el="earth"] .act.spell { color: #d2a86a; border-color: #ecd2a0; background: rgba(48, 34, 16, 0.65); }
+#ui[data-el="air"] .act.spell { color: #e8e4ff; border-color: #ffffff; background: rgba(40, 36, 80, 0.62); }

@@ -31,8 +31,25 @@ Pure function `baseHeight(params, x, z)` (domain-warped ridged dunes + swell + d
 ## Castle tiers and archers (M3, implemented)
 ~5 tiers in one table; visible growth, instanced archers with LOD, branches at certain tiers (more archers / tougher walls / faster mana). Archers target creatures and incoming rival projectiles, never the player. A destroyed castle drops a tier (unless last standing). Rivals use the same table.
 
-## Wizards (M4)
-Fire (burst + burn), Water (chain, freeze, slow), Earth (walls, quakes, structures), Air (fast long-range lightning, mobility). One spell table; a balance script keeps DPS/efficiency within 5% of budget and AI-vs-AI win rates within 10%.
+## Wizards (M4, implemented)
+Every wizard has a **primary attack with 3 tiers** (bought with personal mana: 90 then 180) and one **signature spell**. All numbers live in `src/data/spells.json`; `scripts/solve-balance.ts` derives damage and mana cost from the design so each tier lands on the budget in `src/data/balance.json`.
+
+| Wizard | Primary (tier 1 / 2 / 3) | Signature | Identity |
+|---|---|---|---|
+| **Fire** (Rashid) | Fireball / Blazing Fireball / Inferno Orb: area burst + burn over time | **Firestorm**: a burning zone for 5 s | Area and damage over time |
+| **Water** (Yasmin) | Frost Chain / Glacial Chain / Absolute Zero: chains to 2-3 more targets, slows, tier 3 freezes | **Frost Nova**: damage + slow in a ring around you | Crowd control |
+| **Earth** (Tariq) | Boulder / Granite Boulder / Quake Boulder: slow heavy shot, big crater, strong vs structures, tier 3 aftershock | **Stone Wall**: raises a row of terrain that blocks shots | Siege and terrain |
+| **Air** (Farah) | Lightning Bolt / Storm Bolt / Thunder Arc: very fast, long range, tier 3 arcs to a second target | **Gale Dash**: speed burst that also breaks freezes and slows | Range and mobility |
+
+Statuses: burn (damage over time), slow (speed multiplier), freeze (can't move, steer or cast; only Gale Dash breaks it). Fast bolts are swept in sub-steps so they never skip a target.
+
+### Balance model (`src/sim/balance.ts`, enforced by `tests/balance.test.ts`)
+- **Effective damage per cast** = direct damage (with an area bonus) + burn at 70% uptime + chain jumps at 50% hit chance + aftershock + the damage-equivalent value of slow/freeze. **DPS** = that x casts per second; **efficiency** = that / mana cost.
+- Budget per tier: DPS 80 / 118 / 165 and efficiency 2.9 / 3.3 / 3.7. Every wizard's every tier must be within **5%** of both.
+- Utility is visible too: time to kill a creature and time to destroy a structure per wizard (Earth is the structure-breaker, nobody is locked out); signature spells share a looser budget (6.5 value/s, 20%).
+- Archers stay a support role: at most 60% of the budgeted DPS and 75% of the weakest wizard's raw single-target DPS at every tier and branch pick.
+- **AI-vs-AI test** (`tests/winrate.test.ts`): 48 deterministic matches in a Latin-square design (each element in each faction slot, every chapter, two AI personality sets). Each element must win within 10 percentage points of fair (25%).
+- Co-op combos (steam, fire tornado, earth channel) are defined in the spell table now and implemented in M6.
 
 ## Chapters
 1 Oasis Dawn (1 rival) | 2 Rooftops of the Spice Bazaar (1) | 3 Canyons of Rose Stone (2) | 4 Pearl Harbour by Moonlight (2) | 5 The Sunken Sand City (3) | 6 The Sultan's Sky Palace (3). Rival elements: those the player(s) did not choose first; extras duplicate.

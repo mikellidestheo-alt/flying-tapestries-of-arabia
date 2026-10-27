@@ -284,8 +284,8 @@ function chainFrom(sim: Sim, proj: Projectile, def: SpellDef, x: number, y: numb
 function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, ground: boolean): void {
   const def = spellAt(proj.spell, proj.tier ?? 1);
   const monster = proj.faction === MONSTER_FACTION;
-  const area2 = def.area * def.area;
-  const falloffDamage = (d: number) => def.damage * (1 - def.falloff * clamp(d / Math.max(0.01, def.area), 0, 1));
+  // A target is in the blast if its body (not just its centre) is inside the area.
+  const falloffDamage = (d: number, reach: number) => def.damage * (1 - def.falloff * clamp(d / Math.max(0.01, reach), 0, 1));
   const hitC = new Set<number>();
   const hitW = new Set<number>();
   let first: { x: number; y: number; z: number } | null = null;
@@ -295,10 +295,11 @@ function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, gro
     const dy = c.y - y;
     const dz = c.z - z;
     const d2 = dx * dx + dy * dy + dz * dz;
-    if (d2 > area2 || c.hp <= 0) continue;
+    const reach = def.area + CREATURES[c.type]!.hitRadius;
+    if (d2 > reach * reach || c.hp <= 0) continue;
     hitC.add(c.id);
     first ??= c;
-    hitCreature(sim, c, falloffDamage(Math.sqrt(d2)), def, proj.owner);
+    hitCreature(sim, c, falloffDamage(Math.sqrt(d2), reach), def, proj.owner);
   }
   sim.players.forEach((w, i) => {
     if (!w.active || w.faction === proj.faction) return;
@@ -306,17 +307,18 @@ function impact(sim: Sim, proj: Projectile, x: number, y: number, z: number, gro
     const dy = w.y - y;
     const dz = w.z - z;
     const d2 = dx * dx + dy * dy + dz * dz;
-    if (d2 > area2) return;
+    const reach = def.area + matchData.wizardHitRadius;
+    if (d2 > reach * reach) return;
     hitW.add(i);
     first ??= w;
-    hitWizard(sim, w, falloffDamage(Math.sqrt(d2)), def, proj.owner);
+    hitWizard(sim, w, falloffDamage(Math.sqrt(d2), reach), def, proj.owner);
   });
   for (const s of monster ? [] : sim.structures) {
     const dx = s.x - x;
     const dz = s.z - z;
     const d2 = dx * dx + dz * dz;
     if (!s.alive || d2 > (def.area + matchData.nests.radius) ** 2) continue;
-    hurtStructure(sim, s, falloffDamage(Math.sqrt(d2)) * def.structureMult, proj.owner);
+    hurtStructure(sim, s, falloffDamage(Math.sqrt(d2), def.area + matchData.nests.radius) * def.structureMult, proj.owner);
   }
   for (const c of monster ? [] : sim.castles) {
     if (c.faction === proj.faction || c.ruined) continue;

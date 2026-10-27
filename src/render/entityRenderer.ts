@@ -5,6 +5,7 @@ import simData from '../data/sim.json';
 import { PRESETS } from './quality';
 import type { QualityPreset } from '../save';
 import type { SimEvent } from '../sim/entities';
+import type { Element } from '../data/elements';
 import type { Sim } from '../sim/sim';
 import { GlowLayer } from './glowLayer';
 import { MergeBuilder } from './mergeBuilder';
@@ -19,6 +20,11 @@ const DUST = [0.85, 0.7, 0.45] as const;
 const GOLD = [1.0, 0.85, 0.4] as const;
 const RED = [1.0, 0.25, 0.2] as const;
 const WHITE_HOT = [1.0, 0.85, 0.5] as const;
+const ICE = [0.55, 0.88, 1.0] as const;
+const FROST_WHITE = [0.9, 0.98, 1.0] as const;
+const ROCK = [0.62, 0.45, 0.28] as const;
+const SPARK = [0.85, 0.9, 1.0] as const;
+const ELEMENT_RGB: Record<string, readonly [number, number, number]> = { fire: FIRE, water: ICE, earth: ROCK, air: SPARK };
 const CURSE = [0.65, 0.25, 0.95] as const;
 
 function makeBeamTexture(): THREE.CanvasTexture {
@@ -113,6 +119,7 @@ export class EntityRenderer {
   private seed = 1234567;
   private quality: QualityPreset;
   private structures!: StructureRenderer;
+  private sim: Sim | null = null;
 
   constructor(quality: QualityPreset, private chapter: ChapterConfig) {
     this.quality = quality;
@@ -180,23 +187,77 @@ export class EntityRenderer {
     return { group, beam, beamMat, ring, glow, id: 0 };
   }
 
+  private elementOf(owner: number): Element {
+    return this.sim?.players[owner]?.element ?? 'fire';
+  }
+
   /** Turn a sim event into particles. Audio/HUD consume the same events elsewhere. */
   handleEvent(e: SimEvent): void {
     const P = this.particles;
     const f = this.flashScale;
     const n = (c: number) => Math.max(1, Math.round(c * (f < 1 ? 0.6 : 1)));
     switch (e.type) {
-      case 'cast':
-        P.burst(this.rnd, n(10), e.x, e.y, e.z, 9, 0.35, 1.1 * f, ...FIRE);
+      case 'cast': {
+        const el = this.elementOf(e.v);
+        P.burst(this.rnd, n(10), e.x, e.y, e.z, el === 'air' ? 14 : 9, 0.35, 1.1 * f, ...ELEMENT_RGB[el]!);
         break;
-      case 'impact':
+      }
+      case 'impact': {
         if (e.v < 0) {
           P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 9, 0.5, 1.4 * f, ...CURSE, 4, 0.4);
           break;
         }
-        P.burst(this.rnd, n(26), e.x, e.y + 0.5, e.z, 17, 0.7, 1.5 * f, ...EMBER, 10, 0.5);
-        P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 7, 1.0, 3.2, ...DUST, -1, 0.7);
-        P.burst(this.rnd, n(8), e.x, e.y + 1, e.z, 12, 0.5, 2.4 * f, ...FIRE, 4, 0.2);
+        const el = this.elementOf(e.v);
+        if (el === 'water') {
+          P.burst(this.rnd, n(24), e.x, e.y + 0.5, e.z, 14, 0.7, 1.4 * f, ...ICE, 8, 0.5);
+          P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 6, 0.9, 2.6, ...FROST_WHITE, 2, 0.8);
+        } else if (el === 'earth') {
+          P.burst(this.rnd, n(26), e.x, e.y + 0.5, e.z, 13, 1.0, 3.4, ...ROCK, 14, 0.6);
+          P.burst(this.rnd, n(14), e.x, e.y + 0.5, e.z, 7, 1.4, 4.8, ...DUST, -1, 0.5);
+        } else if (el === 'air') {
+          P.burst(this.rnd, n(18), e.x, e.y + 0.5, e.z, 20, 0.35, 1.2 * f, ...SPARK, 0, 0.2);
+          P.burst(this.rnd, n(6), e.x, e.y + 0.5, e.z, 6, 0.25, 3.2 * f, 1, 1, 1);
+        } else {
+          P.burst(this.rnd, n(26), e.x, e.y + 0.5, e.z, 17, 0.7, 1.5 * f, ...EMBER, 10, 0.5);
+          P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 7, 1.0, 3.2, ...DUST, -1, 0.7);
+          P.burst(this.rnd, n(8), e.x, e.y + 1, e.z, 12, 0.5, 2.4 * f, ...FIRE, 4, 0.2);
+        }
+        break;
+      }
+      case 'chain': {
+        // A jagged arc between two targets in the caster's element colour.
+        const rgb = ELEMENT_RGB[this.elementOf(e.v)]!;
+        const steps = 12;
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const j = (i === 0 || i === steps ? 0 : 1) * 1.4;
+          P.spawn(e.x + (e.x2 - e.x) * t + (this.rnd() - 0.5) * j, e.y + (e.y2 - e.y) * t + (this.rnd() - 0.5) * j, e.z + (e.z2 - e.z) * t + (this.rnd() - 0.5) * j, 0, 0, 0, 0.22 + 0.1 * this.rnd(), 1.5 * f, rgb[0], rgb[1], rgb[2]);
+        }
+        break;
+      }
+      case 'nova':
+        for (let i = 0; i < n(56); i++) {
+          const a = (i / n(56)) * Math.PI * 2;
+          const c = i % 3 ? ICE : FROST_WHITE;
+          P.spawn(e.x, e.y, e.z, Math.cos(a) * e.v * 1.7, 2 + this.rnd() * 3, Math.sin(a) * e.v * 1.7, 0.7, 2.4, c[0], c[1], c[2]);
+        }
+        break;
+      case 'wallRaised':
+        P.burst(this.rnd, n(40), e.x, e.y + 1, e.z, 12, 1.1, 4.2, ...DUST, -4, 0.8);
+        P.burst(this.rnd, n(18), e.x, e.y + 2, e.z, 9, 1.0, 3.0, ...ROCK, 10, 1.0);
+        break;
+      case 'dash':
+        P.burst(this.rnd, n(34), e.x, e.y, e.z, 26, 0.6, 1.8 * f, ...SPARK, 0, 0.2);
+        break;
+      case 'zoneStart':
+        P.burst(this.rnd, n(40), e.x, e.y + 1, e.z, 18, 0.9, 2.4 * f, ...FIRE, -2, 0.9);
+        break;
+      case 'quake':
+        for (let i = 0; i < n(36); i++) {
+          const a = (i / n(36)) * Math.PI * 2;
+          P.spawn(e.x, e.y + 0.5, e.z, Math.cos(a) * e.v * 1.6, 3 + this.rnd() * 3, Math.sin(a) * e.v * 1.6, 0.8, 3.6, ...DUST);
+        }
+        P.burst(this.rnd, n(16), e.x, e.y + 1, e.z, 10, 1.0, 4.4, ...ROCK, 10, 0.9);
         break;
       case 'hit':
         P.burst(this.rnd, n(6), e.x, e.y, e.z, 9, 0.35, 1.1 * f, 1, 0.95, 0.8);
@@ -268,6 +329,7 @@ export class EntityRenderer {
 
   /** Draw everything for this frame. */
   update(sim: Sim, alpha: number, dt: number, time: number, pxScale: number, camX: number, camZ: number): void {
+    this.sim = sim;
     const caps = PRESETS[this.quality].caps;
     const glow = this.glow;
     glow.begin();
@@ -310,10 +372,59 @@ export class EntityRenderer {
       }
       const tier = p.tier ?? 1;
       const big = 1 + (tier - 1) * 0.45;
-      const hot = tier === 3 ? WHITE_HOT : FIRE;
-      glow.add(x, y, z, hot[0], hot[1], hot[2], 1, 4.2 * big);
-      glow.add(x, y, z, 1, 0.95, 0.7, 1, 1.9 * big);
-      this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32 + 0.05 * tier, 2.0 * big * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
+      const el = this.elementOf(p.owner);
+      if (el === 'water') {
+        glow.add(x, y, z, ICE[0], ICE[1], ICE[2], 1, 3.8 * big);
+        glow.add(x, y, z, 1, 1, 1, 1, 1.7 * big);
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.4, 1.8 * big * this.flashScale, FROST_WHITE[0], FROST_WHITE[1], FROST_WHITE[2], 0);
+      } else if (el === 'earth') {
+        glow.add(x, y, z, ROCK[0], ROCK[1], ROCK[2], 1, 5.2 * big);
+        glow.add(x, y, z, 0.9, 0.75, 0.5, 1, 2.6 * big);
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 4, this.rnd() * 2, (this.rnd() - 0.5) * 4, 0.55, 3.0 * big, DUST[0], DUST[1], DUST[2], 4);
+      } else if (el === 'air') {
+        // A long streak: bright points along the path travelled since the last frame.
+        for (let k = 0; k < 6; k++) {
+          const t = k / 5;
+          glow.add(lerp(p.px, p.x) - p.vx * 0.03 * t, lerp(p.py, p.y) - p.vy * 0.03 * t, lerp(p.pz, p.z) - p.vz * 0.03 * t, 0.8, 0.9, 1, 1 - t * 0.6, 2.4 * big * (1 - t * 0.4));
+        }
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, 0.18, 1.4 * this.flashScale, SPARK[0], SPARK[1], SPARK[2], 0);
+      } else {
+        const hot = tier === 3 ? WHITE_HOT : FIRE;
+        glow.add(x, y, z, hot[0], hot[1], hot[2], 1, 4.2 * big);
+        glow.add(x, y, z, 1, 0.95, 0.7, 1, 1.9 * big);
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32 + 0.05 * tier, 2.0 * big * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
+      }
+    }
+
+    // Lasting zones: Firestorm burns with rising flames; a pending aftershock pulses.
+    for (const zn of sim.zones) {
+      if (zn.dps > 0) {
+        const count = 3 + Math.floor(zn.r / 4);
+        for (let k = 0; k < count; k++) {
+          const a = this.rnd() * Math.PI * 2;
+          const rr = Math.sqrt(this.rnd()) * zn.r;
+          this.particles.spawn(zn.x + Math.cos(a) * rr, zn.y + 0.5, zn.z + Math.sin(a) * rr, 0, 7 + this.rnd() * 6, 0, 0.7 + this.rnd() * 0.4, 2.6 * this.flashScale, FIRE[0], FIRE[1] * (0.7 + 0.5 * this.rnd()), FIRE[2], 0);
+        }
+        glow.add(zn.x, zn.y + 1.5, zn.z, FIRE[0], FIRE[1], FIRE[2], 0.5, zn.r * 0.9);
+      } else {
+        const pulse = 0.4 + 0.4 * Math.sin(time * 18);
+        glow.add(zn.x, zn.y + 1, zn.z, ROCK[0], ROCK[1], ROCK[2], pulse, zn.r * 0.5);
+      }
+    }
+
+    // Status effects on wizards: burning, frozen, slowed, dashing.
+    for (const w of sim.players) {
+      if (!w.active) continue;
+      if (w.burnTicks > 0 && this.rnd() < 0.7) this.particles.spawn(w.x, w.y + 1.5, w.z, 0, 4, 0, 0.5, 1.8 * this.flashScale, FIRE[0], FIRE[1], FIRE[2]);
+      if (w.freezeTicks > 0) {
+        glow.add(w.x, w.y + 1.5, w.z, ICE[0], ICE[1], ICE[2], 0.8, 7);
+        if (this.rnd() < 0.5) this.particles.spawn(w.x + (this.rnd() - 0.5) * 3, w.y + 2, w.z + (this.rnd() - 0.5) * 3, 0, 1, 0, 0.6, 1.4, FROST_WHITE[0], FROST_WHITE[1], FROST_WHITE[2]);
+      } else if (w.slowTicks > 0 && this.rnd() < 0.35) {
+        this.particles.spawn(w.x + (this.rnd() - 0.5) * 3, w.y + 1, w.z + (this.rnd() - 0.5) * 3, 0, -1, 0, 0.5, 1.2, ICE[0], ICE[1], ICE[2]);
+      }
+      if (w.boostTicks > 0) {
+        this.particles.spawn(w.x - w.vx * 0.04, w.y + 1, w.z - w.vz * 0.04, -w.vx * 0.2, 0, -w.vz * 0.2, 0.4, 2.2 * this.flashScale, SPARK[0], SPARK[1], SPARK[2]);
+      }
     }
 
     // Creatures (instanced, one mesh per type).
@@ -355,7 +466,9 @@ export class EntityRenderer {
       this.dummy.scale.setScalar(scale);
       this.dummy.updateMatrix();
       mesh.setMatrixAt(idx, this.dummy.matrix);
-      if (c.burnTicks > 0) this.tint.setRGB(1.8, 0.8, 0.45);
+      if (c.freezeTicks > 0) this.tint.setRGB(0.6, 1.0, 1.9);
+      else if (c.burnTicks > 0) this.tint.setRGB(1.8, 0.8, 0.45);
+      else if (c.slowTicks > 0) this.tint.setRGB(0.8, 1.0, 1.4);
       else this.tint.setRGB(1, 1, 1);
       mesh.setColorAt(idx, this.tint);
       if (c.type === 'evil-genie') {

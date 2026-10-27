@@ -13,7 +13,10 @@
     "lint": "eslint .",
     "test": "vitest run",
     "size": "node scripts/bundle-size.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "test:fast": "FAST=1 vitest run",
+    "balance": "tsx scripts/balance-report.ts",
+    "balance:solve": "tsx scripts/solve-balance.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

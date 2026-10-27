@@ -1,6 +1,6 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_MOUND, ACTION_DEPOSIT, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_MOUND, ACTION_DEPOSIT, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -105,6 +105,7 @@ export class Controls {
     this.bindButton('#btnMound', ACTION_MOUND);
     this.bindButton('#btnSpell', ACTION_SPELL);
     this.bindButton('#btnDeposit', ACTION_DEPOSIT);
+    this.bindButton('#btnSig', ACTION_SIGNATURE);
     this.bindTap('#btnWeapon', ACTION_SPELLUP);
 
     window.addEventListener('keydown', (e) => {
@@ -115,6 +116,7 @@ export class Controls {
       if (e.code === 'Space' || e.code === 'KeyF') this.pressed |= ACTION_SPELL;
       if (e.code === 'KeyU') this.upgradeBranch = 1;
       if (e.code === 'KeyG') this.pressed |= ACTION_SPELLUP;
+      if (e.code === 'KeyE') this.pressed |= ACTION_SIGNATURE;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
@@ -206,7 +208,7 @@ export class Controls {
       steer = Math.max(-1, Math.min(1, shape(Math.abs(t) < 0.06 ? 0 : t))) * (this.tiltInvert ? -1 : 1);
     }
 
-    const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0) | (k.has('KeyB') ? ACTION_DEPOSIT : 0);
+    const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0) | (k.has('KeyB') ? ACTION_DEPOSIT : 0) | (k.has('KeyE') ? ACTION_SIGNATURE : 0);
     this.pressed = 0;
     let branch = 0;
     let act = actions;

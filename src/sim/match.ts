@@ -45,6 +45,8 @@ export interface MatchState {
   /** Current target share (drops when sudden death begins). */
   targetShare: number;
   suddenDeath: boolean;
+  /** Faction id that won the match (-1 until it ends). When the human falls, the richest survivor. */
+  winner: number;
   /** Per-faction share of all mana captured so far (0..1). */
   shares: number[];
   endTick: number;
@@ -84,7 +86,8 @@ export function stepMatch(sim: Sim): void {
     m.suddenDeath = true;
     m.targetShare = setup.comeback.suddenDeathShare;
   }
-  const end = (status: MatchStatus, reason: string) => {
+  const end = (status: MatchStatus, reason: string, winner: number) => {
+    m.winner = winner;
     m.status = status;
     m.reason = reason;
     m.endTick = sim.tick;
@@ -93,15 +96,19 @@ export function stepMatch(sim: Sim): void {
 
   // Last castle standing.
   const human = sim.factions[0]!;
-  if (human.eliminated) return end('lost', 'Your castle fell.');
-  if (sim.factions.every((f) => f.human || f.eliminated)) return end('won', 'Every rival castle has fallen.');
+  if (human.eliminated) {
+    let rich = -1;
+    for (const f of sim.factions) if (!f.eliminated && (rich < 0 || f.captured > sim.factions[rich]!.captured)) rich = f.id;
+    return end('lost', 'Your castle fell.', rich);
+  }
+  if (sim.factions.every((f) => f.human || f.eliminated)) return end('won', 'Every rival castle has fallen.', 0);
 
   // Palace race: a top-tier castle plus enough captured mana wins outright.
   for (const f of sim.factions) {
     if (f.eliminated) continue;
     const c = sim.castles.find((q) => q.faction === f.id);
     if (c && !c.ruined && c.tier >= MAX_CASTLE_TIER && f.captured >= setup.palaceWinMana) {
-      return end(f.human ? 'won' : 'lost', f.human ? 'Your palace stands and your treasury overflows: victory!' : `${f.name} completed a palace and amassed a fortune.`);
+      return end(f.human ? 'won' : 'lost', f.human ? 'Your palace stands and your treasury overflows: victory!' : `${f.name} completed a palace and amassed a fortune.`, f.id);
     }
   }
 
@@ -117,11 +124,11 @@ export function stepMatch(sim: Sim): void {
       }
     }
     if (best >= 0 && bestShare >= m.targetShare) {
-      return end(sim.factions[best]!.human ? 'won' : 'lost', sim.factions[best]!.human ? `You captured ${Math.round(bestShare * 100)}% of the mana.` : `${sim.factions[best]!.name} captured ${Math.round(bestShare * 100)}% of the mana.`);
+      return end(sim.factions[best]!.human ? 'won' : 'lost', sim.factions[best]!.human ? `You captured ${Math.round(bestShare * 100)}% of the mana.` : `${sim.factions[best]!.name} captured ${Math.round(bestShare * 100)}% of the mana.`, best);
     }
     // Hard stop a few minutes into sudden death: the leader wins.
     if (minutes >= setup.comeback.suddenDeathMinute + matchData.hardEndAfterSuddenDeathMinutes) {
-      if (best >= 0) return end(sim.factions[best]!.human ? 'won' : 'lost', 'Time is up: the mana leader takes the chapter.');
+      if (best >= 0) return end(sim.factions[best]!.human ? 'won' : 'lost', 'Time is up: the mana leader takes the chapter.', best);
     }
   }
 }

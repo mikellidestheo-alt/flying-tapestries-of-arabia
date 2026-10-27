@@ -40,7 +40,7 @@
         <button id="btnCrater" class="act small tt" type="button" aria-label="Dig crater (8 mana)"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg><i>8</i></button>
         <button id="btnMound" class="act small tt" type="button" aria-label="Raise mound (8 mana)"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M2 19 L12 5 L22 19 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><i>8</i></button>
         <button id="btnWeapon" class="act small wpn" type="button" aria-label="Upgrade weapon">
-          <svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 2c1 3.4 5 5 5 9.6a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5.6.2 1.5.8 2.4 1.8 2.7 1-2.2.1-4 .7-6.7z" fill="currentColor"/><path d="M19 20v-6m-3 3 3-3 3 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="weaponIcon"></span>
           <b id="weaponCost">90</b>
         </button>
       </div>
@@ -59,9 +59,14 @@
           <button id="branchCancel" class="ghost" type="button">Not now</button>
         </div>
       </div>
+      <button id="btnSig" class="act sig" type="button" aria-label="Signature spell">
+        <span id="sigIcon"></span>
+        <span id="sigCost">30</span>
+        <i id="sigCd"></i>
+      </button>
       <div id="actions">
-        <button id="btnSpell" class="act spell" type="button" aria-label="Cast fireball">
-          <svg viewBox="0 0 24 24" width="44" height="44"><path d="M12 1.5c1.2 4.2 6.3 6.2 6.3 12.2a6.3 6.3 0 0 1-12.6 0c0-3.1 1.9-5.1 3.2-7 .2 1.9 1 3 2.2 3.4 1.3-2.7.2-5.2.9-8.6z" fill="currentColor"/></svg>
+        <button id="btnSpell" class="act spell" type="button" aria-label="Cast attack">
+          <span id="spellIcon"></span>
           <em></em>
           <span id="spellCost">12</span>
           <i id="spellCd"></i>

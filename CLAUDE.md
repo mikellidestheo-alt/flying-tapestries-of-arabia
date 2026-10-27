@@ -19,7 +19,7 @@ The repo is PUBLIC. Never commit secrets, tokens or personal data. Assume anyone
 1. **Sim/render separation.** `src/sim` never imports render/UI/DOM. Rendering and UI never mutate gameplay state; input is sampled into a `PlayerInput` per tick. Fixed timestep (30 Hz). Same sim code runs solo in the browser and in the Durable Object.
 2. **Seeded randomness.** In `src/sim`: no `Math.random`, `Date.now`, `performance.now`, and no `Math.sin/cos/atan2/pow/exp/log` (ESLint enforces). Use `src/sim/prng.ts`, `noise.ts`, `dmath.ts`. Terrain/props/chapters must be identical on both phones and the server.
 3. **Data not code.** All tunable numbers live in data files: `src/data/*.json`, `chapters/*.json`, and (later) the spell table and castle-tier table. Adding or retuning a chapter must never touch engine code.
-4. **One spell table** (damage, mana cost, cooldown, area, duration, effects, co-op combos) and **one castle-tier table** (cost, wall HP, archers, archer range/damage/rate, income, visual kit, branches). Balance tests read these.
+4. **One spell table** (`src/data/spells.json`: damage, mana cost, cooldown, area, duration, effects, co-op combos; balanced by `src/data/balance.json`) and **one castle-tier table** (cost, wall HP, archers, archer range/damage/rate, income, visual kit, branches). Balance tests read these.
 5. **Terrain deformation** is stored as capped deltas (position, radius, amount); never mutate base terrain. Deltas are what get synced in co-op.
 6. **Chapter configs** (`chapters/chapterN.json`) are validated by `tests/chapters.test.ts` (three rivals per chapter, personalities, palette, music scale...).
 7. **Co-op is server-authoritative** (one Durable Object per match). Clients send inputs, receive snapshots at 15-20 Hz, interpolate and predict locally.
@@ -44,4 +44,5 @@ The repo is PUBLIC. Never commit secrets, tokens or personal data. Assume anyone
 - Dev branch for the current session is given in the session instructions; see `docs/decisions.md` for branch policy.
 
 ## Commands
-`npm run dev | build | check | test | lint | typecheck | size`
+`npm run dev | build | check | test | test:fast | lint | typecheck | size | balance | balance:solve`
+`test:fast` skips the ~1.5 min AI-vs-AI win-rate test. `balance` prints the wizard balance table; `balance:solve` regenerates `src/data/spells.json` damage/mana numbers from the design in `scripts/solve-balance.ts` (edit the design there, never hand-tune numbers in the JSON).

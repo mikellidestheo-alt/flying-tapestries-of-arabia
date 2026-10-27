@@ -32,11 +32,11 @@ const designs: Record<string, Design> = {
   water: {
     id: 'frostchain',
     names: ['Frost Chain', 'Glacial Chain', 'Absolute Zero'],
-    base: { element: 'water', maxRange: 240, falloff: 0.4, interceptHp: 14, aimAssist: aim(0.86, 0.2), structureMult: 0.8 },
+    base: { element: 'water', maxRange: 240, falloff: 0.4, interceptHp: 14, aimAssist: aim(0.86, 0.2), structureMult: 1.25 },
     tiers: [
-      { speed: 95, gravity: 3, area: 4, hitRadius: 1.5, effects: [{ type: 'slow', mult: 0.65, durationTicks: 70 }], chain: { count: 2, radius: 22, falloff: 0.65 }, cds: [13, 14, 15] },
-      { speed: 98, gravity: 3, area: 4.5, hitRadius: 1.7, effects: [{ type: 'slow', mult: 0.55, durationTicks: 85 }], chain: { count: 3, radius: 26, falloff: 0.65 }, cds: [12, 13, 14] },
-      { speed: 100, gravity: 3, area: 5, hitRadius: 1.9, effects: [{ type: 'slow', mult: 0.5, durationTicks: 95 }, { type: 'freeze', durationTicks: 12 }], chain: { count: 3, radius: 30, falloff: 0.7 }, cds: [11, 12, 13] },
+      { speed: 95, gravity: 3, area: 4.5, hitRadius: 1.9, effects: [{ type: 'slow', mult: 0.65, durationTicks: 70 }], chain: { count: 2, radius: 22, falloff: 0.65 }, cds: [13, 14, 15] },
+      { speed: 98, gravity: 3, area: 5, hitRadius: 2.1, effects: [{ type: 'slow', mult: 0.55, durationTicks: 85 }], chain: { count: 3, radius: 26, falloff: 0.65 }, cds: [12, 13, 14] },
+      { speed: 100, gravity: 3, area: 5.5, hitRadius: 2.3, effects: [{ type: 'slow', mult: 0.5, durationTicks: 95 }, { type: 'freeze', durationTicks: 12 }], chain: { count: 3, radius: 30, falloff: 0.7 }, cds: [11, 12, 13] },
     ],
   },
   earth: {
@@ -44,15 +44,15 @@ const designs: Record<string, Design> = {
     names: ['Boulder', 'Granite Boulder', 'Quake Boulder'],
     base: { element: 'earth', maxRange: 190, falloff: 0.35, interceptHp: 34, aimAssist: aim(0.86, 0.14) },
     tiers: [
-      { speed: 52, gravity: 14, area: 8, hitRadius: 2.2, structureMult: 2.6, effects: [], terrain: { radius: 8, amount: -2.6, kind: 1 }, cds: [18, 20, 22] },
-      { speed: 55, gravity: 14, area: 9.5, hitRadius: 2.4, structureMult: 2.7, effects: [{ type: 'slow', mult: 0.75, durationTicks: 40 }], terrain: { radius: 10, amount: -3.2, kind: 1 }, cds: [17, 19, 21] },
-      { speed: 58, gravity: 14, area: 11, hitRadius: 2.6, structureMult: 2.8, effects: [{ type: 'slow', mult: 0.7, durationTicks: 60 }], aftershock: { delayTicks: 12, radius: 11, damageMult: 0.5 }, terrain: { radius: 12, amount: -4, kind: 1 }, cds: [16, 18, 20] },
+      { speed: 52, gravity: 14, area: 7, hitRadius: 2.2, structureMult: 1.6, effects: [], terrain: { radius: 8, amount: -2.6, kind: 1 }, cds: [18, 20, 22] },
+      { speed: 55, gravity: 14, area: 8, hitRadius: 2.4, structureMult: 1.7, effects: [{ type: 'slow', mult: 0.75, durationTicks: 40 }], terrain: { radius: 10, amount: -3.2, kind: 1 }, cds: [17, 19, 21] },
+      { speed: 58, gravity: 14, area: 9, hitRadius: 2.6, structureMult: 1.8, effects: [{ type: 'slow', mult: 0.7, durationTicks: 60 }], aftershock: { delayTicks: 12, radius: 11, damageMult: 0.5 }, terrain: { radius: 12, amount: -4, kind: 1 }, cds: [16, 18, 20] },
     ],
   },
   air: {
     id: 'lightning',
     names: ['Lightning Bolt', 'Storm Bolt', 'Thunder Arc'],
-    base: { element: 'air', maxRange: 340, gravity: 0, area: 2, falloff: 0.3, interceptHp: 6, aimAssist: aim(0.9, 0.05), structureMult: 0.7, effects: [] },
+    base: { element: 'air', maxRange: 340, gravity: 0, area: 2, falloff: 0.3, interceptHp: 30, aimAssist: aim(0.9, 0.05), structureMult: 0.95, effects: [] },
     tiers: [
       { speed: 190, hitRadius: 1.2, cds: [7, 8, 9] },
       { speed: 200, hitRadius: 1.2, cds: [6, 7, 8] },
