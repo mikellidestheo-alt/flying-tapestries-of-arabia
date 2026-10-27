@@ -489,6 +489,20 @@ export class EntityRenderer {
         }
         break;
       }
+      case 'combo': {
+        // 0 steam, 1 fire tornado, 2 earth channel (see COMBOS in combos.ts)
+        if (e.v === 0) {
+          P.burst(this.rnd, n(40), e.x, e.y + 1, e.z, 12, 1.4, 4.2, 0.92, 0.94, 0.97, 4, 0.8);
+          P.burst(this.rnd, n(16), e.x, e.y + 1, e.z, 8, 1.0, 2.0 * f, ...ICE, 6, 0.5);
+        } else if (e.v === 1) {
+          P.burst(this.rnd, n(36), e.x, e.y + 1, e.z, 16, 1.0, 3.0 * f, ...FIRE, 10, 0.9);
+          P.burst(this.rnd, n(20), e.x, e.y + 2, e.z, 10, 0.9, 2.4 * f, ...SPARK, 6, 0.6);
+        } else {
+          P.burst(this.rnd, n(26), e.x, e.y, e.z, 14, 0.8, 1.8 * f, ...ICE, 4, 0.4);
+          P.burst(this.rnd, n(12), e.x, e.y, e.z, 8, 0.8, 2.6, ...ROCK, 6, 0.5);
+        }
+        break;
+      }
       case 'castleRelease':
         P.burst(this.rnd, n(30), e.x, e.y, e.z, 18, 1.2, 2.2 * f, ...MANA, 8, 0.8);
         P.burst(this.rnd, n(16), e.x, e.y, e.z, 14, 1.0, 3.4, ...DUST, 4, 0.4);
@@ -631,7 +645,24 @@ export class EntityRenderer {
 
     // Lasting zones: Firestorm burns with rising flames; a pending aftershock pulses.
     for (const zn of sim.zones) {
-      if (zn.dps > 0) {
+      if (zn.combo === 'steam') {
+        // A thick, slowly rising cloud of pale steam.
+        for (let k = 0; k < 4 + Math.floor(zn.r / 5); k++) {
+          const a = this.rnd() * Math.PI * 2;
+          const rr = Math.sqrt(this.rnd()) * zn.r;
+          this.particles.spawn(zn.x + Math.cos(a) * rr, zn.y + 1 + this.rnd() * 4, zn.z + Math.sin(a) * rr, 0, 2 + this.rnd() * 3, 0, 1.1, 5.5 * this.flashScale, 0.9, 0.93, 0.97, 0);
+        }
+        glow.add(zn.x, zn.y + 3, zn.z, 0.85, 0.9, 0.95, 0.35, zn.r * 0.8);
+      } else if (zn.combo === 'firetornado') {
+        // A whirling column of flame that leans along its drift.
+        for (let k = 0; k < 8; k++) {
+          const h = this.rnd() * 18;
+          const a = time * 7 + h * 0.5 + k;
+          const rr = 1.5 + h * 0.35;
+          this.particles.spawn(zn.x + Math.cos(a) * rr, zn.y + h, zn.z + Math.sin(a) * rr, Math.cos(a + 1.57) * 6, 4, Math.sin(a + 1.57) * 6, 0.5, 2.8 * this.flashScale, FIRE[0], FIRE[1] * (0.6 + 0.5 * this.rnd()), FIRE[2], 0);
+        }
+        glow.add(zn.x, zn.y + 6, zn.z, FIRE[0], FIRE[1], FIRE[2], 0.55, zn.r * 1.2);
+      } else if (zn.dps > 0) {
         const count = 3 + Math.floor(zn.r / 4);
         for (let k = 0; k < count; k++) {
           const a = this.rnd() * Math.PI * 2;

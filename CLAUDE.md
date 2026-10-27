@@ -44,5 +44,6 @@ The repo is PUBLIC. Never commit secrets, tokens or personal data. Assume anyone
 - Dev branch for the current session is given in the session instructions; see `docs/decisions.md` for branch policy.
 
 ## Commands
-`npm run dev | build | check | test | test:fast | lint | typecheck | size | balance | balance:solve`
+`npm run dev | build | check | test | test:fast | lint | typecheck | size | balance | balance:solve | dev:server | test:coop`
+Co-op dev: `npm run dev:server` (wrangler dev on :8787) next to `npm run dev` (Vite proxies /api and /ws to it); `npm run test:coop` runs a two-client end-to-end check against it (the room-creation limit is 6/hour per IP: use `--persist-to` with a fresh dir to reset).
 `test:fast` skips the ~1.5 min AI-vs-AI win-rate test. `balance` prints the wizard balance table; `balance:solve` regenerates `src/data/spells.json` damage/mana numbers from the design in `scripts/solve-balance.ts` (edit the design there, never hand-tune numbers in the JSON).

@@ -11,6 +11,7 @@ const $ = <T extends Element>(sel: string) => document.querySelector<T>(sel)!;
 
 const ICON = {
   castle: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 21V9l3 1V6h2v3h2V6h2v3h2V6h2v4l3-1v12h-5v-5a3 3 0 0 0-6 0v5z" fill="currentColor"/></svg>',
+  mate: '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="7" r="4" fill="currentColor"/><path d="M4 21c0-5 3.5-8 8-8s8 3 8 8z" fill="currentColor"/></svg>',
   well: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/></svg>',
   bow: '<svg viewBox="0 0 24 24" width="30" height="30"><path d="M6 3c8 3 8 15 0 18M6 12h14m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   walls: '<svg viewBox="0 0 24 24" width="30" height="30"><path d="M3 20V8h3V5h2v3h2V5h2v3h2V5h2v3h3v12z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
@@ -76,7 +77,7 @@ export class Hud {
     this.sim = sim;
     this.closePicker();
     // Element-specific icons (distinct shapes) and signature cost.
-    const me = sim.players[0]!;
+    const me = sim.players[sim.localPlayer]!;
     $('#ui').setAttribute('data-el', me.element);
     $('#spellIcon').innerHTML = primaryIcon(me.element, 44);
     $('#weaponIcon').innerHTML = weaponIcon(me.element, 26);
@@ -116,7 +117,7 @@ export class Hud {
     }
     if (m.kind !== kind) {
       m.kind = kind;
-      m.el.innerHTML = kind.startsWith('well') ? ICON.well : ICON.castle;
+      m.el.innerHTML = kind.startsWith('well') ? ICON.well : kind === 'mate' ? ICON.mate : ICON.castle;
     }
     return m;
   }
@@ -217,7 +218,7 @@ export class Hud {
       m.el.dataset.label = label;
       if (m.el.dataset.l !== label) {
         m.el.dataset.l = label;
-        m.el.innerHTML = (kind.startsWith('well') ? ICON.well : ICON.castle) + (label ? `<span style="position:absolute;bottom:-3px;font-size:10px">${label}</span>` : '');
+        m.el.innerHTML = (kind.startsWith('well') ? ICON.well : kind === 'mate' ? ICON.mate : ICON.castle) + (label ? `<span style="position:absolute;bottom:-3px;font-size:10px">${label}</span>` : '');
       }
     };
     for (const c of sim.castles) {
@@ -225,6 +226,9 @@ export class Hud {
       const fs = castleData.factionStyles[c.faction % castleData.factionStyles.length]!;
       place(c.x, c.z, c.faction === 0 ? 'castle-home' : 'castle-foe', c.faction === 0 ? '#ffe08a' : fs.color, c.faction === 0 ? '' : String(c.faction));
     }
+    sim.players.forEach((w, i) => {
+      if (i !== sim.localPlayer && !w.isRival && w.active) place(w.x, w.z, 'mate', '#9dffb0', ''); // your co-op partner
+    });
     for (const w of sim.wells) if (w.fade === 0) place(w.x, w.z, 'well', '#5fd8ff', '');
     for (let i = n; i < this.markers.length; i++) this.markers[i]!.el.style.display = 'none';
     for (let i = 0; i < n; i++) this.markers[i]!.el.style.display = 'flex';

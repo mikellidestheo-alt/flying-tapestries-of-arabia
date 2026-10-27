@@ -1,12 +1,23 @@
 {
-  // Cloudflare Workers with static assets (see docs/decisions.md).
-  // M1 is a static site only. The co-op Durable Object (server/) is added in M6.
+  // Cloudflare Workers with static assets + one Worker/Durable Object backend for 2-player co-op (see docs/decisions.md).
+  // Free plan only: SQLite-backed Durable Objects (new_sqlite_classes), no paid bindings.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "flying-tapestries-of-arabia",
+  "main": "server/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
-    // Plain static site: unknown paths fall back to index.html.
-    "not_found_handling": "single-page-application"
-  }
+    // Static files (the whole game, solo play) are served straight from the asset store: free and unlimited,
+    // the Worker only runs for the co-op endpoints below.
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/ws/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "MatchRoom" },
+      { "name": "GATE", "class_name": "Gate" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MatchRoom", "Gate"] }]
 }

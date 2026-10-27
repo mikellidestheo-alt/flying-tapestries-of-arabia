@@ -36,6 +36,8 @@ export interface Projectile {
   tid?: number;
   /** Weapon tier the bolt was cast at (1-3). */
   tier?: number;
+  /** Chain reach multiplier from an Earth Channel combo (1 = none). */
+  chainMult?: number;
 }
 
 export const CREATURE_WANDER = 0;
@@ -85,6 +87,13 @@ export interface Zone {
   burst: number;
   structureMult: number;
   element: string;
+  /** Co-op combo clouds: which combo made it, its drift, and the slow it applies (see combos.ts). */
+  combo?: string;
+  vx?: number;
+  vz?: number;
+  slow?: number;
+  /** Ticks before this fire zone may trigger another combo. */
+  comboCd?: number;
 }
 
 export interface Well {
@@ -159,6 +168,7 @@ export type SimEventType =
   | 'monsterFire'
   | 'castleHit'
   | 'castleRelease'
+  | 'combo'
   | 'castleDowngrade'
   | 'castleDestroyed'
   | 'nestDestroyed'

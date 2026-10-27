@@ -10,6 +10,9 @@ import { matchSetupFromChapter } from '../data/matchSetup';
 import { applyFactionPalette } from '../data/factionPalette';
 import { GameAudio } from '../audio/gameAudio';
 import { IntensityFollower, threatTarget } from '../audio/intensity';
+import { COMBOS } from '../sim/combos';
+import { CoopController } from './coop';
+import type { CoopReplica } from '../net/replica';
 import { Controls } from '../input/controls';
 import { enterFullscreen, releaseWakeLock, requestWakeLock, vibrate } from '../platform';
 import { GameRenderer } from '../render/gameRenderer';
@@ -18,7 +21,7 @@ import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } f
 import { tierDef } from '../sim/castles';
 import { CREATURES, KITS, primaryDef, spellAt } from '../sim/combat';
 import { CREATURE_CHASE } from '../sim/entities';
-import { ACTION_SPELL, SIM_DT, SIM_TICK_RATE, Sim } from '../sim/sim';
+import { ACTION_SPELL, NEUTRAL_INPUT, SIM_DT, SIM_TICK_RATE, Sim } from '../sim/sim';
 import { DebugOverlay } from '../ui/debugOverlay';
 import { Hud } from '../ui/hud';
 import { Menu } from '../ui/menu';
@@ -45,6 +48,9 @@ export class Game {
   private menu: Menu;
   private tutorial: Tutorial | null = null;
   private intensity = new IntensityFollower();
+  private coop: CoopController;
+  /** Set during a co-op match: the sim is a client-side mirror driven by the server. */
+  private replica: CoopReplica | null = null;
   private ui = $('#ui');
   private phase: Phase = 'title';
   private settingsFromMenu = false;
@@ -67,7 +73,7 @@ export class Game {
     this.hud.onUpgrade = (branch) => this.controls.requestUpgrade(branch);
     this.controls.onPress = (bit) => {
       if (this.save.settings.haptics) vibrate(12);
-      const p = this.sim?.players[0];
+      const p = this.sim?.players[this.sim.localPlayer];
       if (bit === ACTION_SPELL && p && p.mana < primaryDef(p).manaCost) this.audio.denied();
     };
     this.debug = new DebugOverlay($('#debug'));
@@ -82,6 +88,15 @@ export class Game {
       setWizard: (e) => this.setWizard(e),
       play: (i) => this.startMatch(i),
       openSettings: () => this.openSettings(true),
+    });
+    this.coop = new CoopController({
+      chapterCount: () => this.menu.playableCount(),
+      wizard: () => this.wizardElement(),
+      difficulty: () => this.save.settings.difficulty,
+      startMatch: (r, chapter) => this.startCoopMatch(r, chapter),
+      back: () => this.openMenu(),
+      lost: (text) => this.coopLost(text),
+      toast: (text) => this.hud.showToast(text),
     });
     this.applySettings();
     this.bindUi();
@@ -121,6 +136,8 @@ export class Game {
       this.audio.engine.unlock();
       this.show('#startScreen', false);
       this.openMenu();
+      const room = new URLSearchParams(location.search).get('room');
+      if (room) this.coop.open(room); // opened from an invite link
     });
     $('#pauseBtn').addEventListener('click', () => this.pause());
     $('#resumeBtn').addEventListener('click', () => {
@@ -146,6 +163,11 @@ export class Game {
   }
 
   private quitToMenu(): void {
+    if (this.replica) {
+      this.coop.leave(false);
+      this.replica = null;
+      this.sim = null;
+    }
     this.audio.stopMusic();
     this.hud.closePicker();
     this.show('#pauseScreen', false);
@@ -184,6 +206,8 @@ export class Game {
     const setup = matchSetupFromChapter(chapter, [human], this.save.settings.difficulty);
     const sim = new Sim({ terrain: chapter.terrain, creatureTypes: chapter.creatureSet, match: setup });
     this.sim = sim;
+    this.replica = null;
+    this.show('#restartBtn', true);
     const rivalElements = assignRivalElements([human], chapter.rivals.length);
     this.renderer.loadChapter(chapter, sim, [human, ...rivalElements], 0);
     this.renderer.setReducedFlashing(this.save.settings.reducedFlashing);
@@ -209,6 +233,54 @@ export class Game {
     this.hud.update(sim);
   }
 
+  /** Co-op: the server started the match. The replica's sim stands in for the local one. */
+  private startCoopMatch(replica: CoopReplica, chapterIndex: number): void {
+    const chapter = getChapter(chapterIndex);
+    this.chapterIndex = chapterIndex;
+    this.chapter = chapter;
+    applyFactionPalette(this.save.settings.colorBlind);
+    this.replica = replica;
+    const sim = replica.sim;
+    this.sim = sim;
+    const elements = [...sim.players.slice(0, 2).map((p) => p.element), ...sim.players.slice(2).map((p) => p.element)];
+    this.renderer.loadChapter(chapter, sim, elements, replica.slot);
+    this.renderer.setReducedFlashing(this.save.settings.reducedFlashing);
+    this.hud.startMatch(sim);
+    this.lastSeq = 0;
+    this.acc = 0;
+    this.time = 0;
+    this.endAt = -1;
+    this.governor.reset();
+    this.controls.releaseAll();
+    this.tutorial = null;
+    this.hud.setTutorial(null);
+    this.show('#menuScreen', false);
+    this.show('#coopScreen', false);
+    this.show('#endScreen', false);
+    this.show('#pauseScreen', false);
+    this.show('#restartBtn', false);
+    this.intensity = new IntensityFollower();
+    this.audio.start(chapter);
+    this.audio.setVolumes(this.save.settings.musicVolume, this.save.settings.sfxVolume, this.save.settings.muted);
+    void enterFullscreen();
+    void requestWakeLock();
+    this.phase = 'playing';
+    this.last = performance.now();
+    this.hud.showToast('Connected: fly together! Pair different elements for combos.');
+    this.hud.update(sim, sim.localPlayer);
+  }
+
+  private coopLost(text: string): void {
+    this.phase = 'ended';
+    $('#endTitle').textContent = 'Co-op ended';
+    $('#endReason').textContent = text;
+    $('#endShares').replaceChildren();
+    this.show('#endNext', false);
+    this.show('#endRetry', false);
+    this.show('#endScreen', true);
+    this.audio.stopMusic();
+  }
+
   private finishTutorial(): void {
     if (!this.tutorial) return;
     this.tutorial.skip();
@@ -227,8 +299,8 @@ export class Game {
     this.save.progress.tutorialDone = true;
     writeSave(this.save);
     const prog = this.save.progress;
-    prog.played++;
-    if (won) {
+    if (!this.replica) prog.played++;
+    if (won && !this.replica) {
       prog.wins++;
       const secs = Math.round(sim.tick / SIM_TICK_RATE);
       const best = prog.bestSeconds[this.chapterIndex] ?? 0;
@@ -249,11 +321,13 @@ export class Game {
       row.innerHTML = `<span>${f.name}${f.eliminated ? ' (fallen)' : ''}</span><div class="track"><i style="width:${share * 100}%;background:${color}"></i></div><b>${Math.round(share * 100)}%</b>`;
       shares.appendChild(row);
     }
-    const hasNext = won && this.chapterIndex + 1 < gameData.playableChapters;
+    const hasNext = won && this.chapterIndex + 1 < gameData.playableChapters && !this.replica;
     this.show('#endNext', hasNext);
+    this.show('#endRetry', !this.replica);
     this.show('#endScreen', true);
     this.audio.stopMusic();
     void releaseWakeLock();
+    if (this.replica) this.coop.leave(false); // the room is over: free the connection (the end screen stays)
   }
 
   // ------------------------------------------------------------ settings
@@ -323,8 +397,8 @@ export class Game {
     const ev = sim.events;
     let i = ev.length;
     while (i > 0 && ev[i - 1]!.seq > this.lastSeq) i--;
-    const p = sim.players[0]!;
-    const listener = { x: p.x, z: p.z, heading: p.heading };
+    const p = sim.players[sim.localPlayer]!;
+    const listener = { index: sim.localPlayer, x: p.x, z: p.z, heading: p.heading };
     for (; i < ev.length; i++) {
       const e = ev[i]!;
       this.lastSeq = e.seq;
@@ -348,11 +422,12 @@ export class Game {
           break;
         case 'castleDestroyed': this.hud.showToast('A castle has fallen!'); break;
         case 'bounty':
-          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Bounty! +${Math.round(e.v)} mana`);
+          if (e.x2 === sim.localPlayer) this.hud.showToast(`Bounty! +${Math.round(e.v)} mana`);
           break;
         case 'spellUpgrade':
-          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Weapon upgraded: ${spellAt(KITS[p.element].primary, e.v).name}!`);
+          if (e.x2 === sim.localPlayer) this.hud.showToast(`Weapon upgraded: ${spellAt(KITS[p.element].primary, e.v).name}!`);
           break;
+        case 'combo': this.hud.showToast(`Combo: ${COMBOS[e.v]?.name ?? 'Team combo'}!`); break;
         case 'nestDestroyed': this.hud.showToast('Nest destroyed: mana released!'); break;
         default: break;
       }
@@ -362,7 +437,7 @@ export class Game {
   // ------------------------------------------------------------ adaptive music
   /** Estimate how dangerous the moment is for the local player and steer the music's combat layers. */
   private updateMusicIntensity(sim: Sim, dt: number): void {
-    const p = sim.players[0]!;
+    const p = sim.players[sim.localPlayer]!;
     const T = musicData.combat.threat;
     let hostileNear = 0;
     for (const c of sim.creatures) {
@@ -400,7 +475,8 @@ export class Game {
     this.lastRender = now;
 
     const sim = this.sim;
-    if (this.phase !== 'playing' && this.phase !== 'ended') {
+    const coopPaused = this.replica !== null && this.phase === 'paused'; // the shared world does not stop for one player's pause
+    if (this.phase !== 'playing' && this.phase !== 'ended' && !coopPaused) {
       // Behind the title/menu/pause screens the scene is static: redraw only twice a second.
       if (sim && now - this.idleDraw > 500) {
         this.idleDraw = now;
@@ -417,7 +493,11 @@ export class Game {
     this.acc += dt;
     let steps = 0;
     while (this.acc >= SIM_DT && steps < simData.maxFrameSteps) {
-      sim.step([this.controls.sample()]);
+      if (this.replica) {
+        const input = this.phase === 'playing' ? this.controls.sample() : NEUTRAL_INPUT;
+        this.replica.tick(input, performance.now());
+        this.coop.queueInput(input);
+      } else sim.step([this.controls.sample()]);
       this.acc -= SIM_DT;
       steps++;
     }
@@ -430,7 +510,7 @@ export class Game {
     if (this.governor.sample(frameMs)) this.renderer.setScales(this.governor.renderScale, this.governor.radiusScale);
     if (now - this.hudAt > 100) {
       this.hudAt = now;
-      this.hud.update(sim);
+      this.hud.update(sim, sim.localPlayer);
       this.updateMusicIntensity(sim, 0.1);
       if (this.tutorial) {
         this.tutorial.update(sim, 0.1);
@@ -448,7 +528,7 @@ export class Game {
       renderScale: this.governor.renderScale,
       radiusScale: this.governor.radiusScale,
       preset: s.qualityAuto ? `${s.quality} (auto)` : s.quality,
-      pingMs: null,
+      pingMs: this.replica ? Math.round(this.coop.rttMs) : null,
       deltaCount: sim.terrain.deltas.list.length,
     });
   }

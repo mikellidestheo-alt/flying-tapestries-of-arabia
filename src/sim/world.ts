@@ -28,6 +28,26 @@ function nearestPlayer(sim: Sim, x: number, y: number, z: number): { p: PlayerSt
   return { p: best, d2: bd };
 }
 
+// ---------------------------------------------------------------- co-op difficulty director
+/**
+ * Population multiplier for the world's hostile creatures. Solo: 1. Co-op: 1.6x the chapter's density, nudged
+ * between 0.8x and 1.25x of that every 30 s by how the team is doing (a team far ahead on mana share meets
+ * more enemies, a struggling team fewer). Pure function of sim state, so the server and any replay agree.
+ */
+export function directorFactor(sim: Sim): number {
+  const c = matchData.coop;
+  if (!sim.setup?.coop) return 1;
+  const epoch = Math.floor(sim.tick / c.directorEveryTicks);
+  const fair = 1 / Math.max(1, sim.factions.filter((f) => !f.eliminated).length);
+  const share = sim.match.shares[0] ?? fair;
+  // Cache per epoch so the factor does not wobble between director updates.
+  if (sim.directorEpoch !== epoch) {
+    sim.directorEpoch = epoch;
+    sim.directorScale = clamp(1 + (share - fair) * 2, c.directorMin, c.directorMax);
+  }
+  return c.enemyDensityMult * sim.directorScale;
+}
+
 // ---------------------------------------------------------------- creatures
 export function stepCreatures(sim: Sim): void {
   const T = sim.terrain;
@@ -48,7 +68,7 @@ export function stepCreatures(sim: Sim): void {
     const hostileTypes = sim.creatureTypes.filter((t) => CREATURES[t]!.hostile);
     const wildTypes = sim.creatureTypes.filter((t) => !CREATURES[t]!.hostile);
     const n = sim.players.length;
-    const density = sim.setup?.enemyDensity ?? 1;
+    const density = (sim.setup?.enemyDensity ?? 1) * directorFactor(sim);
     let pool: string[] = [];
     if (hostile < Math.ceil(sp.targetNear * density * n) && hostileTypes.length > 0 && (wild >= sp.wildTarget * n || wildTypes.length === 0 || sim.rng.next() < 0.6)) pool = hostileTypes;
     else if (wild < sp.wildTarget * n && wildTypes.length > 0) pool = wildTypes;
@@ -352,7 +372,7 @@ export function stepNests(sim: Sim): void {
     if (d2 > cfg.wakeRadius * cfg.wakeRadius) continue;
     let alive = 0;
     for (const c of sim.creatures) if (c.nest === s.id) alive++;
-    if (alive >= Math.max(1, Math.round(cfg.maxSpawned * (sim.setup?.enemyDensity ?? 1)))) continue;
+    if (alive >= Math.max(1, Math.round(cfg.maxSpawned * (sim.setup?.enemyDensity ?? 1) * directorFactor(sim)))) continue;
     sim.spawnCreature(guards[sim.rng.int(0, guards.length)]!, s.x + sim.rng.range(-6, 6), s.z + sim.rng.range(-6, 6), s.id);
     s.spawnCd = cfg.spawnEveryTicks;
   }

@@ -60,6 +60,7 @@ export function trySignature(sim: Sim, idx: number): boolean {
         const off = (i - (w.segments - 1) / 2) * w.spacing;
         sim.terrain.deltas.add(cx - fz * off, cz + fx * off, w.radius, w.amount, DELTA_BUMP, sim.tick);
       }
+      sim.walls.push({ x: cx, z: cz, dx: fx === 0 && fz === 0 ? 1 : -fz, dz: fx, half: (w.segments * w.spacing) / 2, faction: p.faction, untilTick: sim.tick + 180 });
       sim.emit('wallRaised', cx, sim.terrain.surfaceAt(cx, cz), cz, idx);
       break;
     }
@@ -92,9 +93,21 @@ export function stepZones(sim: Sim): void {
     const inside = (x: number, y: number, zz: number) => (x - z.x) ** 2 + (zz - z.z) ** 2 < r2 && Math.abs(y - z.y) < z.r + 12;
     const tickDmg = z.dps * SIM_DT;
     if (z.dps > 0) {
-      for (const c of sim.creatures) if (c.hp > 0 && inside(c.x, c.y, c.z)) hurtCreature(sim, c, tickDmg, z.owner);
+      for (const c of sim.creatures) {
+        if (c.hp <= 0 || !inside(c.x, c.y, c.z)) continue;
+        hurtCreature(sim, c, tickDmg, z.owner);
+        if (z.slow) {
+          c.slowTicks = Math.max(c.slowTicks, 12);
+          c.slowMult = Math.min(c.slowMult, z.slow);
+        }
+      }
       sim.players.forEach((p) => {
-        if (p.active && p.hp > 0 && p.faction !== z.faction && inside(p.x, p.y, p.z)) hurtWizard(sim, p, tickDmg, z.owner);
+        if (!p.active || p.hp <= 0 || p.faction === z.faction || !inside(p.x, p.y, p.z)) return;
+        hurtWizard(sim, p, tickDmg, z.owner);
+        if (z.slow && p.invuln === 0) {
+          p.slowTicks = Math.max(p.slowTicks, 12);
+          p.slowMult = Math.min(p.slowMult, z.slow);
+        }
       });
       for (const s of sim.structures) if (s.alive && inside(s.x, s.y, s.z)) hurtStructure(sim, s, tickDmg * z.structureMult, z.owner);
     }

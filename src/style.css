@@ -171,3 +171,15 @@ html.hc #castleInfo, html.hc #toast, html.hc #tutorial, html.hc #wellGuide, html
 html.hc #shareLine, html.hc #palaceInfo, html.hc .bar b { text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 3px #000; font-weight: 800; }
 html.hc #chapterList button, html.hc .seg, html.hc button.ghost { border-color: #fff; }
 html.rm * { transition: none !important; animation: none !important; }
+
+/* ---- M6: co-op lobby ---- */
+.coop-join { display: flex; gap: 8px; }
+.coop-join input { width: 120px; font: 800 22px ui-monospace, Menlo, monospace; letter-spacing: 4px; text-align: center; text-transform: uppercase; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(0, 0, 0, 0.35); color: #fff; padding: 6px; min-height: 48px; user-select: text; -webkit-user-select: text; }
+.coop-code { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0; }
+.coop-code b { font: 800 34px ui-monospace, Menlo, monospace; letter-spacing: 6px; color: var(--gold); }
+#coopSeats { display: flex; gap: 10px; margin: 6px 0; }
+#coopSeats .seat { flex: 1; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 6px 10px; font-size: 14px; background: rgba(255, 255, 255, 0.06); }
+#coopSeats .seat.empty { opacity: 0.55; border-style: dashed; }
+#coopSeats .seat b { display: block; font-size: 16px; }
+.coop-error { color: #ff9a9a; text-align: center; min-height: 1.2em; margin: 4px 0; font-size: 14px; }
+#coopChapter { flex-wrap: wrap; }

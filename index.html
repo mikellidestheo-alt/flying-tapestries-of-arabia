@@ -90,7 +90,31 @@
         <div id="chapterDetail"></div>
         <div class="menu-row"><label>Difficulty</label><div id="difficultySeg" class="seg"></div></div>
         <div class="menu-row"><label>Wizard</label><div id="wizardSeg" class="seg"></div></div>
-        <div class="menu-actions"><button id="playBtn" class="primary" type="button">Play</button><button id="menuSettingsBtn" class="ghost" type="button">Settings</button></div>
+        <div class="menu-actions"><button id="playBtn" class="primary" type="button">Play</button><button id="coopBtn" class="ghost" type="button">Co-op (online)</button><button id="menuSettingsBtn" class="ghost" type="button">Settings</button></div>
+      </div>
+    </div>
+
+    <div id="coopScreen" class="overlay hidden">
+      <div class="card wide menu">
+        <h2>Co-op: two wizards, one castle</h2>
+        <p id="coopNote" class="tiny"></p>
+        <div id="coopHome">
+          <div class="menu-actions"><button id="coopCreate" class="primary" type="button">Create a room</button></div>
+          <div class="menu-row"><label for="coopCode">Have a code?</label><div class="coop-join"><input id="coopCode" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" /><button id="coopJoin" class="ghost" type="button">Join</button></div></div>
+        </div>
+        <div id="coopLobby" class="hidden">
+          <div class="coop-code"><span>Room</span><b id="coopCodeBig"></b><button id="coopShare" class="ghost" type="button">Share invite</button></div>
+          <div id="coopSeats"></div>
+          <div class="menu-row"><label>Your wizard</label><div id="coopElement" class="seg"></div></div>
+          <div id="coopHostRows">
+            <div class="menu-row"><label>Chapter</label><div id="coopChapter" class="seg"></div></div>
+            <div class="menu-row"><label>Difficulty</label><div id="coopDifficulty" class="seg"></div></div>
+          </div>
+          <p id="coopWait" class="tiny"></p>
+          <div class="menu-actions"><button id="coopStart" class="primary" type="button">Start</button></div>
+        </div>
+        <p id="coopError" class="coop-error"></p>
+        <div class="menu-actions"><button id="coopBack" class="ghost" type="button">Back</button></div>
       </div>
     </div>
 

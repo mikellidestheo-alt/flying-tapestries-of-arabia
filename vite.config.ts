@@ -33,6 +33,9 @@ function swPrecache(): Plugin {
   };
 }
 
+// The Worker only accepts same-origin requests, so the dev proxy presents the Worker's own origin.
+const devProxy = (scheme: 'http' | 'ws') => ({ target: `${scheme}://127.0.0.1:8787`, changeOrigin: true, headers: { Origin: 'http://127.0.0.1:8787' } });
+
 export default defineConfig({
   base: './',
   plugins: [swPrecache()],
@@ -42,5 +45,7 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 700,
   },
-  server: { host: true },
+  // Co-op during development: run `npx wrangler dev --port 8787` next to `npm run dev`; the game's same-origin
+  // /api and /ws requests are forwarded to it (in production the Worker serves them directly).
+  server: { host: true, proxy: { '/api': devProxy('http'), '/ws': { ...devProxy('ws'), ws: true } } },
 });

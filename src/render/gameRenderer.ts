@@ -99,7 +99,7 @@ export class GameRenderer {
 
     const wizards: WizardView[] = sim.players.map((p, i) => {
       const faction = castleData.factionStyles[p.faction % castleData.factionStyles.length]!;
-      const model = i === 0 && !p.isRival ? new TapestryModel(wizardElements[i] ?? 'fire') : new TapestryModel(wizardElements[i] ?? 'fire', shade(faction.color, 0.55), '#e9c26a');
+      const model = i === localIndex && !p.isRival ? new TapestryModel(wizardElements[i] ?? 'fire') : new TapestryModel(wizardElements[i] ?? 'fire', shade(faction.color, 0.55), '#e9c26a');
       scene.add(model.root, model.shadow);
       return { model, roll: 0, pitch: 0 };
     });

@@ -12,7 +12,7 @@ Checkpoints: M1, M3, M5c, M6.
 | M5a Chapters 3-4 | done |
 | M5b Chapters 5-6 | done - awaiting phone test |
 | M5c Polish, hub, accessibility, stress test | done - awaiting phone test (checkpoint) |
-| M6 Co-op | not started |
+| M6 Co-op | done - awaiting two-phone test (checkpoint) |
 
 ## Per-milestone records
 (filled in as each milestone completes: bundle size, test results, phone test checklist)
@@ -140,6 +140,24 @@ Phone result: works well, no fps drop. Changes:
 - **Map:** castle sites 370 apart (was 440), nests 130-320, wells 90-210, ambient orbs within 150.
 **Tests:** 225 passing (new `tests/economy.test.ts`: kill drops vs cost, shared pool, pair wells, compact map, archers vs wizards/creatures/animals and per-tier strength). Old bank/deposit tests were rewritten for the single pool. The stress test now judges the 99.9th-percentile tick (a lone scheduler spike under a parallel test run was flaky). Win rates still inside tolerance.
 
-## RESUME HERE (written 2026-10-27, end of M5c)
-**State:** M1-M5c done: six playable chapters, bloom, adaptive music, hub, accessibility, stress tests. `npm run check` exits 0 (214 tests, 205 KB gzip JS). **M5c is a CHECKPOINT: wait for the user's phone feedback (M3-M5c checklists: FPS and warmth per preset, bloom cost, map size, enemy counts, mana, weapon tiers) and apply it before starting M6 (co-op, CHECKPOINT).** M6 starts with free-plan research (Durable Objects SQLite, hibernatable WebSockets) before code; ask before anything that needs a paid plan.
-**Tips:** dev server `(nohup npx vite --port 5173 >log 2>&1 &)`; never `pkill -f` with a pattern that matches your own command (use `[v]ite`). Headless screenshots: Playwright at `/opt/node-tools/node_modules/playwright` with `--use-gl=angle --use-angle=swiftshader`; dev hook `window.__game` (`changeSettings({quality:'high',qualityAuto:false},'quality')`, click `#startBtn`, then `startMatch(i)`; `sim.players[0]` to teleport/set `spellTier`). `npx vite-node script.ts` runs scratch TS against `src/` (terrain ASCII maps, win-rate diagnostics). The win-rate test is deterministic and takes ~3.5 min; if a content change tips it, measure per-element mana share at 6 minutes over several seeds before touching spells (earth was +10%).
+### M6 (2026-10-27): two-player online co-op on a Durable Object
+**Research first (Cloudflare docs, free plan):** SQLite-backed Durable Objects are the only kind on the free plan: 100k requests/day (incoming WebSocket messages count), 13,000 GB-s/day, 5M rows read / 100k written, 5 GB; Workers 100k requests/day, 10 ms CPU per HTTP request; hibernating WebSocket objects are not billed for duration. Budget math and the guard are in `docs/deploy.md`. **Open question for you:** the docs mention a 20:1 billing ratio for incoming WebSocket messages that I could not confirm; until the dashboard shows it I count every message as one request (about 6 full matches/day on the safe setting, 100+ if the ratio holds). Raising the real capacity is a one-number change (`gate.messageWeight`).
+**Built:**
+- `server/`: Worker entry (routes, same-origin, hashed-IP limits), `Gate` Durable Object (room codes, per-IP and daily caps, running message budget), `MatchRoom` Durable Object (hibernatable sockets, 30 Hz loop only while a match runs, lobby persisted across hibernation, alarm backstop, evicted-match notice), and `matchHost.ts` (all room logic as plain TypeScript, tested with a fake transport).
+- `src/net/`: strict protocol and validation, run-length input encoding, compact interest-filtered snapshots (about 5-6 KB), browser `NetClient` (pings, token reconnect), `CoopReplica` (prediction + interpolation + event pacing).
+- Game: Co-op button on the chapter menu, lobby screen (create / join by code, invite link via Share or clipboard, element picker, host picks chapter and difficulty), `?room=CODE` invite links, partner marker on the compass, reconnect with back-off, "co-op ended" screen, ping in the debug overlay.
+- Sim: two humans per match (`playerCount`), income split between teammates, `setAutopilot` (AI takes a dropped teammate), difficulty director, the three combos with their own VFX/SFX/toasts, `predictPlayer`, `localPlayer`.
+**Tests:** 252 passing in 25 files (new `tests/coop-net.test.ts`: protocol validation, snapshot round trip and size, room rules (seats, host rights, inputs, rate limits, timeouts, drop-out/AI/reconnect, match end, budget stop), a latency simulation (70 ms each way) checking prediction and mirroring, the gate; `tests/combos.test.ts`). `npm run test:coop` passes end to end against `wrangler dev` (create, join, element swap, third player refused, host-only start, 17 snapshots/s, movement, prediction error ~0, garbage kicked, token reconnect). Two real browsers (Playwright) played a match through the UI against the local Worker with the proxy.
+**Bundle:** JS 212.7 KB gzip (budget 300); Worker 158 KB (raw, includes the data files).
+**Phone checklist (M6), you need two phones (or a phone and a computer):**
+1. Deploy (push to `main`; Workers Builds does the rest). Open the live link on both. Phone A: menu -> **Co-op (online)** -> Create a room -> **Share invite** (or read out the 5-letter code).
+2. Phone B: open the invite link (or Co-op -> type the code -> Join). Both seats show "connected"; B gets a different wizard if they picked the same.
+3. A (host) picks chapter and difficulty, taps Start. Fly together: your own wizard should feel instant (no rubber-banding), the partner should glide smoothly. Check the debug overlay for ping.
+4. Combos (pick Fire + Water, Fire + Air or Earth + Water): fire a Firestorm, then fly a Water bolt through it (Steam Cloud), or an Air bolt (Fire Tornado); raise a Stone Wall and fire Frost Chain along it.
+5. Castle: both of you spend from your own mana pools; income is split. Shoot enemy castles together; archers should defend.
+6. Drop-out test: close the tab on B for 10 s: the AI should fly B's wizard, then reopen the invite link: B returns to the match.
+7. Tell me about lag, any jumps, and the data use (about 0.7 Mbit/s each way).
+
+## RESUME HERE (written 2026-10-27, end of M6)
+**State:** M1-M6 done. `npm run check` exits 0 (252 tests, 212.7 KB gzip JS). **M6 is a CHECKPOINT: stop and report.** Waiting for: the M3-M6 phone feedback (FPS/warmth per preset, bloom cost, the economy and archer changes, co-op feel with two phones, ping, data use), the answer on the 20:1 WebSocket billing ratio, and any wish for follow-ups (3-4 player co-op, voice/ping markers, delta-compressed snapshots, public matchmaking).
+**Tips:** co-op dev needs `npm run dev:server` next to `npm run dev`; never `pkill -f` with a pattern that appears in your own command line (it kills the shell: use `pgrep -x workerd` or kill by pid); the room-creation limit (6/hour/IP) also applies locally, so restart wrangler with `--persist-to <fresh dir>` between test runs.

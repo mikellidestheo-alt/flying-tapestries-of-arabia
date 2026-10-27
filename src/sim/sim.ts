@@ -12,6 +12,7 @@ import {
   type Castle, type Creature, type Faction, type Orb, type Projectile, type SimEvent, type SimEventType, type Structure, type Well, type Zone,
 } from './entities';
 import { CREATURES, creatureHp, stepProjectiles, tryCast, tryUpgradeSpell } from './combat';
+import { stepCombos, type WallChannel } from './combos';
 import { stepWizardStatuses, stepZones, trySignature } from './spells';
 import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
@@ -120,6 +121,13 @@ export class Sim {
   wells: Well[] = [];
   structures: Structure[] = [];
   zones: Zone[] = [];
+  /** Raised Stone Walls that Water bolts can be channelled along (co-op combo). */
+  walls: WallChannel[] = [];
+  /** Which wizard this machine controls (HUD, camera, audio). 0 in solo; 0 or 1 in co-op. */
+  localPlayer = 0;
+  /** Difficulty director state (co-op): see world.ts directorFactor. */
+  directorEpoch = -1;
+  directorScale = 1;
   castles: Castle[] = [];
   factions: Faction[] = [];
   ai: RivalAI[] = [];
@@ -270,6 +278,7 @@ export class Sim {
       if ((input.actions | 0) & ACTION_SIGNATURE) trySignature(this, i);
     }
     stepProjectiles(this);
+    stepCombos(this);
     stepZones(this);
     stepWizardStatuses(this);
     stepCreatures(this);
@@ -280,6 +289,28 @@ export class Sim {
     stepPlayerVitals(this);
     stepMatch(this);
     this.trimEvents();
+  }
+
+  /**
+   * Client-side prediction: advance one wizard's flight by one tick using the shared movement code.
+   * Terrain tools and spells are not predicted (they are server business).
+   */
+  predictPlayer(p: PlayerState, input: PlayerInput): void {
+    this.stepPlayer(p, { steer: input.steer, throttle: input.throttle, actions: 0 });
+  }
+
+  /** Let the rival AI fly a human's wizard (a teammate who dropped out of a co-op match), or hand it back with `null`. */
+  setAutopilot(index: number, personality: Personality | null): void {
+    const p = this.players[index];
+    if (!p) return;
+    if (personality === null) {
+      p.rivalIndex = -1;
+      return;
+    }
+    if (p.rivalIndex < 0) {
+      p.rivalIndex = this.ai.length;
+      this.ai.push(makeRivalAI(personality, this.ai.length));
+    }
   }
 
   private stepPlayer(p: PlayerState, input: PlayerInput): void {
@@ -378,7 +409,8 @@ export class Sim {
     const f = this.factions[p.faction];
     if (f) f.captured += amount;
     p.mana = Math.min(simData.player.maxMana, p.mana + amount);
-    this.emit('bounty', p.x, p.y, p.z, amount);
+    // x2 carries the wizard's index so each client can tell whether the bounty is theirs.
+    this.emitLine('bounty', p.x, p.y, p.z, amount, this.players.indexOf(p), 0, 0);
   }
 
   spawnOrb(x: number, y: number, z: number, value: number, vx: number, vz: number): void {
@@ -390,7 +422,7 @@ export class Sim {
     const def = CREATURES[type];
     if (!def || this.creatures.length >= simData.caps.creatures) return;
     const y = this.terrain.surfaceAt(x, z) + def.hover;
-    const hp = creatureHp(type, this.setup?.difficulty ?? 'normal');
+    const hp = creatureHp(type, this.setup?.difficulty ?? 'normal') * (this.setup?.coop ? matchData.coop.enemyHpMult : 1);
     this.creatures.push({
       id: this.nextId++, type, nest, x, y, z, px: x, py: y, pz: z, vx: 0, vz: 0, hp,
       state: CREATURE_WANDER, cd: 0, burnTicks: 0, burnDps: 0, slowTicks: 0, slowMult: 1, freezeTicks: 0, homeX: x, homeZ: z, wx: x, wz: z, wanderUntil: 0,

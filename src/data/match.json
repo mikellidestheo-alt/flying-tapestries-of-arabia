@@ -31,5 +31,14 @@
     "castleDowngradePerTier": 30,
     "castleDestroy": 320
   },
-  "lastHitCreditTicks": 150
+  "lastHitCreditTicks": 150,
+  "coop": {
+    "enemyDensityMult": 1.6,
+    "enemyHpMult": 1.25,
+    "directorEveryTicks": 900,
+    "directorMin": 0.8,
+    "directorMax": 1.25,
+    "respawnAutopilotAfterTicks": 90,
+    "reconnectGraceTicks": 1800
+  }
 }

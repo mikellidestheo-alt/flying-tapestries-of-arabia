@@ -37,6 +37,8 @@ export interface MatchSetup {
   nestCount?: number;
   /** Hostile creature population multiplier (chapter data; later chapters are busier). */
   enemyDensity?: number;
+  /** Two humans share faction 0: tougher, busier world (the difficulty director) and combos between their elements. */
+  coop?: boolean;
 }
 
 export type MatchStatus = 'playing' | 'won' | 'lost';

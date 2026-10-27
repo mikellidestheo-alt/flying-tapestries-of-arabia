@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "roomCodeLength": 5,
+  "roomCodeAlphabet": "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+  "inputEveryTicks": 4,
+  "inputKeepAliveTicks": 15,
+  "maxInputRuns": 16,
+  "maxInputBacklogTicks": 9,
+  "snapshotEveryTicks": 2,
+  "interpDelayTicks": 4,
+  "pingEveryMs": 4000,
+  "maxMessageBytes": 2048,
+  "maxMessagesPerSecond": 30,
+  "interestRadius": 420,
+  "maxOrbsPerSnapshot": 120,
+  "maxEventsPerSnapshot": 90,
+  "helloTimeoutMs": 10000,
+  "lobbyTimeoutSeconds": 600,
+  "matchMaxSeconds": 1800,
+  "idleKickSeconds": 45,
+  "reconnectGraceSeconds": 60,
+  "gate": {
+    "roomTtlSeconds": 7200,
+    "createPerIpPerHour": 6,
+    "dailyRoomCap": 80,
+    "messageWeight": 1,
+    "dailyMessageBudget": 70000,
+    "hardMessageBudget": 90000,
+    "reportEverySeconds": 30
+  }
+}

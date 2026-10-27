@@ -7,16 +7,19 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview --host",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server",
     "lint": "eslint .",
     "test": "vitest run",
     "size": "node scripts/bundle-size.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
     "test:fast": "FAST=1 vitest run",
     "balance": "tsx scripts/balance-report.ts",
-    "balance:solve": "tsx scripts/solve-balance.ts"
+    "balance:solve": "tsx scripts/solve-balance.ts",
+    "dev:server": "wrangler dev --port 8787 --ip 127.0.0.1",
+    "test:coop": "tsx scripts/test-coop.ts",
+    "stress:browser": "node scripts/stress-browser.cjs"
   },
   "dependencies": {
     "three": "^0.186.1"

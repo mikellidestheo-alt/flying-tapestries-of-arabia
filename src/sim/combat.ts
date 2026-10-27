@@ -69,7 +69,7 @@ export function tryUpgradeSpell(sim: Sim, p: PlayerState): boolean {
   if (!up || !p.active || p.mana < up.cost) return false;
   p.mana -= up.cost;
   p.spellTier = up.tier;
-  sim.emit('spellUpgrade', p.x, p.y, p.z, up.tier);
+  sim.emitLine('spellUpgrade', p.x, p.y, p.z, up.tier, sim.players.indexOf(p), 0, 0);
   return true;
 }
 
@@ -253,7 +253,8 @@ function chainFrom(sim: Sim, proj: Projectile, def: SpellDef, x: number, y: numb
   for (let n = 0; n < chain.count; n++) {
     dmg *= chain.falloff;
     let best: { kind: 0 | 1; c?: Creature; w?: PlayerState; i: number; d2: number } | null = null;
-    const r2 = chain.radius * chain.radius;
+    const reach = chain.radius * (proj.chainMult ?? 1);
+    const r2 = reach * reach;
     for (const c of sim.creatures) {
       if (c.hp <= 0 || hitC.has(c.id)) continue;
       const d2 = (c.x - cx) ** 2 + (c.y - cy) ** 2 + (c.z - cz) ** 2;
