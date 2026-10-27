@@ -31,6 +31,18 @@ export interface ChapterPalette {
   /** Night skies: stars and a moon disc. */
   stars?: boolean;
   moon?: boolean;
+  /** Water is drawn as an opaque sea of billowing clouds (chapter 6). */
+  cloudSea?: boolean;
+}
+
+/** Render-only weather (never touches the sim). */
+export interface WeatherConfig {
+  sandstorm?: {
+    /** How much gusts pull the fog in (0..1 of the view distance). */
+    fogTighten: number;
+    /** Peak opacity of the drifting sand layer (0..1). */
+    layer: number;
+  };
 }
 
 export interface RivalConfig {
@@ -52,6 +64,7 @@ export interface ChapterConfig {
   nest: { name: string; color: string; glow: string };
   creatureSet: string[];
   ambient: { sound: string; birds: boolean };
+  weather?: WeatherConfig;
   music: { scale: string; rootMidi: number; tempoBpm: number; rhythm: string; motif: number[] };
   rivals: RivalConfig[];
   targetShare: number;
@@ -95,7 +108,7 @@ export function validateChapter(c: ChapterConfig): string[] {
   for (const [k, v] of Object.entries(c.palette)) {
     if (k === 'sunDir') {
       need(Array.isArray(v) && v.length === 3, 'sunDir must be [x,y,z]');
-    } else if (k === 'stars' || k === 'moon') {
+    } else if (k === 'stars' || k === 'moon' || k === 'cloudSea') {
       need(typeof v === 'boolean', `palette.${k} must be a boolean`);
     } else {
       need(typeof v === 'string' && HEX.test(v), `palette.${k} must be #rrggbb`);
@@ -114,6 +127,11 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(c.creatureSet.length > 0, 'creatureSet empty');
   for (const [k, v] of Object.entries(c.structureStyle)) need(HEX.test(v), `structureStyle.${k} must be #rrggbb`);
   need(HEX.test(c.nest.color) && HEX.test(c.nest.glow), 'nest colours must be #rrggbb');
+  if (c.weather?.sandstorm) {
+    const w = c.weather.sandstorm;
+    need(w.fogTighten >= 0 && w.fogTighten <= 0.7, 'weather.sandstorm.fogTighten must be 0-0.7');
+    need(w.layer >= 0 && w.layer <= 0.5, 'weather.sandstorm.layer must be 0-0.5');
+  }
   if (c.terrain.city) {
     const city = c.terrain.city;
     need(64 % city.cell === 0, 'city.cell must divide the 64-unit chunk size');

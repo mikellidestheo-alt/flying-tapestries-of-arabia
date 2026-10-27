@@ -45,5 +45,8 @@
       5,
       6
     ]
+  },
+  "elementPower": {
+    "earth": 1.25
   }
 }

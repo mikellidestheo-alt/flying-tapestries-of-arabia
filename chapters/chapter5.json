@@ -40,17 +40,27 @@
     "oasisThreshold": 0.69,
     "oasisSoftness": 0.18,
     "oasisDepth": 6,
-    "oasisRim": 3.2
+    "oasisRim": 3.2,
+    "landmarks": {
+      "kind": "ruin-tower",
+      "cell": 210,
+      "chance": 0.55,
+      "radius": 5.5,
+      "height": 26,
+      "minAboveWater": 3,
+      "maxAboveWater": 90
+    }
   },
   "props": {
     "candidatesPerChunk": 22,
     "palmChance": 0.55,
-    "rockChance": 0.25
+    "rockChance": 0.3
   },
   "structureKit": "buried-ruins",
   "creatureSet": [
     "sand-wraith",
-    "ruin-golem"
+    "ruin-golem",
+    "gazelle"
   ],
   "ambient": {
     "sound": "sandstorm",
@@ -109,5 +119,11 @@
     "color": "#8a6a3a",
     "glow": "#ffd27a"
   },
-  "palaceWinMana": 2400
+  "palaceWinMana": 2400,
+  "weather": {
+    "sandstorm": {
+      "fogTighten": 0.42,
+      "layer": 0.2
+    }
+  }
 }

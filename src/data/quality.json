@@ -23,7 +23,8 @@
         "archers": 64,
         "particles": 600
       },
-      "cityDetail": 2
+      "cityDetail": 2,
+      "weatherLayer": true
     },
     "medium": {
       "label": "Medium",
@@ -47,7 +48,8 @@
         "archers": 40,
         "particles": 350
       },
-      "cityDetail": 1
+      "cityDetail": 1,
+      "weatherLayer": true
     },
     "low": {
       "label": "Low",
@@ -71,7 +73,8 @@
         "archers": 24,
         "particles": 150
       },
-      "cityDetail": 0
+      "cityDetail": 0,
+      "weatherLayer": false
     }
   },
   "governor": {

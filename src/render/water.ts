@@ -58,6 +58,43 @@ export class Water {
           #include <fog_fragment>
         }`,
     });
+    if (p.cloudSea) {
+      this.shader.dispose();
+      // Cloud sea: opaque billows from a few sine layers; shallow = sunlit tops, deep = shaded troughs.
+      this.shader = new THREE.ShaderMaterial({
+        fog: true,
+        uniforms: THREE.UniformsUtils.merge([
+          THREE.UniformsLib.fog,
+          { shallow: { value: new THREE.Color(p.waterShallow) }, deep: { value: new THREE.Color(p.waterDeep) }, sunColor: { value: new THREE.Color(p.sun) }, time: this.timeUniform },
+        ]),
+        vertexShader: /* glsl */ `
+          #include <fog_pars_vertex>
+          varying vec3 vWorld;
+          void main() {
+            vec4 w = modelMatrix * vec4(position, 1.0);
+            vWorld = w.xyz;
+            vec4 mvPosition = viewMatrix * w;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <fog_vertex>
+          }`,
+        fragmentShader: /* glsl */ `
+          precision mediump float;
+          uniform vec3 shallow; uniform vec3 deep; uniform vec3 sunColor; uniform float time;
+          varying vec3 vWorld;
+          #include <fog_pars_fragment>
+          void main() {
+            vec2 q = vWorld.xz;
+            float a = sin(q.x * 0.021 + time * 0.07) * sin(q.y * 0.017 - time * 0.05);
+            float b = sin(q.x * 0.047 - q.y * 0.039 + time * 0.11 + a * 2.0);
+            float c = sin(q.x * 0.11 + q.y * 0.09 - time * 0.16 + b * 1.5);
+            float billow = 0.5 + 0.28 * a + 0.16 * b + 0.06 * c;
+            vec3 col = mix(deep, shallow, smoothstep(0.25, 0.8, billow));
+            col += sunColor * 0.12 * smoothstep(0.65, 1.0, billow);
+            gl_FragColor = vec4(col, 1.0);
+            #include <fog_fragment>
+          }`,
+      });
+    }
     this.flat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(p.waterShallow).lerp(new THREE.Color(p.waterDeep), 0.45),
     });
@@ -65,7 +102,7 @@ export class Water {
     geom.rotateX(-Math.PI / 2);
     this.mesh = new THREE.Mesh(geom, mode === 'shader' ? this.shader : this.flat);
     this.mesh.position.y = chapter.terrain.waterLevel;
-    this.mesh.renderOrder = 1;
+    this.mesh.renderOrder = p.cloudSea ? 0 : 1;
     this.mesh.frustumCulled = false;
   }
 

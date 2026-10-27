@@ -240,7 +240,7 @@
     "gravity": 14,
     "area": 7,
     "hitRadius": 2.2,
-    "structureMult": 1.6,
+    "structureMult": 2,
     "effects": [],
     "terrain": {
       "radius": 8,
@@ -253,7 +253,7 @@
       22
     ],
     "name": "Boulder",
-    "damage": 49.7,
+    "damage": 39.8,
     "manaCost": 20,
     "cooldownTicks": 22,
     "tierNames": [
@@ -266,7 +266,7 @@
         "speed": 55,
         "area": 8,
         "hitRadius": 2.4,
-        "structureMult": 1.7,
+        "structureMult": 2.1,
         "effects": [
           {
             "type": "slow",
@@ -285,7 +285,7 @@
           21
         ],
         "name": "Granite Boulder",
-        "damage": 65.3,
+        "damage": 51.8,
         "manaCost": 25,
         "cooldownTicks": 21,
         "upgradeCost": 90
@@ -294,7 +294,7 @@
         "speed": 58,
         "area": 9,
         "hitRadius": 2.6,
-        "structureMult": 1.8,
+        "structureMult": 2.25,
         "effects": [
           {
             "type": "slow",
@@ -318,7 +318,7 @@
           20
         ],
         "name": "Quake Boulder",
-        "damage": 67,
+        "damage": 53,
         "manaCost": 30,
         "cooldownTicks": 20,
         "upgradeCost": 180
@@ -343,7 +343,7 @@
     "structureMult": 0.95,
     "effects": [],
     "speed": 190,
-    "hitRadius": 1.2,
+    "hitRadius": 1.7,
     "cds": [
       7,
       8,
@@ -375,7 +375,7 @@
       },
       {
         "speed": 210,
-        "hitRadius": 1.3,
+        "hitRadius": 1.8,
         "chain": {
           "count": 1,
           "radius": 22,
@@ -537,6 +537,44 @@
       }
     ],
     "interceptHp": 8,
+    "structureMult": 0
+  },
+  "sand-bolt": {
+    "name": "Sand Lash",
+    "element": "dark",
+    "manaCost": 0,
+    "cooldownTicks": 0,
+    "speed": 36,
+    "maxRange": 135,
+    "gravity": 0,
+    "damage": 14,
+    "area": 4,
+    "falloff": 0.3,
+    "hitRadius": 1.8,
+    "effects": [
+      {
+        "type": "slow",
+        "mult": 0.8,
+        "durationTicks": 40
+      }
+    ],
+    "interceptHp": 9,
+    "structureMult": 0
+  },
+  "guardian-bolt": {
+    "name": "Gilded Lance",
+    "element": "dark",
+    "manaCost": 0,
+    "cooldownTicks": 0,
+    "speed": 46,
+    "maxRange": 135,
+    "gravity": 0,
+    "damage": 13,
+    "area": 3.2,
+    "falloff": 0.3,
+    "hitRadius": 1.5,
+    "effects": [],
+    "interceptHp": 10,
     "structureMult": 0
   },
   "combos": [

@@ -23,7 +23,10 @@ export function effectiveDamage(s: SpellDef): number {
     e += s.damage * sum * balance.chainHit;
   }
   if (s.aftershock) e += s.damage * s.aftershock.damageMult * balance.aftershockHit;
-  return e;
+  // Calibration from AI-vs-AI play (see docs/decisions.md): the plain model undervalues how much
+  // more mana an element really collects (area shots that one-shot clusters), so those spells are
+  // costed higher and the solver gives them less damage per hit for the same budget.
+  return e * ((balance.elementPower as Record<string, number>)[s.element] ?? 1);
 }
 
 export function castsPerSecond(s: SpellDef): number {

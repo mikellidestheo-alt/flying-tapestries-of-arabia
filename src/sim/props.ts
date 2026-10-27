@@ -37,7 +37,7 @@ export function chunkProps(
     const h = baseHeight(tp, x, z);
     if (o > 0.12 && h > tp.waterLevel + 0.5) {
       if (roll < pp.palmChance + o * 0.4) out.push({ kind: 'palm', x, z, scale, rot });
-    } else if (o <= 0.12 && roll < pp.rockChance) {
+    } else if (o <= 0.12 && roll < pp.rockChance && h > tp.waterLevel - 3) {
       out.push({ kind: 'rock', x, z, scale: scale * 1.2, rot });
     }
   }

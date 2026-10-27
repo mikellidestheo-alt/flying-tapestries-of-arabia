@@ -34,15 +34,23 @@ const MONSTER_BOLTS: Record<string, { glow: readonly [number, number, number]; c
   'genie-bolt': { glow: [0.7, 0.25, 1], core: [1, 0.8, 1], trail: [0.6, 0.2, 0.95] },
   'wraith-bolt': { glow: [1, 0.45, 0.3], core: [1, 0.9, 0.7], trail: [0.9, 0.35, 0.3] },
   'tide-bolt': { glow: [0.2, 0.9, 0.85], core: [0.85, 1, 1], trail: [0.2, 0.75, 0.8] },
+  'sand-bolt': { glow: [1, 0.78, 0.35], core: [1, 0.97, 0.75], trail: [0.85, 0.65, 0.35] },
+  'guardian-bolt': { glow: [1, 0.85, 0.3], core: [1, 1, 0.85], trail: [1, 0.7, 0.25] },
 };
 
 /** How each creature type moves on screen. */
-type Motion = 'sprite' | 'caster' | 'walker' | 'flier';
+type Motion = 'sprite' | 'caster' | 'walker' | 'flier' | 'golem' | 'serpent';
 const MOTION: Record<string, { motion: Motion; scale: number; eye?: readonly [number, number, number]; eyeY?: number; smoke?: readonly [number, number, number] }> = {
   'dust-sprite': { motion: 'sprite', scale: 1 },
   'evil-genie': { motion: 'caster', scale: 1.15, eye: [1, 0.2, 0.15], eyeY: 3.9, smoke: [0.35, 0.25, 0.6] },
   'tide-djinn': { motion: 'caster', scale: 1.15, eye: [0.4, 1, 0.95], eyeY: 3.9, smoke: [0.2, 0.55, 0.6] },
   'canyon-wraith': { motion: 'caster', scale: 1.2, eye: [1, 0.65, 0.2], eyeY: 4.3, smoke: [0.5, 0.3, 0.4] },
+  'sand-wraith': { motion: 'caster', scale: 1.2, eye: [0.45, 1, 0.9], eyeY: 4.3, smoke: [0.8, 0.65, 0.4] },
+  'ruin-golem': { motion: 'golem', scale: 1.5, eye: [1, 0.75, 0.25], eyeY: 3.5, smoke: [0.75, 0.6, 0.4] },
+  'palace-guardian': { motion: 'caster', scale: 1.2, eye: [1, 0.9, 0.4], eyeY: 4.1, smoke: [1, 0.8, 0.35] },
+  'cloud-serpent': { motion: 'serpent', scale: 1.4 },
+  gazelle: { motion: 'walker', scale: 1.35 },
+  dove: { motion: 'flier', scale: 1.5 },
   oryx: { motion: 'walker', scale: 1.5 },
   ibex: { motion: 'walker', scale: 1.4 },
   'stone-bat': { motion: 'flier', scale: 1.3 },
@@ -125,20 +133,93 @@ function genieGeometry(c: GeniePalette): THREE.BufferGeometry {
   return b.build();
 }
 
-/** Canyon wraith: a hooded spectre in rose-grey rags, burning orange eyes, long clawed arms. */
-function wraithGeometry(): THREE.BufferGeometry {
+interface WraithPalette {
+  cloak: string;
+  rags: string;
+  shoulders: string;
+  hoodIn: string;
+  hood: string;
+  eye: string;
+}
+
+const CANYON_WRAITH: WraithPalette = { cloak: '#7a4a5e', rags: '#4b2c3c', shoulders: '#8e5a70', hoodIn: '#2a1620', hood: '#6a3a50', eye: '#ffb040' };
+const SAND_WRAITH: WraithPalette = { cloak: '#c9a566', rags: '#8a6a3a', shoulders: '#dcc088', hoodIn: '#2b2012', hood: '#b08a4a', eye: '#6affe0' };
+
+/** Wraith: a hooded spectre in tattered rags, burning eyes, long clawed arms. Palette picks the species. */
+function wraithGeometry(c: WraithPalette): THREE.BufferGeometry {
   const b = new MergeBuilder();
-  b.add(new THREE.ConeGeometry(1.7, 4.2, 8), '#7a4a5e', [0, 1.4, 0], [Math.PI, 0, 0]); // cloak, tip down
-  b.add(new THREE.ConeGeometry(1.1, 2.6, 6), '#4b2c3c', [-0.6, -0.2, -0.2], [Math.PI, 0.5, 0.25]); // ragged tatters
-  b.add(new THREE.ConeGeometry(0.9, 2.2, 6), '#4b2c3c', [0.7, -0.1, 0.1], [Math.PI, 1.1, -0.3]);
-  b.add(new THREE.CylinderGeometry(0.9, 1.5, 1.8, 8), '#8e5a70', [0, 3.0, 0]); // shoulders
-  b.add(new THREE.SphereGeometry(0.85, 8, 6), '#2a1620', [0, 4.2, 0.1]); // hood interior
-  b.add(new THREE.ConeGeometry(1.0, 1.7, 7), '#6a3a50', [0, 4.7, -0.15], [-0.25, 0, 0]); // peaked hood
+  b.add(new THREE.ConeGeometry(1.7, 4.2, 8), c.cloak, [0, 1.4, 0], [Math.PI, 0, 0]); // cloak, tip down
+  b.add(new THREE.ConeGeometry(1.1, 2.6, 6), c.rags, [-0.6, -0.2, -0.2], [Math.PI, 0.5, 0.25]); // ragged tatters
+  b.add(new THREE.ConeGeometry(0.9, 2.2, 6), c.rags, [0.7, -0.1, 0.1], [Math.PI, 1.1, -0.3]);
+  b.add(new THREE.CylinderGeometry(0.9, 1.5, 1.8, 8), c.shoulders, [0, 3.0, 0]); // shoulders
+  b.add(new THREE.SphereGeometry(0.85, 8, 6), c.hoodIn, [0, 4.2, 0.1]); // hood interior
+  b.add(new THREE.ConeGeometry(1.0, 1.7, 7), c.hood, [0, 4.7, -0.15], [-0.25, 0, 0]); // peaked hood
   for (const sx of [-1, 1]) {
-    b.add(new THREE.SphereGeometry(0.17, 5, 4), '#ffb040', [sx * 0.3, 4.3, 0.85]); // burning eyes
-    b.add(new THREE.CylinderGeometry(0.2, 0.14, 2.6, 5), '#8e5a70', [sx * 1.5, 2.8, 0.9], [-1.1, 0, sx * -0.2]); // long arms
+    b.add(new THREE.SphereGeometry(0.17, 5, 4), c.eye, [sx * 0.3, 4.3, 0.85]); // burning eyes
+    b.add(new THREE.CylinderGeometry(0.2, 0.14, 2.6, 5), c.shoulders, [sx * 1.5, 2.8, 0.9], [-1.1, 0, sx * -0.2]); // long arms
     for (let k = -1; k <= 1; k++) b.add(new THREE.ConeGeometry(0.07, 0.8, 4), '#e8d8c0', [sx * 1.6 + k * 0.17, 2.0, 2.2], [-1.7, 0, k * 0.2]); // claws
   }
+  return b.build();
+}
+
+/** Ruin golem: a floating sandstone giant of stacked blocks, glowing glyph eyes and heavy fists. */
+function golemGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  const stone = '#b9976a';
+  const dark = '#7a5a3a';
+  b.add(new THREE.BoxGeometry(2.6, 2.8, 1.8), stone, [0, 3.0, 0]); // chest
+  b.add(new THREE.BoxGeometry(2.2, 1.0, 1.5), dark, [0, 1.3, 0]); // waist
+  b.add(new THREE.ConeGeometry(0.9, 1.6, 5), dark, [0, 0.2, 0], [Math.PI, 0, 0]); // hovering base
+  b.add(new THREE.BoxGeometry(1.4, 1.2, 1.3), stone, [0, 4.9, 0.1]); // head
+  b.add(new THREE.BoxGeometry(1.7, 0.35, 1.5), dark, [0, 5.65, 0.1]); // brow slab
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.BoxGeometry(0.3, 0.22, 0.12), '#ffc04a', [sx * 0.38, 4.95, 0.78]); // glowing glyph eyes
+    b.add(new THREE.BoxGeometry(1.2, 1.2, 1.2), dark, [sx * 1.95, 3.9, 0.1]); // shoulder block
+    b.add(new THREE.BoxGeometry(0.9, 2.0, 0.9), stone, [sx * 2.2, 2.4, 0.5], [-0.35, 0, sx * -0.1]); // arm
+    b.add(new THREE.BoxGeometry(1.5, 1.5, 1.5), stone, [sx * 2.35, 1.2, 1.2], [0, 0.3 * sx, 0]); // fist
+    b.add(new THREE.BoxGeometry(0.5, 0.5, 0.2), '#2aa09a', [sx * 0.8, 3.2, 0.95]); // inlaid turquoise tiles
+  }
+  return b.build();
+}
+
+/** Cloud serpent: a coiling body of shrinking pearly segments, a crested head and gilded fins. */
+function serpentGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const r = 0.95 - 0.7 * t;
+    const col = i % 2 ? '#f7ecf5' : '#e0b8d8';
+    b.add(new THREE.SphereGeometry(r, 7, 5), col, [Math.sin(i * 0.9) * 0.45, 0.05 * i, -i * 1.05]);
+  }
+  b.add(new THREE.SphereGeometry(0.8, 8, 6), '#f4dff0', [0, 0.25, 1.0]); // head
+  b.add(new THREE.ConeGeometry(0.45, 0.9, 6), '#e8c2dc', [0, 0.1, 1.7], [Math.PI / 2, 0, 0]); // snout
+  b.add(new THREE.ConeGeometry(0.25, 1.1, 4), '#ffd060', [0, 1.1, 0.7], [-0.5, 0, 0]); // crest
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.SphereGeometry(0.14, 5, 4), '#ffd060', [sx * 0.42, 0.5, 1.45]); // eyes
+    b.add(new THREE.BoxGeometry(1.8, 0.06, 1.0), '#ffd8a0', [sx * 1.3, 0.2, -0.2], [0, sx * 0.2, sx * 0.25]); // fins
+  }
+  return b.build();
+}
+
+/** Palace guardian: a floating gilded suit of armour, plumed helm, no body beneath. */
+function guardianGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  const gold = '#e8b83a';
+  const white = '#f6efe0';
+  b.add(new THREE.ConeGeometry(1.2, 3.2, 8), '#c9962c', [0, 0.8, 0], [Math.PI, 0, 0]); // tapering skirt, tip down
+  b.add(new THREE.CylinderGeometry(1.0, 1.4, 1.8, 8), gold, [0, 2.7, 0]); // breastplate
+  b.add(new THREE.CylinderGeometry(1.45, 1.45, 0.3, 8), white, [0, 2.0, 0]); // belt
+  b.add(new THREE.SphereGeometry(0.8, 8, 6), gold, [0, 4.0, 0.05]); // helm
+  b.add(new THREE.ConeGeometry(0.3, 1.4, 5), '#d94a3a', [0, 5.1, -0.1]); // plume
+  b.add(new THREE.BoxGeometry(0.9, 0.18, 0.2), '#241a14', [0, 3.95, 0.8]); // visor slit
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.SphereGeometry(0.62, 7, 5), white, [sx * 1.55, 3.3, 0]); // pauldrons
+    b.add(new THREE.CylinderGeometry(0.28, 0.22, 1.8, 6), gold, [sx * 1.7, 2.3, 0.6], [-0.9, 0, sx * -0.2]); // forearms
+    b.add(new THREE.SphereGeometry(0.34, 6, 5), white, [sx * 1.8, 1.8, 1.3]); // gauntlets
+  }
+  b.add(new THREE.BoxGeometry(0.2, 3.2, 0.2), '#d9d9e8', [1.9, 2.6, 1.6], [0.2, 0, 0.1]); // scimitar blade
+  b.add(new THREE.BoxGeometry(0.8, 0.15, 0.15), '#8a5a1c', [1.9, 1.0, 1.6]); // cross-guard
   return b.build();
 }
 
@@ -186,9 +267,15 @@ export class EntityRenderer {
     ['oryx', oryxGeometry()],
     ['evil-genie', genieGeometry(EVIL_GENIE)],
     ['tide-djinn', genieGeometry(TIDE_DJINN)],
-    ['canyon-wraith', wraithGeometry()],
+    ['canyon-wraith', wraithGeometry(CANYON_WRAITH)],
+    ['sand-wraith', wraithGeometry(SAND_WRAITH)],
+    ['ruin-golem', golemGeometry()],
+    ['cloud-serpent', serpentGeometry()],
+    ['palace-guardian', guardianGeometry()],
     ['stone-bat', batGeometry()],
     ['ibex', oryxGeometry()], // same silhouette, rose tint from creatures.json
+    ['gazelle', oryxGeometry()], // golden tint
+    ['dove', gullGeometry()], // sunset-pink tint
     ['night-gull', gullGeometry()],
   ]);
   private creatureMat = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -207,10 +294,13 @@ export class EntityRenderer {
   /** Supplies lit lighthouses/lanterns near the camera (set by the game renderer). */
   beaconSource: (() => Beacon[]) | null = null;
   private waterLevel = -1e9;
+  /** Clouds do not mirror lanterns. */
+  private cloudSea = false;
 
   constructor(quality: QualityPreset, private chapter: ChapterConfig) {
     this.quality = quality;
     this.waterLevel = chapter.terrain.waterLevel;
+    this.cloudSea = !!chapter.palette.cloudSea;
     this.build();
     for (let i = 0; i < simData.caps.wells; i++) this.wellViews.push(this.makeWell());
   }
@@ -547,6 +637,24 @@ export class EntityRenderer {
         }
         this.dummy.rotation.set(0, face, Math.sin(time * 2.2 + c.id) * 0.1);
         this.dummy.position.y += Math.sin(time * 2.6 + c.id) * 0.5;
+      } else if (look.motion === 'golem') {
+        // Slow, heavy sway; floats a little and faces the nearest wizard.
+        let face = heading;
+        let bd = Infinity;
+        for (const p of sim.players) {
+          const d = (p.x - x) ** 2 + (p.z - z) ** 2;
+          if (p.active && d < bd) {
+            bd = d;
+            face = Math.atan2(p.x - x, p.z - z);
+          }
+        }
+        this.dummy.rotation.set(0, face, Math.sin(time * 1.3 + c.id) * 0.06);
+        this.dummy.position.y += Math.sin(time * 1.8 + c.id) * 0.35;
+        if (c.state === 1 && this.rnd() < 0.15) this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, -0.5, (this.rnd() - 0.5) * 3, 0.8, 2, DUST[0], DUST[1], DUST[2]);
+      } else if (look.motion === 'serpent') {
+        // Slithers: the whole body weaves left and right along its heading.
+        this.dummy.rotation.set(Math.sin(time * 2.2 + c.id) * 0.15, heading + Math.sin(time * 4 + c.id) * 0.35, Math.sin(time * 3 + c.id) * 0.25);
+        this.dummy.position.y += Math.sin(time * 2.6 + c.id) * 0.6;
       } else if (look.motion === 'flier') {
         // Banks into turns and flaps (rolls) as it flies.
         this.dummy.rotation.set(Math.sin(time * 4 + c.id) * 0.1, heading, Math.sin(time * (c.type === 'stone-bat' ? 17 : 9) + c.id * 1.3) * 0.45);
@@ -641,7 +749,7 @@ export class EntityRenderer {
         const dz = Math.sin(a);
         for (let k = 1; k <= 9; k++) glow.add(b.x + dx * k * 9, b.y - k * 0.25, b.z + dz * k * 9, b.color[0], b.color[1], b.color[2], 0.6 - k * 0.05, 7 - k * 0.4);
       }
-      if (b.y > water + 1 && water > -1e8) {
+      if (b.y > water + 1 && water > -1e8 && !this.cloudSea) {
         const my = 2 * water - b.y;
         const wob = Math.sin(time * 1.7 + b.x) * 0.8;
         glow.add(b.x + wob, my, b.z, b.color[0], b.color[1], b.color[2], flicker * 0.35, b.size * 1.1);

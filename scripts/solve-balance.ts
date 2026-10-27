@@ -43,9 +43,9 @@ const designs: Record<string, Design> = {
     names: ['Boulder', 'Granite Boulder', 'Quake Boulder'],
     base: { element: 'earth', maxRange: 190, falloff: 0.35, interceptHp: 34, aimAssist: aim(0.86, 0.14) },
     tiers: [
-      { speed: 52, gravity: 14, area: 7, hitRadius: 2.2, structureMult: 1.6, effects: [], terrain: { radius: 8, amount: -2.6, kind: 1 }, cds: [18, 20, 22] },
-      { speed: 55, gravity: 14, area: 8, hitRadius: 2.4, structureMult: 1.7, effects: [{ type: 'slow', mult: 0.75, durationTicks: 40 }], terrain: { radius: 10, amount: -3.2, kind: 1 }, cds: [17, 19, 21] },
-      { speed: 58, gravity: 14, area: 9, hitRadius: 2.6, structureMult: 1.8, effects: [{ type: 'slow', mult: 0.7, durationTicks: 60 }], aftershock: { delayTicks: 12, radius: 11, damageMult: 0.5 }, terrain: { radius: 12, amount: -4, kind: 1 }, cds: [16, 18, 20] },
+      { speed: 52, gravity: 14, area: 7, hitRadius: 2.2, structureMult: 2.0, effects: [], terrain: { radius: 8, amount: -2.6, kind: 1 }, cds: [18, 20, 22] },
+      { speed: 55, gravity: 14, area: 8, hitRadius: 2.4, structureMult: 2.1, effects: [{ type: 'slow', mult: 0.75, durationTicks: 40 }], terrain: { radius: 10, amount: -3.2, kind: 1 }, cds: [17, 19, 21] },
+      { speed: 58, gravity: 14, area: 9, hitRadius: 2.6, structureMult: 2.25, effects: [{ type: 'slow', mult: 0.7, durationTicks: 60 }], aftershock: { delayTicks: 12, radius: 11, damageMult: 0.5 }, terrain: { radius: 12, amount: -4, kind: 1 }, cds: [16, 18, 20] },
     ],
   },
   air: {
@@ -53,9 +53,9 @@ const designs: Record<string, Design> = {
     names: ['Lightning Bolt', 'Storm Bolt', 'Thunder Arc'],
     base: { element: 'air', maxRange: 340, gravity: 0, area: 2, falloff: 0.3, interceptHp: 30, aimAssist: aim(0.9, 0.05), structureMult: 0.95, effects: [] },
     tiers: [
-      { speed: 190, hitRadius: 1.2, cds: [7, 8, 9] },
-      { speed: 200, hitRadius: 1.2, cds: [6, 7, 8] },
-      { speed: 210, hitRadius: 1.3, chain: { count: 1, radius: 22, falloff: 0.6 }, cds: [5, 6, 7] },
+      { speed: 190, hitRadius: 1.7, cds: [7, 8, 9] },
+      { speed: 200, hitRadius: 1.7, cds: [6, 7, 8] },
+      { speed: 210, hitRadius: 1.8, chain: { count: 1, radius: 22, falloff: 0.6 }, cds: [5, 6, 7] },
     ],
   },
 };
@@ -164,6 +164,8 @@ const monsterBolt = (name: string, speed: number, damage: number, area: number, 
 spells['genie-bolt'] = monsterBolt('Curse Bolt', 42, 11, 3.5, 8);
 spells['wraith-bolt'] = monsterBolt('Wraith Wail', 34, 15, 4, 10, [], { hitRadius: 1.9 });
 spells['tide-bolt'] = monsterBolt('Tide Surge', 38, 9, 3.5, 8, [{ type: 'slow', mult: 0.7, durationTicks: 50 }]);
+spells['sand-bolt'] = monsterBolt('Sand Lash', 36, 14, 4, 9, [{ type: 'slow', mult: 0.8, durationTicks: 40 }], { hitRadius: 1.8 });
+spells['guardian-bolt'] = monsterBolt('Gilded Lance', 46, 13, 3.2, 10);
 spells.combos = [
   { id: 'steam', name: 'Steam Cloud', needs: ['water', 'fire'], description: 'Water bolts crossing a fire zone make a scalding, vision-blocking steam cloud.', durationTicks: 150, radius: 16, dps: 12, slowMult: 0.7 },
   { id: 'firetornado', name: 'Fire Tornado', needs: ['air', 'fire'], description: 'Lightning through a Firestorm whips it into a roaming fire tornado.', durationTicks: 120, radius: 10, dps: 22, slowMult: 1 },

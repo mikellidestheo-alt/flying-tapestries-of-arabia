@@ -15,6 +15,7 @@ import { Sky } from './sky';
 import { TapestryModel } from './tapestry';
 import { TerrainRenderer } from './terrainRenderer';
 import { Water } from './water';
+import { SandLayer, gustAt } from './weather';
 
 const CHUNK = simData.chunkSize;
 
@@ -44,6 +45,7 @@ interface World {
   entities: EntityRenderer;
   wizards: WizardView[];
   fog: THREE.Fog;
+  sand: SandLayer | null;
 }
 
 export class GameRenderer {
@@ -104,7 +106,12 @@ export class GameRenderer {
     sun.position.set(...chapter.palette.sunDir);
     scene.add(sun, new THREE.HemisphereLight(chapter.palette.skyMid, chapter.palette.sand, 1.3));
 
-    this.world = { scene, sim, chapter, terrain, sky, water, entities, wizards, fog };
+    let sand: SandLayer | null = null;
+    if (chapter.weather?.sandstorm && this.preset.weatherLayer) {
+      sand = new SandLayer(chapter);
+      scene.add(sand.mesh);
+    }
+    this.world = { scene, sim, chapter, terrain, sky, water, entities, wizards, fog, sand };
     this.localIndex = localIndex;
     this.camReady = false;
     this.applyFog();
@@ -117,30 +124,56 @@ export class GameRenderer {
     if (!w) return;
     w.terrain.dispose();
     w.sky.dispose();
+    w.sand?.dispose();
     w.water.dispose();
     w.entities.dispose();
     for (const v of w.wizards) v.model.dispose();
     this.world = null;
   }
 
+  /** Add or remove the sand layer when the quality preset changes. */
+  private setSandLayer(): void {
+    const w = this.world;
+    if (!w || !w.chapter.weather?.sandstorm) return;
+    if (this.preset.weatherLayer && !w.sand) {
+      w.sand = new SandLayer(w.chapter);
+      w.scene.add(w.sand.mesh);
+    } else if (!this.preset.weatherLayer && w.sand) {
+      w.scene.remove(w.sand.mesh);
+      w.sand.dispose();
+      w.sand = null;
+    }
+  }
+
   get viewDistance(): number {
     return this.preset.viewRadiusChunks * CHUNK * this.radiusScale;
   }
 
+  /** Sandstorm gusts (0..1) tighten the fog by up to `fogTighten`. Everything else is calm. */
+  private gust = 0;
+
   private applyFog(): void {
     const d = this.viewDistance;
-    if (this.world) {
-      this.world.fog.near = d * 0.3;
-      this.world.fog.far = d * 0.97;
-    }
+    this.applyFogOnly();
     this.camera.far = d * 1.4;
     this.camera.updateProjectionMatrix();
+  }
+
+  /** Per-frame fog refresh for weather (no camera matrix work). */
+  private applyFogOnly(): void {
+    const w = this.world;
+    if (!w) return;
+    const d = this.viewDistance;
+    const k = 1 - (w.chapter.weather?.sandstorm?.fogTighten ?? 0) * this.gust;
+    w.fog.near = d * 0.3 * k;
+    w.fog.far = d * 0.97 * k;
   }
 
   setQuality(q: QualityPreset): void {
     this.quality = q;
     this.preset = PRESETS[q];
     if (this.world) {
+      this.setSandLayer();
       this.world.entities.setQuality(q);
       this.world.terrain.setQuality(this.preset);
       this.world.water.setMode(this.preset.water as 'shader' | 'flat');
@@ -274,6 +307,12 @@ export class GameRenderer {
 
     const pxScale = this.renderer.domElement.height / (2 * Math.tan((this.camera.fov * Math.PI) / 360));
     w.entities.update(sim, alpha, dt, time, pxScale, this.camPos.x, this.camPos.z);
+    const storm = w.chapter.weather?.sandstorm;
+    if (storm) {
+      this.gust = gustAt(time);
+      this.applyFogOnly();
+      w.sand?.update(time, storm.layer, this.gust);
+    }
     w.sky.update(this.camera, this.camera.far * 0.9, time);
     w.water.update(this.camPos.x, this.camPos.z, this.camera.far * 2.5, time);
     this.renderer.render(w.scene, this.camera);

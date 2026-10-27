@@ -14,43 +14,65 @@
     "rock": "#9a5a7a",
     "grass": "#6aa05a",
     "bank": "#a0b060",
-    "waterShallow": "#6fd8d0",
-    "waterDeep": "#3a5a9a",
+    "waterShallow": "#fff1f2",
+    "waterDeep": "#e6a8c4",
     "sunDir": [
       -0.7,
       0.25,
       -0.67
     ],
     "sunLight": "#ffb878",
-    "ambient": "#8a5a9a"
+    "ambient": "#8a5a9a",
+    "cloudSea": true
   },
   "terrain": {
     "seed": 6606,
-    "baseHeight": 10,
-    "swellAmplitude": 10,
+    "baseHeight": 60,
+    "swellAmplitude": 8,
     "swellScale": 0.0018,
-    "duneAmplitude": 14,
+    "duneAmplitude": 10,
     "duneScale": 0.0075,
-    "duneWarp": 60,
+    "duneWarp": 50,
     "duneSharpness": 2,
     "detailAmplitude": 0.9,
     "detailScale": 0.05,
-    "waterLevel": 4,
+    "waterLevel": 30,
     "oasisScale": 0.005,
-    "oasisThreshold": 0.63,
-    "oasisSoftness": 0.18,
-    "oasisDepth": 6,
-    "oasisRim": 3.2
+    "oasisThreshold": 0.995,
+    "oasisSoftness": 0.05,
+    "oasisDepth": 4,
+    "oasisRim": 2,
+    "canyon": {
+      "scale": 0.0032,
+      "warp": 130,
+      "width": 0.36,
+      "softness": 0.06,
+      "depth": 64
+    },
+    "landmarks": {
+      "kind": "spire",
+      "cell": 240,
+      "chance": 0.55,
+      "radius": 4,
+      "height": 38,
+      "minAboveWater": 8,
+      "maxAboveWater": 90
+    },
+    "strata": {
+      "band": 4.2,
+      "contrast": 0.22
+    }
   },
   "props": {
-    "candidatesPerChunk": 22,
-    "palmChance": 0.55,
-    "rockChance": 0.1
+    "candidatesPerChunk": 20,
+    "palmChance": 0,
+    "rockChance": 0.22
   },
   "structureKit": "sky-palace",
   "creatureSet": [
     "cloud-serpent",
-    "palace-guardian"
+    "palace-guardian",
+    "dove"
   ],
   "ambient": {
     "sound": "high-wind",
@@ -90,7 +112,7 @@
   ],
   "targetShare": 0.38,
   "matchLengthMinutes": 15,
-  "aiLevel": 1.0,
+  "aiLevel": 1,
   "comeback": {
     "startMinute": 10,
     "trailingIncomeBonus": 0.5,
