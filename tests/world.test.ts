@@ -83,8 +83,8 @@ describe('mana orbs and wells', () => {
   it('a mana well appears and refills the pool while you hover beside it', () => {
     const s = make();
     run(s, simData.wells.firstTick + 2);
-    expect(s.wells.length).toBe(1);
-    expect(s.events.some((e) => e.type === 'wellSpawn')).toBe(true);
+    expect(s.wells.length).toBe(simData.wells.perSpawn); // wells come in pairs
+    expect(s.events.filter((e) => e.type === 'wellSpawn').length).toBe(simData.wells.perSpawn);
     const well = s.wells[0]!;
     const p = s.players[0]!;
     p.mana = 5;

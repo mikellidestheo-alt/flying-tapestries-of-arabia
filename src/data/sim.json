@@ -28,30 +28,31 @@
   },
   "caps": {
     "projectiles": 32,
-    "orbs": 160,
+    "orbs": 200,
     "creatures": 24,
-    "wells": 3,
+    "wells": 6,
     "events": 160,
     "zones": 24
   },
   "player": {
     "maxHp": 100,
-    "maxMana": 200,
-    "startMana": 60,
+    "maxMana": 1000,
+    "startMana": 100,
     "hpRegenPerSecond": 1.5,
     "respawnManaLossFrac": 0.3,
     "invulnTicks": 75,
     "absorbRadius": 3.6,
     "magnetRadius": 16,
-    "magnetSpeed": 46
+    "magnetSpeed": 46,
+    "barMana": 300
   },
   "orbs": {
-    "ambientEveryTicks": 22,
-    "ambientNearMax": 48,
+    "ambientEveryTicks": 18,
+    "ambientNearMax": 60,
     "ambientRadiusMin": 35,
-    "ambientRadiusMax": 170,
+    "ambientRadiusMax": 150,
     "ambientAltitude": 2.6,
-    "ambientValue": 5,
+    "ambientValue": 7,
     "lifetimeTicks": 3600,
     "despawnDistance": 260
   },
@@ -68,14 +69,17 @@
     "firstTick": 360,
     "minIntervalTicks": 700,
     "maxIntervalTicks": 1200,
-    "maxActive": 3,
-    "minDistance": 110,
-    "maxDistance": 260,
+    "maxActive": 4,
+    "minDistance": 90,
+    "maxDistance": 210,
     "reserve": 220,
     "lifeTicks": 3900,
     "drawRadius": 15,
     "drawMaxHeight": 45,
     "drawPerSecond": 40,
-    "fadeTicks": 60
+    "fadeTicks": 60,
+    "perSpawn": 2,
+    "pairMin": 45,
+    "pairMax": 95
   }
 }

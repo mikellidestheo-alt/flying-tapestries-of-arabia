@@ -42,7 +42,6 @@ export class Hud {
   private foeFill = $<HTMLElement>('#foeFill');
   private upgrade = $<HTMLButtonElement>('#btnUpgrade');
   private upgradeCost = $<HTMLElement>('#upgradeCost');
-  private deposit = $<HTMLElement>('#btnDeposit');
   private weapon = $<HTMLElement>('#btnWeapon');
   private sigBtn = $<HTMLElement>('#btnSig');
   private sigCd = $<HTMLElement>('#sigCd');
@@ -132,7 +131,7 @@ export class Hud {
     const mana = Math.floor(p.mana);
     if (mana !== this.last.mana) {
       this.last.mana = mana;
-      this.manaFill.style.transform = `scaleX(${p.mana / simData.player.maxMana})`;
+      this.manaFill.style.transform = `scaleX(${Math.min(1, p.mana / simData.player.barMana)})`;
       this.manaText.textContent = String(mana);
     }
     const def = primaryDef(p);
@@ -238,21 +237,20 @@ export class Hud {
       const near = d < castleData.upgradeRadius + 10;
       const up = nextUpgrade(mine);
       const stats = castleStats(mine.tier, mine.branches);
-      const infoKey = d < 110 ? `${mine.tier}|${Math.floor(mine.bank)}|${Math.round(mine.hp)}|${mine.branches.join()}|${Math.floor(mana)}` : '';
+      const infoKey = d < 110 ? `${mine.tier}|${Math.round(mine.hp)}|${mine.branches.join()}|${Math.floor(mana)}` : '';
       if (infoKey !== this.last.castle) {
         this.last.castle = infoKey;
         this.castleInfo.classList.toggle('hidden', infoKey === '');
         if (infoKey) {
-          this.castleInfo.innerHTML = `<b>${tierDef(mine.tier).name}</b> (tier ${mine.tier})<br>Archers ${stats.archers} · Walls ${Math.round(mine.hp)}/${mine.maxHp}<br>Income ${stats.income.toFixed(1)}/s · Bank ${Math.floor(mine.bank)}${up ? `<br>Next: ${up.cost} (bank + mana ${Math.floor(mine.bank + mana)})` : ''}`;
+          this.castleInfo.innerHTML = `<b>${tierDef(mine.tier).name}</b> (tier ${mine.tier})<br>Archers ${stats.archers} · Walls ${Math.round(mine.hp)}/${mine.maxHp}<br>Income ${stats.income.toFixed(1)}/s into your mana${up ? `<br>Next: ${up.cost} (you have ${Math.floor(mana)})` : ''}`;
         }
       }
-      const upKey = near && up ? `${up.cost}|${Math.floor(Math.min(mine.bank + mana, 9999))}` : '';
+      const upKey = near && up ? `${up.cost}|${Math.floor(Math.min(mana, 9999))}` : '';
       if (upKey !== this.last.up) {
         this.last.up = upKey;
         this.upgrade.classList.toggle('hidden', !(near && up));
-        this.deposit.classList.toggle('hidden', !(near && up));
         if (near && up) {
-          const can = mine.bank + mana >= up.cost;
+          const can = mana >= up.cost;
           this.upgrade.classList.toggle('cant', !can);
           this.upgradeCost.textContent = `Upgrade ${up.cost}`;
         }

@@ -17,7 +17,6 @@ describe('castle damage shakes mana loose every 20%', () => {
   it('releases one batch per 20% of wall HP and none for smaller hits', () => {
     const s = mk(0);
     const c = s.castles[1]!;
-    c.bank = 500;
     const releases = () => s.events.filter((e) => e.type === 'castleRelease').length;
     damageCastle(s, c, c.maxHp * 0.15, 0);
     expect(releases()).toBe(0);
@@ -27,7 +26,6 @@ describe('castle damage shakes mana loose every 20%', () => {
     damageCastle(s, c, c.maxHp * 0.4, 0); // 65% total: steps at 40% and 60%
     expect(releases()).toBe(3);
     expect(s.orbs.length).toBeGreaterThan(orbsBefore);
-    expect(c.bank).toBeLessThan(500); // paid from the castle's own bank first
     expect(c.hp).toBeGreaterThan(0);
   });
 

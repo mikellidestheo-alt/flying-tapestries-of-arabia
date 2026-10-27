@@ -119,7 +119,7 @@
     "color": "#8a6a3a",
     "glow": "#ffd27a"
   },
-  "palaceWinMana": 2400,
+  "palaceWinMana": 8600,
   "weather": {
     "sandstorm": {
       "fogTighten": 0.42,

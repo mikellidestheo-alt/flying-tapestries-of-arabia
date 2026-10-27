@@ -41,7 +41,7 @@ describe('elements and kits', () => {
       const { s, p } = arena(el);
       s.step([input(0, -1, ACTION_SPELL)]);
       expect(s.projectiles[0]!.spell).toBe(KITS[el].primary);
-      expect(p.mana).toBe(200 - spellAt(KITS[el].primary, 1).manaCost);
+      expect(p.mana).toBeCloseTo(200 - spellAt(KITS[el].primary, 1).manaCost, 0);
     }
   });
 });
@@ -120,7 +120,7 @@ describe('fire: Firestorm and burn', () => {
     const hp0 = inside.hp;
     s.step([input(0, -1, ACTION_SIGNATURE)]);
     expect(s.zones.length).toBe(1);
-    expect(p.mana).toBe(200 - sig.manaCost);
+    expect(p.mana).toBeCloseTo(200 - sig.manaCost, 0);
     expect(p.sigCd).toBeGreaterThanOrEqual(sig.cooldownTicks - 1); // cools down from the same tick
     for (let i = 0; i < sig.durationTicks! + 5; i++) {
       keep(inside, 0, inside.y, 55); keep(outside, 90, outside.y, 55);

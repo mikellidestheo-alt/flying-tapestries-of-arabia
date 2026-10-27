@@ -121,8 +121,6 @@ export interface Castle {
   branches: string[];
   hp: number;
   maxHp: number;
-  /** Shared castle mana pool: passive income, spent on upgrades. */
-  bank: number;
   invuln: number;
   ruined: boolean;
   archerCd: number[];

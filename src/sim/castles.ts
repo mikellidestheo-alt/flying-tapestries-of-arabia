@@ -3,7 +3,8 @@ import castleData from '../data/castles.json';
 import matchData from '../data/match.json';
 import { clamp, dcos, dsin } from './dmath';
 import type { Castle, Creature, Projectile } from './entities';
-import { CREATURES, hurtCreature } from './combat';
+import { CREATURES, hurtCreature, hurtWizard } from './combat';
+import simData from '../data/sim.json';
 import { incomeMultiplier } from './match';
 import type { PlayerInput, PlayerState, Sim } from './sim';
 import { SIM_DT, SIM_TICK_RATE } from './sim';
@@ -84,7 +85,7 @@ export function nextUpgrade(c: Castle): { tier: number; cost: number; needsBranc
 export function makeCastle(id: number, faction: number, x: number, y: number, z: number): Castle {
   const stats = castleStats(1, []);
   return {
-    id, faction, x, y, z, tier: 1, branches: [], hp: stats.wallHp, maxHp: stats.wallHp, bank: 0, invuln: 0,
+    id, faction, x, y, z, tier: 1, branches: [], hp: stats.wallHp, maxHp: stats.wallHp, invuln: 0,
     ruined: false, released: 0, archerCd: Array.from({ length: MAX_ARCHER_SLOTS }, (_, i) => 4 + i * 3), threat: 0, lastHit: -999,
   };
 }
@@ -122,7 +123,7 @@ export function findCastleSite(p: TerrainParams, anchor: { x: number; z: number 
   return { x: tx, z: tz, h: Math.max(baseHeight(p, tx, tz), p.waterLevel + 3) };
 }
 
-/** Attempt an upgrade for faction `p` standing near its castle. Pays from the bank, then the wizard's pool. */
+/** Attempt an upgrade for a wizard standing near their faction's castle. The cost comes out of the wizard's own mana pool. */
 export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolean {
   const c = sim.castles.find((q) => q.faction === p.faction);
   if (!c) return false;
@@ -131,7 +132,7 @@ export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolea
   const dx = p.x - c.x;
   const dz = p.z - c.z;
   if (dx * dx + dz * dz > castleData.upgradeRadius * castleData.upgradeRadius) return false;
-  if (c.bank + p.mana < up.cost) return false;
+  if (p.mana < up.cost) return false;
   let branch: string | null = null;
   if (up.needsBranch) {
     const idx = (input.branch ?? 0) - 1;
@@ -139,9 +140,7 @@ export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolea
     if (!id) return false;
     branch = id;
   }
-  const fromBank = Math.min(c.bank, up.cost);
-  c.bank -= fromBank;
-  p.mana -= up.cost - fromBank;
+  p.mana -= up.cost;
   c.tier = up.tier;
   if (branch) c.branches.push(branch);
   const stats = castleStats(c.tier, c.branches);
@@ -150,19 +149,6 @@ export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolea
   c.released = 0;
   refreshObstacle(sim, c);
   sim.emit('upgrade', c.x, c.y, c.z, c.tier);
-  return true;
-}
-
-/** Move mana from the wizard's pool into the castle bank (hold near your castle). The pool is capped, the bank is not, so this is how big upgrades get paid for. */
-export function tryDeposit(sim: Sim, p: PlayerState): boolean {
-  const c = sim.castles.find((q) => q.faction === p.faction);
-  if (!c || c.ruined || p.mana <= 0 || c.bank >= castleData.bankCap) return false;
-  const dx = p.x - c.x;
-  const dz = p.z - c.z;
-  if (dx * dx + dz * dz > castleData.upgradeRadius * castleData.upgradeRadius) return false;
-  const amount = Math.min(p.mana, castleData.depositPerSecond / SIM_TICK_RATE, castleData.bankCap - c.bank);
-  p.mana -= amount;
-  c.bank += amount; // already counted in the faction's captured share when it was collected
   return true;
 }
 
@@ -191,13 +177,12 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
   c.lastHit = sim.tick;
   sim.emit('castleHit', c.x, c.y + 6, c.z, amount);
   if (c.hp > 0) {
-    // Every 20% of the wall's HP knocked off shakes loose mana (paid from the bank first) for whoever is attacking.
+    // Every 20% of the wall's HP knocked off shakes loose mana for whoever is attacking.
     const rel = castleData.damageRelease;
     const steps = Math.floor((c.maxHp - c.hp) / (c.maxHp * rel.step) + 1e-9);
     while (c.released < steps) {
       c.released++;
       const value = rel.base + rel.perTier * c.tier;
-      c.bank -= Math.min(c.bank, value);
       dropLoot(sim, c, value);
       sim.emit('castleRelease', c.x, c.y + 6, c.z, value);
     }
@@ -208,9 +193,7 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
     if (attackerWizard && attackerWizard.faction !== c.faction) {
       sim.award(attackerWizard, matchData.bounty.castleDowngradeBase + matchData.bounty.castleDowngradePerTier * c.tier);
     }
-    const loot = c.bank * castleData.downgradeLootFraction;
-    c.bank -= loot;
-    dropLoot(sim, c, loot + 20);
+    dropLoot(sim, c, castleData.downgradeLoot.base + castleData.downgradeLoot.perTier * c.tier);
     c.tier--;
     c.branches = c.branches.slice(0, castleData.branchTiers.filter((t) => t <= c.tier).length);
     const stats = castleStats(c.tier, c.branches);
@@ -225,8 +208,7 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
     if (attackerWizard && attackerWizard.faction !== c.faction) sim.award(attackerWizard, matchData.bounty.castleDestroy);
     c.ruined = true;
     c.hp = 0;
-    dropLoot(sim, c, c.bank + 60);
-    c.bank = 0;
+    dropLoot(sim, c, castleData.destroyLoot);
     refreshObstacle(sim, c);
     sim.factions[c.faction]!.eliminated = true;
     for (const p of sim.players) {
@@ -237,13 +219,32 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
 }
 
 interface Threat {
-  kind: 0 | 1; // 0 creature, 1 projectile
+  kind: 0 | 1 | 2; // 0 creature, 1 projectile, 2 wizard
   c?: Creature;
   p?: Projectile;
+  w?: PlayerState;
   x: number;
   y: number;
   z: number;
+  /** Squared distance, already biased so wizards are picked a little sooner. */
   d2: number;
+}
+
+const MAX_THREATS = 12;
+const threatBuf: Threat[] = [];
+
+/** Insert keeping the buffer sorted by d2 and at most MAX_THREATS long. */
+function addThreat(t: Threat): void {
+  let i = threatBuf.length;
+  if (i >= MAX_THREATS && t.d2 >= threatBuf[i - 1]!.d2) return;
+  if (i >= MAX_THREATS) i--;
+  threatBuf[i] = t;
+  while (i > 0 && threatBuf[i - 1]!.d2 > threatBuf[i]!.d2) {
+    const tmp = threatBuf[i - 1]!;
+    threatBuf[i - 1] = threatBuf[i]!;
+    threatBuf[i] = tmp;
+    i--;
+  }
 }
 
 export function stepCastles(sim: Sim): void {
@@ -253,10 +254,15 @@ export function stepCastles(sim: Sim): void {
     if (c.invuln > 0) c.invuln--;
     const stats = castleStats(c.tier, c.branches);
 
-    // Passive income into the shared castle bank (counts towards the faction's mana share).
+    // Passive income goes straight into the pool of the faction's wizards (split between them) and counts towards the mana share.
     const income = (stats.income / SIM_TICK_RATE) * incomeMultiplier(sim, c.faction);
-    c.bank = Math.min(settings.bankCap, c.bank + income);
-    sim.factions[c.faction]!.captured += income;
+    let owners = 0;
+    for (const p of sim.players) if (p.faction === c.faction) owners++;
+    if (owners > 0) {
+      const share = income / owners;
+      for (const p of sim.players) if (p.faction === c.faction) p.mana = Math.min(simData.player.maxMana, p.mana + share);
+      sim.factions[c.faction]!.captured += income;
+    }
 
     // Healing aura for the faction's wizards.
     for (const p of sim.players) {
@@ -269,22 +275,34 @@ export function stepCastles(sim: Sim): void {
     }
 
     if (stats.archers === 0) continue;
-    // Pick the nearest threat: wild creatures and enemy projectiles (never wizards).
+    // Gather the threats in range, nearest first: hostile creatures, enemy wizards (every other faction) and
+    // enemy bolts. Peaceful animals and the castle's own side are never targeted.
     const range2 = stats.archerRange * stats.archerRange;
-    let best: Threat | null = null;
+    const vw = settings.archerVsWizard;
+    threatBuf.length = 0;
     for (const cr of sim.creatures) {
+      if (!CREATURES[cr.type]!.hostile || cr.hp <= 0) continue;
       const dx = cr.x - c.x;
       const dz = cr.z - c.z;
       const d2 = dx * dx + dz * dz;
-      if (CREATURES[cr.type]!.hostile && cr.hp > 0 && d2 < range2 && (!best || d2 < best.d2)) best = { kind: 0, c: cr, x: cr.x, y: cr.y, z: cr.z, d2 };
+      if (d2 < range2) addThreat({ kind: 0, c: cr, x: cr.x, y: cr.y, z: cr.z, d2 });
+    }
+    for (const w of sim.players) {
+      if (w.faction === c.faction || !w.active || w.hp <= 0) continue;
+      const dx = w.x - c.x;
+      const dz = w.z - c.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 < range2) addThreat({ kind: 2, w, x: w.x, y: w.y + 1, z: w.z, d2: d2 * vw.priorityBias });
     }
     for (const pr of sim.projectiles) {
       if (pr.faction === c.faction || pr.hp <= 0) continue;
       const dx = pr.x - c.x;
       const dz = pr.z - c.z;
       const d2 = dx * dx + dz * dz;
-      if (d2 < range2 && (!best || d2 < best.d2)) best = { kind: 1, p: pr, x: pr.x, y: pr.y, z: pr.z, d2 };
+      if (d2 < range2) addThreat({ kind: 1, p: pr, x: pr.x, y: pr.y, z: pr.z, d2 });
     }
+    if (threatBuf.length === 0) continue;
+    const owner = sim.players.findIndex((w) => w.faction === c.faction);
     const slots = archerSlots(c.tier, stats.archers);
     const cooldown = Math.max(1, Math.round(SIM_TICK_RATE / stats.archerRate));
     let arrowEvents = 0;
@@ -293,13 +311,15 @@ export function stepCastles(sim: Sim): void {
         c.archerCd[i]!--;
         continue;
       }
-      if (!best) continue;
+      // Archers spread across the threats (archer i takes the i-th nearest) so a crowd cannot be ignored.
+      const t = threatBuf[i % threatBuf.length]!;
       c.archerCd[i] = cooldown;
-      if (best.kind === 0) hurtCreature(sim, best.c!, stats.archerDamage, -1);
-      else best.p!.hp -= stats.archerDamage;
+      if (t.kind === 0) hurtCreature(sim, t.c!, stats.archerDamage, owner);
+      else if (t.kind === 1) t.p!.hp -= stats.archerDamage;
+      else if (sim.rng.next() < vw.hitChance) hurtWizard(sim, t.w!, stats.archerDamage * vw.damageMult, owner);
       if (arrowEvents++ < settings.maxArrowEventsPerTick) {
         const s = slots[i]!;
-        sim.emitLine('arrow', c.x + s.x, c.y + s.y, c.z + s.z, best.x, best.y, best.z, c.faction);
+        sim.emitLine('arrow', c.x + s.x, c.y + s.y, c.z + s.z, t.x, t.y, t.z, c.faction);
       }
     }
   }

@@ -3,7 +3,6 @@
 import simData from '../data/sim.json';
 import flightData from '../data/flight.json';
 import matchData from '../data/match.json';
-import castleData from '../data/castles.json';
 import { clamp, dcos, dsin, wrapAngle } from './dmath';
 import type { Element } from '../data/elements';
 import { DeltaStore, DELTA_BUMP, DELTA_CRATER } from './deltas';
@@ -14,7 +13,7 @@ import {
 } from './entities';
 import { CREATURES, creatureHp, stepProjectiles, tryCast, tryUpgradeSpell } from './combat';
 import { stepWizardStatuses, stepZones, trySignature } from './spells';
-import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryDeposit, tryUpgrade } from './castles';
+import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
 import { stepCreatures, stepNests, stepOrbs, stepPlayerVitals, stepWells } from './world';
@@ -28,7 +27,6 @@ export const ACTION_CRATER = 1;
 export const ACTION_MOUND = 2;
 export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
-export const ACTION_DEPOSIT = 16;
 export const ACTION_SPELLUP = 32;
 export const ACTION_SIGNATURE = 64;
 
@@ -268,7 +266,6 @@ export class Sim {
       this.stepPlayer(p, input);
       if ((input.actions | 0) & ACTION_SPELL) tryCast(this, i);
       if ((input.actions | 0) & ACTION_UPGRADE) tryUpgrade(this, p, input);
-      if ((input.actions | 0) & ACTION_DEPOSIT) tryDeposit(this, p);
       if ((input.actions | 0) & ACTION_SPELLUP) tryUpgradeSpell(this, p);
       if ((input.actions | 0) & ACTION_SIGNATURE) trySignature(this, i);
     }
@@ -376,15 +373,11 @@ export class Sim {
     return a;
   }
 
-  /** Grant mana outright (bounties, rewards): fills the pool first, the overflow goes into the castle bank. Counts fully towards the captured share. */
+  /** Grant mana outright (bounties, rewards) into the wizard's pool. Counts fully towards the captured share. */
   award(p: PlayerState, amount: number): void {
     const f = this.factions[p.faction];
     if (f) f.captured += amount;
-    const toPool = Math.max(0, Math.min(amount, simData.player.maxMana - p.mana));
-    p.mana += toPool;
-    const rest = amount - toPool;
-    const castle = this.castles.find((c) => c.faction === p.faction && !c.ruined);
-    if (castle && rest > 0) castle.bank = Math.min(castleData.bankCap, castle.bank + rest);
+    p.mana = Math.min(simData.player.maxMana, p.mana + amount);
     this.emit('bounty', p.x, p.y, p.z, amount);
   }
 
@@ -405,8 +398,8 @@ export class Sim {
   }
 
   /**
-   * Death is costly: ALL of the wizard's personal mana drops as orbs, 30% of the castle bank is
-   * lost, and whoever landed the last blow (within a few seconds) collects a big bounty.
+   * Death is costly: a share (`wizardRespawnManaLoss`) of the wizard's mana drops as orbs for
+   * anyone to grab, and whoever landed the last blow (within a few seconds) collects a big bounty.
    */
   respawn(p: PlayerState): void {
     p.deaths++;
@@ -419,8 +412,6 @@ export class Sim {
       const sp = this.rng.range(4, 12);
       this.spawnOrb(p.x, p.y, p.z, lost / n, dcos(a) * sp, dsin(a) * sp);
     }
-    const castle = this.castles.find((c) => c.faction === p.faction && !c.ruined);
-    if (castle) castle.bank *= 1 - matchData.deathBankLoss;
     const killer = this.players[p.lastHitBy];
     if (killer && killer.active && killer.faction !== p.faction && this.tick - p.lastHitTick <= matchData.lastHitCreditTicks) {
       killer.kills++;

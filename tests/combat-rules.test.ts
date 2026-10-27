@@ -46,7 +46,7 @@ describe('weapon tiers (3 per wizard attack)', () => {
     p.mana = 200;
     s.step([input(0, -1, ACTION_SPELLUP)]);
     expect(p.spellTier).toBe(2);
-    expect(p.mana).toBeCloseTo(200 - spellAt('fireball', 2).upgradeCost!, 5);
+    expect(p.mana).toBeCloseTo(200 - spellAt('fireball', 2).upgradeCost!, 0);
     p.mana = 200;
     s.step([input(0, -1, ACTION_SPELLUP)]);
     expect(p.spellTier).toBe(3);
@@ -77,7 +77,7 @@ describe('weapon tiers (3 per wizard attack)', () => {
     p.spellTier = 3;
     p.mana = 100;
     s.step([input(0, -1, ACTION_SPELL)]);
-    expect(p.mana).toBe(100 - spellAt('fireball', 3).manaCost);
+    expect(p.mana).toBeCloseTo(100 - spellAt('fireball', 3).manaCost, 0);
   });
 });
 
@@ -89,10 +89,8 @@ describe('killing and dying', () => {
     return { s, killer, victim };
   };
 
-  it('dying zeroes personal mana, costs 30% of the castle bank, and pays the killer a big bounty', () => {
+  it('dying drops a share of your mana as orbs, and pays the killer a big bounty', () => {
     const { s, killer, victim } = duel();
-    const vc = s.castles[1]!;
-    vc.bank = 200;
     victim.mana = 150;
     killer.mana = 20;
     victim.hp = 0;
@@ -100,26 +98,23 @@ describe('killing and dying', () => {
     victim.lastHitTick = s.tick;
     const captured0 = s.factions[0]!.captured;
     hold(s, 1);
-    expect(victim.mana).toBe(0);
-    expect(vc.bank).toBeLessThan(200 * (1 - matchData.deathBankLoss) + 2); // minus 30%, plus a tick of income
-    expect(killer.mana).toBe(20 + matchData.bounty.wizardKill);
+    expect(victim.mana).toBeCloseTo(150 * (1 - matchData.wizardRespawnManaLoss), 0); // plus a tick of castle income
+    expect(killer.mana).toBeCloseTo(20 + matchData.bounty.wizardKill, 0);
     expect(killer.kills).toBe(1);
     expect(s.factions[0]!.captured - captured0).toBeGreaterThanOrEqual(matchData.bounty.wizardKill);
     expect(s.events.some((e) => e.type === 'bounty')).toBe(true);
     // The victim's mana did not vanish: it dropped as orbs anyone can grab.
-    expect(s.orbs.reduce((a, o) => a + o.value, 0)).toBeGreaterThan(100);
+    expect(s.orbs.reduce((a, o) => a + o.value, 0)).toBeGreaterThan(150 * matchData.wizardRespawnManaLoss - 5);
   });
 
-  it('the bounty overflows into the killer\'s castle bank when the pool is full', () => {
+  it('the bounty lands in the same pool you spend from', () => {
     const { s, killer, victim } = duel();
     killer.mana = 190;
-    const bank0 = s.castles[0]!.bank;
     victim.hp = 0;
     victim.lastHitBy = 0;
     victim.lastHitTick = s.tick;
     hold(s, 1);
-    expect(killer.mana).toBe(simData.player.maxMana);
-    expect(s.castles[0]!.bank).toBeGreaterThan(bank0 + matchData.bounty.wizardKill - 10 - 1);
+    expect(killer.mana).toBeGreaterThanOrEqual(190 + matchData.bounty.wizardKill);
   });
 
   it('no bounty for deaths by monsters, stale hits, or friendly fire', () => {
@@ -136,14 +131,12 @@ describe('killing and dying', () => {
     expect(t.killer.kills).toBe(0);
   });
 
-  it('the human also loses everything when killed', () => {
+  it('the human also loses a share of their mana when killed', () => {
     const { s, killer } = duel();
     killer.mana = 180;
-    s.castles[0]!.bank = 100;
     killer.hp = 0;
     hold(s, 1);
-    expect(killer.mana).toBe(0);
-    expect(s.castles[0]!.bank).toBeLessThan(75);
+    expect(killer.mana).toBeCloseTo(180 * (1 - matchData.wizardRespawnManaLoss), 0);
     expect(killer.deaths).toBe(1);
   });
 });
@@ -164,9 +157,7 @@ describe('castle bounties', () => {
     p.mana = 0;
     damageCastle(s, rival, 10, 0);
     expect(rival.ruined).toBe(true);
-    // 320 exceeds the 200 pool: the pool fills and the rest lands in the attacker's castle bank.
-    expect(p.mana).toBe(simData.player.maxMana);
-    expect(s.castles[0]!.bank).toBeGreaterThanOrEqual(matchData.bounty.castleDestroy - simData.player.maxMana);
+    expect(p.mana).toBe(matchData.bounty.castleDestroy);
   });
 
   it('no payout for archers or for damaging your own castle', () => {
@@ -177,7 +168,7 @@ describe('castle bounties', () => {
     const p = s.players[0]!;
     p.mana = 0;
     damageCastle(s, mine, 10, 0);
-    expect(p.mana).toBe(0);
+    expect(p.mana).toBeCloseTo(0, 0);
   });
 });
 
@@ -286,6 +277,6 @@ describe('terrain tools cost mana', () => {
     p.mana = 50;
     s.step([input(0, -1, ACTION_CRATER)]);
     expect(s.terrain.deltas.list.length).toBe(1);
-    expect(p.mana).toBe(50 - simData.debugTools.manaCost);
+    expect(p.mana).toBeCloseTo(50 - simData.debugTools.manaCost, 0);
   });
 });

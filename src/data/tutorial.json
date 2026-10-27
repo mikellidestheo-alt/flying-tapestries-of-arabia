@@ -3,7 +3,7 @@
     { "id": "fly", "text": "Drag on the left side of the screen to fly. Push up to boost, pull down to brake.", "until": { "moved": 90 } },
     { "id": "mana", "text": "Fly into the glowing blue mana orbs to collect mana.", "until": { "manaGained": 8 } },
     { "id": "spell", "text": "Tap the big attack button to fire (it auto-aims a little). Try the signature button beside it too. Shoot a creature for more mana!", "until": { "casts": 2 } },
-    { "id": "castle", "text": "Follow the gold castle icon on the compass home. Near your castle, tap Upgrade. Short on mana? Hold Deposit to move mana into the castle bank first.", "until": { "castleTier": 2 } },
+    { "id": "castle", "text": "Follow the gold castle icon on the compass home. Near your castle, tap Upgrade. Your castle's income and everything you collect share one mana pool.", "until": { "castleTier": 2 } },
     { "id": "goal", "text": "Win by owning a tier-5 palace with enough mana, by capturing the target share, or by felling every rival castle. Wizard kills and castle hits pay big bounties, but if you die you lose ALL your mana. Upgrade your weapon (flame +) to fight better. Good luck!", "until": { "seconds": 9 } }
   ]
 }

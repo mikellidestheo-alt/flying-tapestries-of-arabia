@@ -7,7 +7,7 @@ import { clamp, datan2, wrapAngle } from './dmath';
 import { nextUpgrade } from './castles';
 import { CREATURES, nextSpellUpgrade, primaryDef, signatureDef } from './combat';
 import { DIFFICULTIES } from './match';
-import { ACTION_DEPOSIT, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
+import { ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
 
 export type Personality = keyof typeof rivalData.personalities;
 const AI = rivalData.ai;
@@ -66,7 +66,7 @@ function decide(sim: Sim, p: PlayerState, ai: RivalAI): void {
 
   // Upgrade when affordable (defensive builders do it earliest).
   const up = nextUpgrade(castle);
-  if (up && castle.bank + p.mana >= up.cost * (1.05 - 0.2 * pers.upgradeEagerness * skill)) {
+  if (up && p.mana >= up.cost * (1.05 - 0.2 * pers.upgradeEagerness * skill)) {
     offer({ kind: 'home', id: castle.id, x: castle.x, z: castle.z, score: 1.5 + 2.5 * pers.upgradeEagerness });
   }
 
@@ -254,11 +254,9 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
   let branch = 0;
   if (ai.goal === 'home') {
     const up = nextUpgrade(castle);
-    if (up && dist(p.x, p.z, castle.x, castle.z) < castleData.upgradeRadius - 4 && castle.bank + p.mana >= up.cost) {
+    if (up && dist(p.x, p.z, castle.x, castle.z) < castleData.upgradeRadius - 4 && p.mana >= up.cost) {
       actions |= ACTION_UPGRADE;
       branch = ai.branchPick;
-    } else if (up && dist(p.x, p.z, castle.x, castle.z) < castleData.upgradeRadius - 4 && p.mana > 120) {
-      actions |= ACTION_DEPOSIT; // top up the bank towards a big upgrade
     }
   }
   return { steer, throttle, actions, branch };

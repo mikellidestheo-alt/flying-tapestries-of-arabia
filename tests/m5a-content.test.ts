@@ -94,7 +94,7 @@ describe('render kits produce sane geometry', () => {
     });
     expect(harbour.chunks).toBeGreaterThan(0);
     expect(lanterns).toBeGreaterThan(0);
-  });
+  }, 60000); // 7000+ chunk builds: slow when the whole suite runs in parallel
 
   it('night chapters opt into stars and a moon; day chapters do not', () => {
     expect(ch4.palette.stars).toBe(true);

@@ -2,9 +2,7 @@
   "upgradeRadius": 48,
   "healRadius": 56,
   "healPerSecond": 9,
-  "bankCap": 900,
   "downgradeInvulnTicks": 150,
-  "downgradeLootFraction": 0.5,
   "retargetEveryTicks": 4,
   "maxArrowEventsPerTick": 6,
   "branchTiers": [
@@ -49,7 +47,7 @@
       "archerRange": 0,
       "archerDamage": 0,
       "archerRate": 0,
-      "income": 0.4,
+      "income": 1.2,
       "visual": {
         "wallRadius": 9,
         "wallHeight": 3.5,
@@ -68,10 +66,10 @@
       "cost": 80,
       "wallHp": 520,
       "archers": 2,
-      "archerRange": 75,
-      "archerDamage": 3,
-      "archerRate": 0.8,
-      "income": 0.7,
+      "archerRange": 85,
+      "archerDamage": 6,
+      "archerRate": 1.2,
+      "income": 2.0,
       "visual": {
         "wallRadius": 10.5,
         "wallHeight": 4.5,
@@ -90,10 +88,10 @@
       "cost": 170,
       "wallHp": 800,
       "archers": 4,
-      "archerRange": 88,
-      "archerDamage": 3.2,
-      "archerRate": 0.9,
-      "income": 1.05,
+      "archerRange": 100,
+      "archerDamage": 8,
+      "archerRate": 1.3,
+      "income": 3.0,
       "visual": {
         "wallRadius": 12,
         "wallHeight": 5.5,
@@ -112,10 +110,10 @@
       "cost": 300,
       "wallHp": 1200,
       "archers": 6,
-      "archerRange": 100,
-      "archerDamage": 3.0,
-      "archerRate": 0.95,
-      "income": 1.5,
+      "archerRange": 115,
+      "archerDamage": 9,
+      "archerRate": 1.4,
+      "income": 4.3,
       "visual": {
         "wallRadius": 13,
         "wallHeight": 6.5,
@@ -134,10 +132,10 @@
       "cost": 520,
       "wallHp": 1800,
       "archers": 8,
-      "archerRange": 112,
-      "archerDamage": 2.6,
-      "archerRate": 1.0,
-      "income": 2.1,
+      "archerRange": 130,
+      "archerDamage": 11,
+      "archerRate": 1.5,
+      "income": 6.0,
       "visual": {
         "wallRadius": 14.5,
         "wallHeight": 7.5,
@@ -173,10 +171,19 @@
       "shape": "disc"
     }
   ],
-  "depositPerSecond": 70,
   "damageRelease": {
     "step": 0.2,
     "base": 25,
     "perTier": 10
+  },
+  "downgradeLoot": {
+    "base": 40,
+    "perTier": 25
+  },
+  "destroyLoot": 150,
+  "archerVsWizard": {
+    "damageMult": 0.5,
+    "hitChance": 0.55,
+    "priorityBias": 0.5
   }
 }

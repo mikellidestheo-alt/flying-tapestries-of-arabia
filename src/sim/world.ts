@@ -259,22 +259,32 @@ export function stepWells(sim: Sim): void {
   const W = simData.wells;
   const T = sim.terrain;
 
-  if (sim.tick >= sim.nextWellTick && sim.wells.length < Math.min(W.maxActive, simData.caps.wells)) {
+  if (sim.tick >= sim.nextWellTick && sim.wells.length + W.perSpawn <= Math.min(W.maxActive, simData.caps.wells)) {
     const target = sim.players[sim.rng.int(0, sim.players.length)]!;
-    let placed = false;
-    for (let attempt = 0; attempt < 8 && !placed; attempt++) {
+    // Wells come in pairs: the first somewhere around a wizard, the second a short flight from it.
+    let ax = 0;
+    let az = 0;
+    let placed = 0;
+    const place = (x: number, z: number): boolean => {
+      if (baseHeight(T.params, x, z) <= T.params.waterLevel + 1.5) return false;
+      const y = T.surfaceAt(x, z);
+      sim.wells.push({ id: sim.nextId++, x, y, z, reserve: W.reserve, max: W.reserve, age: 0, fade: 0 });
+      sim.emit('wellSpawn', x, y, z, 0);
+      return true;
+    };
+    for (let attempt = 0; attempt < 8 && placed === 0; attempt++) {
       const a = sim.rng.range(0, 6.2831853);
       const r = sim.rng.range(W.minDistance, W.maxDistance);
-      const x = target.x + dcos(a) * r;
-      const z = target.z + dsin(a) * r;
-      if (baseHeight(T.params, x, z) > T.params.waterLevel + 1.5) {
-        const y = T.surfaceAt(x, z);
-        sim.wells.push({ id: sim.nextId++, x, y, z, reserve: W.reserve, max: W.reserve, age: 0, fade: 0 });
-        sim.emit('wellSpawn', x, y, z, 0);
-        placed = true;
-      }
+      ax = target.x + dcos(a) * r;
+      az = target.z + dsin(a) * r;
+      if (place(ax, az)) placed++;
     }
-    sim.nextWellTick = sim.tick + (placed ? sim.rng.int(W.minIntervalTicks, W.maxIntervalTicks) : 100);
+    for (let attempt = 0; attempt < 8 && placed > 0 && placed < W.perSpawn; attempt++) {
+      const a = sim.rng.range(0, 6.2831853);
+      const r = sim.rng.range(W.pairMin, W.pairMax);
+      if (place(ax + dcos(a) * r, az + dsin(a) * r)) placed++;
+    }
+    sim.nextWellTick = sim.tick + (placed > 0 ? sim.rng.int(W.minIntervalTicks, W.maxIntervalTicks) : 100);
   }
 
   for (const p of sim.players) p.drawing = 0;

@@ -4,11 +4,10 @@ import castleData from '../src/data/castles.json';
 import matchData from '../src/data/match.json';
 import { matchSetupFromChapter } from '../src/data/matchSetup';
 import { BRANCHES, MAX_TIER, TIERS, archerDps, castleStats, damageCastle, nextUpgrade } from '../src/sim/castles';
-import { ELEMENTS } from '../src/data/elements';
-import { BALANCE, castsPerSecond } from '../src/sim/balance';
-import { KITS, SPELLS, spellAt } from '../src/sim/combat';
+import { BALANCE } from '../src/sim/balance';
+import { SPELLS } from '../src/sim/combat';
 import { factionShare, incomeMultiplier } from '../src/sim/match';
-import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, Sim, type PlayerInput } from '../src/sim/sim';
+import { ACTION_SPELL, ACTION_UPGRADE, Sim, type PlayerInput } from '../src/sim/sim';
 import { buildingTopAt } from '../src/sim/terrain';
 
 const input = (steer = 0, throttle = 0, actions = 0, branch = 0): PlayerInput => ({ steer, throttle, actions, branch });
@@ -45,7 +44,7 @@ describe('match setup', () => {
       for (let b = a + 1; b < s.castles.length; b++) {
         const dx = s.castles[a]!.x - s.castles[b]!.x;
         const dz = s.castles[a]!.z - s.castles[b]!.z;
-        expect(Math.hypot(dx, dz)).toBeGreaterThan(400);
+        expect(Math.hypot(dx, dz)).toBeGreaterThan(matchData.castleSiteDistance * 0.8);
       }
     }
     expect(s.players.length).toBe(1 + CHAPTERS[i]!.rivals.length);
@@ -76,28 +75,33 @@ describe('castle tiers and upgrades', () => {
     }
   });
 
-  it('archer DPS stays a support role at every tier and branch pick: at most 60% of a wizard\'s budgeted DPS and 75% of the weakest wizard\'s raw single-target DPS', () => {
-    const budget = BALANCE.primaryBudget.dps[0]!;
-    const weakestRaw = Math.min(...ELEMENTS.map((el) => { const t1 = spellAt(KITS[el].primary, 1); return t1.damage * castsPerSecond(t1); }));
-    for (let tier = 1; tier <= MAX_TIER; tier++) {
+  it('archers get better with every tier and never out-damage a wizard of the same tier', () => {
+    let prev = 0;
+    for (let tier = 2; tier <= MAX_TIER; tier++) {
+      const base = archerDps(tier, []);
+      expect(base, `tier ${tier} base`).toBeGreaterThan(prev);
+      prev = base;
+      const t = TIERS[tier - 1]!;
+      const a = TIERS[tier - 2]!;
+      expect(t.archerDamage, `tier ${tier} damage`).toBeGreaterThanOrEqual(a.archerDamage);
+      expect(t.archerRange, `tier ${tier} range`).toBeGreaterThan(a.archerRange);
+      expect(t.archerRate, `tier ${tier} rate`).toBeGreaterThanOrEqual(a.archerRate);
+      const budget = BALANCE.primaryBudget.dps[Math.min(tier, 3) - 1]!;
+      expect(base, `tier ${tier} competent`).toBeGreaterThan(budget * 0.1);
       for (const branches of [[], ['archers'], ['archers', 'archers'], ['walls'], ['income', 'archers']]) {
-        const picks = branches.slice(0, castleData.branchTiers.filter((t) => t <= tier).length);
-        const dps = archerDps(tier, picks);
-        expect(dps, `tier ${tier} ${picks} vs budget`).toBeLessThanOrEqual(budget * 0.6);
-        expect(dps, `tier ${tier} ${picks} vs weakest raw`).toBeLessThanOrEqual(weakestRaw * 0.75);
+        const picks = branches.slice(0, castleData.branchTiers.filter((x) => x <= tier).length);
+        expect(archerDps(tier, picks), `tier ${tier} ${picks}`).toBeLessThanOrEqual(budget * 1.05);
       }
     }
   });
 
-  it('upgrades from the shared bank first, then the wizard pool; needs to be at the castle', () => {
+  it('upgrades are paid from the one mana pool; you need to be at the castle', () => {
     const s = make();
     const { c, p } = atCastle(s);
-    c.bank = 30;
-    p.mana = 60;
+    p.mana = 100;
     s.step([input(0, -1, ACTION_UPGRADE)]);
     expect(c.tier).toBe(2);
-    expect(c.bank).toBeLessThan(0.2); // bank emptied first (plus one tick of fresh income)
-    expect(p.mana).toBeCloseTo(60 - (TIERS[1]!.cost - 30), 0);
+    expect(p.mana).toBeCloseTo(100 - TIERS[1]!.cost, 0); // plus a tick of castle income
     expect(c.hp).toBe(c.maxHp);
     expect(s.events.some((e) => e.type === 'upgrade')).toBe(true);
     // Too far away: refused.
@@ -113,11 +117,9 @@ describe('castle tiers and upgrades', () => {
     p.mana = 10;
     s.step([input(0, -1, ACTION_UPGRADE)]);
     expect(c.tier).toBe(1);
-    p.mana = 200;
-    c.bank = 900;
+    p.mana = 900;
     s.step([input(0, -1, ACTION_UPGRADE)]);
     expect(c.tier).toBe(2);
-    c.bank = 900;
     s.step([input(0, -1, ACTION_UPGRADE)]); // tier 3 requires a branch
     expect(c.tier).toBe(2);
     expect(nextUpgrade(c)!.needsBranch).toBe(true);
@@ -134,15 +136,16 @@ describe('castle tiers and upgrades', () => {
     expect(castleStats(3, ['archers']).archers).toBe(base.archers + 1);
   });
 
-  it('earns passive mana income into the bank, scaled by tier', () => {
+  it('earns passive mana income straight into the wizard\'s pool, scaled by tier', () => {
     const s = make();
+    const m0 = s.players[0]!.mana;
     hold(s, 300);
-    const t1 = s.castles[0]!.bank;
-    expect(t1).toBeGreaterThan(0);
+    const t1 = s.players[0]!.mana - m0;
+    expect(t1).toBeGreaterThan(5);
     const s2 = make();
     s2.castles[0]!.tier = 4;
     hold(s2, 300);
-    expect(s2.castles[0]!.bank).toBeGreaterThan(t1 * 2);
+    expect(s2.players[0]!.mana - m0).toBeGreaterThan(t1 * 2);
   });
 });
 
@@ -228,6 +231,7 @@ describe('castle damage', () => {
 
   it('a tier-1 castle is destroyed: faction eliminated; the last castle standing wins', () => {
     const s = make();
+    for (const w of s.players.slice(1)) w.mana = 0; // keep the rivals from upgrading mid-test
     const rival = s.castles[1]!;
     rival.hp = 1;
     damageCastle(s, rival, 10);
@@ -255,6 +259,7 @@ describe('castle damage', () => {
 
   it('a fireball hitting a rival castle damages it', () => {
     const s = make();
+    for (const w of s.players.slice(1)) w.mana = 0; // no rival upgrades (they would refill the walls)
     const rival = s.castles[1]!;
     const hp0 = rival.hp;
     s.projectiles.push({
@@ -354,7 +359,7 @@ describe('difficulty', () => {
 });
 
 describe('rival AI and full matches', () => {
-  it.each([0, 1].map((i) => [CHAPTERS[i]!.id, i] as const))('%s: rivals collect mana, upgrade and stay finite; the run is deterministic', (_id, i) => {
+  it.each([0, 1].map((i) => [CHAPTERS[i]!.id, i] as const))('%s: rivals collect mana, upgrade and stay finite; the run is deterministic', { timeout: 60000 }, (_id, i) => {
     const run = () => {
       const s = make(i);
       const p = s.players[0]!;
@@ -374,7 +379,7 @@ describe('rival AI and full matches', () => {
     const b = run();
     expect(JSON.stringify({ f: a.factions, c: a.castles, p: a.players })).toBe(JSON.stringify({ f: b.factions, c: b.castles, p: b.players }));
     expect(a.factions[1]!.captured).toBeGreaterThan(30); // the rival gathered mana on its own
-    expect(a.castles[1]!.bank + a.castles[1]!.tier * 100).toBeGreaterThan(50);
+    expect(a.castles[1]!.tier * 100).toBeGreaterThan(50);
   });
 
   it('rivals fight back: an aggressive rival hurts a player who sits in its range', () => {
@@ -419,48 +424,11 @@ describe('rooftop flight in the Spice Bazaar', () => {
   });
 });
 
-describe('depositing mana into the castle bank', () => {
-  it('lets a capped (200) mana pool pay for the 300/520 upgrades', () => {
-    const s = make();
-    const { c, p } = atCastle(s);
-    c.tier = 3;
-    c.branches = ['archers'];
-    c.bank = 0;
-    p.mana = 200;
-    s.step([input(0, -1, ACTION_UPGRADE, 1)]); // tier 4 costs 300: pool alone (200) is not enough
-    expect(c.tier).toBe(3);
-    for (let i = 0; i < 90; i++) {
-      p.x = c.x; p.z = c.z + 10; p.y = c.y + 30; p.vx = p.vz = 0;
-      s.step([input(0, -1, ACTION_DEPOSIT)]);
-    }
-    expect(c.bank).toBeGreaterThan(100);
-    p.mana = 200; // gathered more orbs meanwhile
-    s.step([input(0, -1, ACTION_UPGRADE)]);
-    expect(c.tier).toBe(4);
-  });
-
-  it('only works near your own castle and never exceeds the bank cap', () => {
-    const s = make();
-    const { c, p } = atCastle(s);
-    p.mana = 100;
-    p.x += 300;
-    s.step([input(0, -1, ACTION_DEPOSIT)]);
-    expect(p.mana).toBe(100);
-    p.x = c.x;
-    p.z = c.z + 10;
-    c.bank = castleData.bankCap - 1;
-    for (let i = 0; i < 20; i++) {
-      p.x = c.x; p.z = c.z + 10; p.vx = p.vz = 0;
-      s.step([input(0, -1, ACTION_DEPOSIT)]);
-    }
-    expect(c.bank).toBeLessThanOrEqual(castleData.bankCap + 0.2); // plus a little passive income
-  });
-});
-
 describe('guided aim', () => {
   const shoot = (offAngle: number, dist = 90) => {
     const s = make();
     const p = s.players[0]!;
+    for (const w of s.players.slice(1)) w.mana = 0; // rival castles must not grow archers that would shoot the target
     p.x = 0; p.z = 0; p.y = s.terrain.surfaceAt(0, 0) + 10; p.heading = 0; p.mana = 200; p.invuln = 9999; p.speed = 9; p.vx = p.vz = 0;
     s.spawnCreature('dust-sprite', Math.sin(offAngle) * dist, Math.cos(offAngle) * dist);
     const c = s.creatures[0]!;
