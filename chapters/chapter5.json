@@ -126,5 +126,6 @@
       "layer": 0.2
     }
   },
-  "enemyDensity": 1.25
+  "enemyDensity": 1.25,
+  "rank": "Grand Wizard"
 }

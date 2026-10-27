@@ -132,5 +132,6 @@
     "glow": "#ffd27a"
   },
   "palaceWinMana": 8600,
-  "enemyDensity": 1.5
+  "enemyDensity": 1.5,
+  "rank": "Grand Master Wizard"
 }

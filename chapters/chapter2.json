@@ -123,5 +123,6 @@
     "glow": "#ffb347"
   },
   "palaceWinMana": 10200,
-  "enemyDensity": 0.7
+  "enemyDensity": 0.7,
+  "rank": "Novice"
 }

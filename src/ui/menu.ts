@@ -31,7 +31,7 @@ export class Menu {
 
   /** Index of the last chapter the player can start. */
   playableCount(): number {
-    return Math.min(gameData.playableChapters, this.host.progress().unlockedChapters);
+    return gameData.playableChapters; // every chapter is open from the start
   }
 
   render(): void {
@@ -50,7 +50,8 @@ export class Menu {
       const art = `linear-gradient(180deg, ${p.skyTop} 0%, ${p.skyMid} 40%, ${p.horizon} 62%, ${p.sand} 62%, ${p.sandShade} 100%)`;
       const best = prog.bestSeconds[i] ?? 0;
       const status = soon ? 'Coming soon' : locked ? 'Win the previous chapter to unlock' : cleared ? `Cleared ✓${best > 0 ? ` · best ${fmtTime(best)}` : ''}` : c.tagline;
-      b.innerHTML = `<span class="art" style="background:${art}"><i>${c.number}</i>${locked ? '<u aria-hidden="true">🔒</u>' : ''}</span><b>${c.name}</b><small>${status}</small>`;
+      const rank = `<em class="rank r${c.number}">${c.rank}</em>`;
+      b.innerHTML = `<span class="art" style="background:${art}"><i>${c.number}</i>${locked ? '<u aria-hidden="true">🔒</u>' : ''}</span><b>${c.name}</b>${rank}<small>${status}</small>`;
       b.disabled = locked;
       b.setAttribute('aria-label', `Chapter ${c.number}: ${c.name}. ${status}`);
       if (i === this.selected) b.classList.add('sel');
@@ -65,8 +66,7 @@ export class Menu {
     const names = (id: string) => (creatureData as Record<string, { name: string; hostile?: boolean }>)[id]?.name ?? id;
     const foes = sel.creatureSet.filter((t) => (creatureData as Record<string, { hostile?: boolean }>)[t]?.hostile !== false).map(names).join(', ');
     const wild = sel.creatureSet.filter((t) => (creatureData as Record<string, { hostile?: boolean }>)[t]?.hostile === false).map(names).join(', ');
-    const density = sel.enemyDensity < 0.8 ? 'Calm' : sel.enemyDensity < 1.1 ? 'Busy' : 'Dangerous';
-    $('#chapterDetail').innerHTML = `<b>${sel.tagline}</b><br><span>Rivals: ${sel.rivals.map((r) => `${r.name} (${r.personality})`).join(', ')}</span><br><span>Enemies (${density}): ${foes}${wild ? ` · Mana animals: ${wild}` : ''}</span>`;
+    $('#chapterDetail').innerHTML = `<b>${sel.tagline}</b><br><span>Rivals: ${sel.rivals.map((r) => `${r.name} (${r.personality})`).join(', ')}</span><br><span>Difficulty: <b>${sel.rank}</b> (${sel.number} of 6)</span><br><span>Enemies: ${foes}${wild ? ` · Mana animals: ${wild}` : ''}</span>`;
     $('#hubStats').textContent = `Chapters cleared ${popcount(prog.cleared)}/${gameData.playableChapters} · Matches won ${prog.wins}/${prog.played}`;
 
     const s = this.host.settings();

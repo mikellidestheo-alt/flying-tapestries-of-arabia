@@ -16,7 +16,7 @@ import type { CoopReplica } from '../net/replica';
 import { Controls } from '../input/controls';
 import { enterFullscreen, releaseWakeLock, requestWakeLock, vibrate } from '../platform';
 import { GameRenderer } from '../render/gameRenderer';
-import { GOVERNOR, PRESETS, QualityGovernor, guessPreset } from '../render/quality';
+import { GOVERNOR, PRESETS, QualityGovernor, ThermalGuard, guessPreset } from '../render/quality';
 import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } from '../save';
 import { tierDef } from '../sim/castles';
 import { CREATURES, KITS, primaryDef, spellAt } from '../sim/combat';
@@ -43,6 +43,8 @@ export class Game {
   private renderer: GameRenderer;
   private controls: Controls;
   private governor = new QualityGovernor(GOVERNOR.targetFps);
+  private thermal = new ThermalGuard();
+  private thermalToldAt = -Infinity;
   private debug: DebugOverlay;
   private panel: SettingsPanel;
   private menu: Menu;
@@ -438,6 +440,19 @@ export class Game {
     }
   }
 
+  // ------------------------------------------------------------ heat
+  /** Long sessions warm the phone: ease the heaviest visual effects in stages and say so once. */
+  private updateThermal(dt: number): void {
+    const before = this.thermal.stage;
+    const stage = this.thermal.update(dt, this.phase === 'playing');
+    if (stage === before) return;
+    this.renderer.setThermalStage(stage);
+    if (stage > before && this.time - this.thermalToldAt > 600) {
+      this.thermalToldAt = this.time;
+      this.hud.showToast('Long session: some glow effects were eased to keep your phone cooler. Battery saver in Settings cuts heat further.');
+    }
+  }
+
   // ------------------------------------------------------------ adaptive music
   /** Estimate how dangerous the moment is for the local player and steer the music's combat layers. */
   private updateMusicIntensity(sim: Sim, dt: number): void {
@@ -481,7 +496,8 @@ export class Game {
     const sim = this.sim;
     const coopPaused = this.replica !== null && this.phase === 'paused'; // the shared world does not stop for one player's pause
     if (this.phase !== 'playing' && this.phase !== 'ended' && !coopPaused) {
-      // Behind the title/menu/pause screens the scene is static: redraw only twice a second.
+      // Behind the title/menu/pause screens the scene is static: redraw only twice a second (and the phone cools down).
+      this.updateThermal(Math.min(1, frameMs / 1000));
       if (sim && now - this.idleDraw > 500) {
         this.idleDraw = now;
         this.renderer.render(1, 1 / 60, this.time);
@@ -493,6 +509,7 @@ export class Game {
     const dt = Math.min(0.1, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     this.time += dt;
+    this.updateThermal(dt);
 
     this.acc += dt;
     let steps = 0;

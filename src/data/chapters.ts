@@ -9,6 +9,8 @@ import ch6 from '../../chapters/chapter6.json';
 
 export const PERSONALITIES = ['aggressive', 'greedy', 'defensive'] as const;
 export type Personality = (typeof PERSONALITIES)[number];
+/** Difficulty ranks shown on the chapter menu, one per chapter, easiest first. */
+export const RANKS = ['Beginner', 'Novice', 'Apprentice', 'Wizard', 'Grand Wizard', 'Grand Master Wizard'] as const;
 export const MUSIC_SCALES = ['hijaz', 'bayati', 'nahawand', 'rast', 'saba'] as const;
 export const RHYTHMS = ['maqsum', 'saidi', 'baladi'] as const;
 
@@ -56,6 +58,8 @@ export interface ChapterConfig {
   number: number;
   name: string;
   tagline: string;
+  /** Difficulty rank shown on the menu (one of RANKS; rises with the chapter number). */
+  rank: (typeof RANKS)[number];
   palette: ChapterPalette;
   terrain: TerrainParams;
   props: PropParams;
@@ -101,6 +105,7 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(typeof c.id === 'string' && /^[a-z0-9-]+$/.test(c.id), 'id must be kebab-case');
   need(Number.isInteger(c.number) && c.number >= 1 && c.number <= 6, 'number must be 1-6');
   need(c.name.length > 0, 'name missing');
+  need(RANKS[c.number - 1] === c.rank, `rank must be ${RANKS[c.number - 1]} for chapter ${c.number}`);
   need(c.rivals.length === rivalCountForChapter(), `needs ${rivalCountForChapter()} rivals`);
   need(new Set(c.rivals.map((r) => r.id)).size === c.rivals.length, 'rival ids must be unique');
   need(new Set(c.rivals.map((r) => r.name)).size === c.rivals.length, 'rival names must be unique');

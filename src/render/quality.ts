@@ -105,3 +105,28 @@ export class QualityGovernor {
     return changed;
   }
 }
+
+/**
+ * Heat proxy. Phones give no temperature reading, so sustained play time stands in for it: "heat" builds while
+ * playing and drains at `coolRate` while in menus or paused. Stage 1 turns off bloom and the MSAA/post-process
+ * work behind it; stage 2 also trims render resolution and view distance a little. It only changes drawing (never the
+ * sim) and steps back down when the phone has had a rest.
+ */
+export const THERMAL = q.thermal;
+
+export class ThermalGuard {
+  heat = 0;
+  stage = 0;
+
+  /** Advance by `dt` seconds; returns the new stage (0-2). */
+  update(dt: number, playing: boolean): number {
+    this.heat = playing ? this.heat + dt : Math.max(0, this.heat - dt * THERMAL.coolRate);
+    const up1 = THERMAL.stage1Heat;
+    const up2 = THERMAL.stage2Heat;
+    if (this.stage < 2 && this.heat >= up2) this.stage = 2;
+    else if (this.stage < 1 && this.heat >= up1) this.stage = 1;
+    else if (this.stage === 2 && this.heat < up2 * THERMAL.releaseFraction) this.stage = 1;
+    if (this.stage === 1 && this.heat < up1 * THERMAL.releaseFraction) this.stage = 0;
+    return this.stage;
+  }
+}

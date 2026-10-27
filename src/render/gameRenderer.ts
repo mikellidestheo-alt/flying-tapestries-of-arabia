@@ -10,7 +10,7 @@ import type { SimEvent } from '../sim/entities';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 import { EntityRenderer } from './entityRenderer';
-import { GLOBAL_PIXEL_RATIO_CAP, PRESETS, type QualityPresetData } from './quality';
+import { GLOBAL_PIXEL_RATIO_CAP, PRESETS, THERMAL, type QualityPresetData } from './quality';
 import type { BloomPipeline } from './bloom';
 import quality from '../data/quality.json';
 import { linearOut } from './colorspace';
@@ -64,6 +64,8 @@ export class GameRenderer {
   private camReady = false;
   private reducedFlashing = false;
   private reducedMotion = false;
+  /** 0 normal, 1 bloom off, 2 also a little less resolution and distance (see ThermalGuard). */
+  private thermalStage = 0;
   private bloom: BloomPipeline | null = null;
   private bloomLoading = false;
   localIndex = 0;
@@ -72,7 +74,8 @@ export class GameRenderer {
     this.preset = PRESETS[quality];
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: quality !== 'low',
+      // High gets its anti-aliasing from the bloom target (one MSAA buffer instead of two); Low has none.
+      antialias: quality === 'medium',
       powerPreference: 'high-performance',
       stencil: false,
       alpha: false,
@@ -156,7 +159,7 @@ export class GameRenderer {
 
   /** Bloom runs only while the preset asks for it and the governor has not had to cut resolution. */
   private bloomActive(): boolean {
-    return !!this.bloom && this.preset.bloom && this.renderScale >= quality.bloom.minRenderScale;
+    return !!this.bloom && this.preset.bloom && this.thermalStage === 0 && this.renderScale >= quality.bloom.minRenderScale;
   }
 
   /** Add or remove the sand layer when the quality preset changes. */
@@ -175,7 +178,7 @@ export class GameRenderer {
   }
 
   get viewDistance(): number {
-    return this.preset.viewRadiusChunks * CHUNK * this.radiusScale;
+    return this.preset.viewRadiusChunks * CHUNK * this.radiusScale * (this.thermalStage >= 2 ? THERMAL.stage2RadiusScale : 1);
   }
 
   /** Sandstorm gusts (0..1) tighten the fog by up to `fogTighten`. Everything else is calm. */
@@ -220,6 +223,14 @@ export class GameRenderer {
     this.world?.entities.handleEvent(e);
   }
 
+  /** Called by the game when sustained play has warmed the phone up (see ThermalGuard). */
+  setThermalStage(stage: number): void {
+    if (stage === this.thermalStage) return;
+    this.thermalStage = stage;
+    this.applyFog();
+    this.resize();
+  }
+
   /** Steady camera: no boost zoom, calmer follow. Also drops the sand haze. */
   setReducedMotion(on: boolean): void {
     this.reducedMotion = on;
@@ -250,7 +261,7 @@ export class GameRenderer {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, GLOBAL_PIXEL_RATIO_CAP, this.preset.pixelRatioCap);
-    this.renderer.setPixelRatio(dpr * this.renderScale);
+    this.renderer.setPixelRatio(dpr * this.renderScale * (this.thermalStage >= 2 ? THERMAL.stage2RenderScale : 1));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();

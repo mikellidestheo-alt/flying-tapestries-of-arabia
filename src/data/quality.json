@@ -13,7 +13,7 @@
       ],
       "props": true,
       "propDensity": 1.0,
-      "pixelRatioCap": 1.5,
+      "pixelRatioCap": 1.35,
       "water": "shader",
       "chunkBuildsPerFrame": 2,
       "caps": {
@@ -39,7 +39,7 @@
       ],
       "props": true,
       "propDensity": 0.7,
-      "pixelRatioCap": 1.25,
+      "pixelRatioCap": 1.15,
       "water": "shader",
       "chunkBuildsPerFrame": 2,
       "caps": {
@@ -99,8 +99,16 @@
     "strength": 0.42,
     "radius": 0.5,
     "threshold": 0.88,
-    "resolutionScale": 0.5,
-    "msaaSamples": 4,
+    "resolutionScale": 0.4,
+    "msaaSamples": 2,
     "minRenderScale": 0.75
+  },
+  "thermal": {
+    "stage1Heat": 240,
+    "stage2Heat": 540,
+    "coolRate": 0.5,
+    "stage2RenderScale": 0.9,
+    "stage2RadiusScale": 0.85,
+    "releaseFraction": 0.6
   }
 }

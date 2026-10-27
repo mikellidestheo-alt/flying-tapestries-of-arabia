@@ -111,5 +111,6 @@
     "glow": "#ffd27a"
   },
   "palaceWinMana": 9600,
-  "enemyDensity": 0.6
+  "enemyDensity": 0.6,
+  "rank": "Beginner"
 }

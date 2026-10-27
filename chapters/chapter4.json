@@ -122,5 +122,6 @@
     "glow": "#ffd27a"
   },
   "palaceWinMana": 9300,
-  "enemyDensity": 1.0
+  "enemyDensity": 1.0,
+  "rank": "Wizard"
 }

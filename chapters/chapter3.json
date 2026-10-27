@@ -131,5 +131,6 @@
     "glow": "#ffd27a"
   },
   "palaceWinMana": 9300,
-  "enemyDensity": 0.85
+  "enemyDensity": 0.85,
+  "rank": "Apprentice"
 }

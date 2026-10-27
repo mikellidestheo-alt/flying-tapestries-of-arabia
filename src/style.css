@@ -228,3 +228,8 @@ h2 .ar.small { display: inline-block; margin-left: 10px; font-size: 20px; vertic
 #coopSeats .seat b { font-size: 18px; font-family: var(--font-title); font-weight: 400; }
 .coop-code span { font-family: var(--font-title); font-size: 20px; }
 .coop-join input { font-family: ui-monospace, Menlo, monospace; }
+
+/* Chapter rank badges */
+#chapterList .rank { display: block; padding: 0 9px; font: 400 13px var(--font-title); font-style: normal; letter-spacing: 0.4px; color: #ffd98a; opacity: 0.95; }
+#chapterList .rank.r1 { color: #9fe3a6; } #chapterList .rank.r2 { color: #b6e07a; } #chapterList .rank.r3 { color: #f3d86a; }
+#chapterList .rank.r4 { color: #ffb45a; } #chapterList .rank.r5 { color: #ff8a6a; } #chapterList .rank.r6 { color: #ff6f9a; }
