@@ -7,6 +7,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="Flying Tapestries of Arabia - fly a magic tapestry over a golden Arabian fantasy world." />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="preload" href="./fonts/aladin-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/amiri-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <title>Flying Tapestries of Arabia</title>
   </head>
   <body>
@@ -76,27 +78,28 @@
     <div id="startScreen" class="overlay">
       <div class="card">
         <h1>Flying Tapestries<br />of Arabia</h1>
-        <p class="sub">Fly a magic tapestry over a golden world.</p>
-        <button id="startBtn" class="primary" type="button">Tap to begin</button>
+        <p class="ar big" lang="ar" dir="rtl">السجّادة الطائرة</p>
+        <p class="sub">Soar upon a magic carpet over a golden world.</p>
+        <button id="startBtn" class="primary" type="button">Begin thy journey</button>
         <p class="tiny" id="startInfo"></p>
       </div>
     </div>
 
     <div id="menuScreen" class="overlay hidden">
       <div class="card wide menu">
-        <h2>Choose your chapter</h2>
+        <h2>Choose your journey <span class="ar small" lang="ar">اختر رحلتك</span></h2>
         <p id="hubStats" class="tiny"></p>
         <div id="chapterList"></div>
         <div id="chapterDetail"></div>
         <div class="menu-row"><label>Difficulty</label><div id="difficultySeg" class="seg"></div></div>
         <div class="menu-row"><label>Wizard</label><div id="wizardSeg" class="seg"></div></div>
-        <div class="menu-actions"><button id="playBtn" class="primary" type="button">Play</button><button id="coopBtn" class="ghost" type="button">Co-op (online)</button><button id="menuSettingsBtn" class="ghost" type="button">Settings</button></div>
+        <div class="menu-actions"><button id="playBtn" class="primary" type="button">Take Flight</button><button id="coopBtn" class="ghost" type="button">Fly Together (online)</button><button id="menuSettingsBtn" class="ghost" type="button">Settings</button></div>
       </div>
     </div>
 
     <div id="coopScreen" class="overlay hidden">
       <div class="card wide menu">
-        <h2>Co-op: two wizards, one castle</h2>
+        <h2>Fly Together: two wizards, one castle <span class="ar small" lang="ar">معًا</span></h2>
         <p id="coopNote" class="tiny"></p>
         <div id="coopHome">
           <div class="menu-actions"><button id="coopCreate" class="primary" type="button">Create a room</button></div>
@@ -121,6 +124,7 @@
     <div id="endScreen" class="overlay hidden">
       <div class="card wide">
         <h1 id="endTitle">Victory</h1>
+        <p id="endArabic" class="ar big" lang="ar" dir="rtl" style="text-align:center"></p>
         <p class="sub" id="endReason"></p>
         <div id="endShares"></div>
         <div class="menu-actions"><button id="endNext" class="primary" type="button">Next chapter</button><button id="endRetry" class="ghost" type="button">Play again</button><button id="endMenu" class="ghost" type="button">Chapters</button></div>
@@ -130,6 +134,7 @@
     <div id="pauseScreen" class="overlay hidden">
       <div class="card wide">
         <h2 id="settingsTitle">Paused</h2>
+        <p id="settingsArabic" class="ar small" lang="ar" dir="rtl" style="text-align:center"></p>
         <div class="row" id="pauseActions"><button id="resumeBtn" class="primary" type="button">Resume</button><button id="restartBtn" class="ghost" type="button">Restart</button><button id="quitBtn" class="ghost" type="button">Chapters</button></div>
         <div class="row"><button id="closeSettingsBtn" class="primary hidden" type="button">Close</button></div>
         <div id="settings"></div>

@@ -359,10 +359,12 @@ describe('free-plan gate', () => {
 
   it('refuses new rooms past the soft message budget, stops running ones at the hard budget, and resets at UTC midnight', () => {
     const g = new GateCore(emptyGate('2026-10-27'));
+    const w = NET.gate.messageWeight; // incoming messages bill 20:1, so each counts as 0.05 requests
     expect(g.report(1000, t0)).toBe('ok');
-    g.report(NET.gate.dailyMessageBudget, t0);
+    g.report(NET.gate.dailyMessageBudget / w, t0);
     expect(g.issue('ip', t0, code)).toEqual({ ok: false, code: 'budget' });
-    expect(g.report(NET.gate.hardMessageBudget, t0)).toBe('stop');
+    expect(g.report(NET.gate.hardMessageBudget / w, t0)).toBe('stop');
+    expect(w).toBeLessThanOrEqual(0.05);
     const nextDay = Date.UTC(2026, 9, 28, 0, 0, 1);
     expect(g.issue('ip', nextDay, code).ok).toBe(true);
     expect(g.state.messages).toBe(0);

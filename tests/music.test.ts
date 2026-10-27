@@ -72,3 +72,22 @@ describe('music planner', () => {
     expect(neyBars).toEqual([1]);
   });
 });
+
+describe('recorded background track and fonts', async () => {
+  const { existsSync, readFileSync, statSync } = await import('node:fs');
+  const music = (await import('../src/data/music.json')).default;
+  it('the track named in music.json ships as an Ogg file of a sane size', () => {
+    const path = `public/${music.track}`;
+    expect(existsSync(path)).toBe(true);
+    expect(readFileSync(path).subarray(0, 4).toString('latin1')).toBe('OggS');
+    expect(statSync(path).size).toBeLessThan(3_500_000); // precached for offline play
+    expect(music.trackGain.combat).toBeGreaterThanOrEqual(music.trackGain.calm);
+  });
+
+  it('the Arabian-style fonts are bundled locally with their licences', () => {
+    for (const f of ['aladin-latin-400-normal', 'amiri-latin-400-normal', 'amiri-latin-700-normal', 'aref-ruqaa-arabic-700-normal']) {
+      expect(existsSync(`public/fonts/${f}.woff2`), f).toBe(true);
+    }
+    expect(readFileSync('public/fonts/LICENSES.txt', 'utf8')).toContain('SIL OPEN FONT LICENSE');
+  });
+});

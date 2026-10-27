@@ -1,4 +1,13 @@
+/* Typography: Aladin (Arabian Nights display face) for titles and buttons, Amiri (classical Naskh-companion serif)
+   for text, Aref Ruqaa for Arabic calligraphy accents. All SIL OFL, shipped locally (public/fonts) so they work offline. */
+@font-face { font-family: 'Aladin'; src: url('./fonts/aladin-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Amiri'; src: url('./fonts/amiri-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Amiri'; src: url('./fonts/amiri-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Aref Ruqaa'; src: url('./fonts/aref-ruqaa-arabic-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
 :root {
+  --font-body: 'Amiri', 'Noto Naskh Arabic', Georgia, serif;
+  --font-title: 'Aladin', 'Amiri', Georgia, serif;
+  --font-arabic: 'Aref Ruqaa', 'Amiri', 'Noto Naskh Arabic', serif;
   --gold: #f3c969;
   --ink: #1a1030;
   --panel: rgba(26, 16, 48, 0.82);
@@ -8,7 +17,7 @@
   --safe-l: env(safe-area-inset-left, 0px);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1030; overscroll-behavior: none; touch-action: none; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #fff; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1030; overscroll-behavior: none; touch-action: none; font-family: var(--font-body); color: #fff; }
 canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 .hidden { display: none !important; }
 
@@ -22,7 +31,7 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 
 #actions { position: absolute; right: calc(var(--safe-r) + 20px); bottom: calc(var(--safe-b) + 24px); pointer-events: none; }
 #ui.lefty #actions { right: auto; left: calc(var(--safe-l) + 20px); }
-.act { pointer-events: auto; touch-action: none; width: 82px; height: 82px; border-radius: 50%; border: 3px solid rgba(255, 236, 190, 0.8); background: rgba(26, 16, 48, 0.55); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font: 700 14px/1 system-ui, sans-serif; padding: 0; position: relative; overflow: hidden; }
+.act { pointer-events: auto; touch-action: none; width: 82px; height: 82px; border-radius: 50%; border: 3px solid rgba(255, 236, 190, 0.8); background: rgba(26, 16, 48, 0.55); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font: 700 14px/1 var(--font-body); padding: 0; position: relative; overflow: hidden; }
 .act.spell { width: 104px; height: 104px; color: #ffb25a; border-color: #ffd58a; background: rgba(60, 20, 20, 0.6); }
 .act.spell span { color: #fff; margin-top: 2px; }
 .act.spell i { position: absolute; inset: 0; background: conic-gradient(rgba(0, 0, 0, 0.55) var(--cd, 0%), transparent 0); pointer-events: none; }
@@ -38,8 +47,8 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 .bar.mana { color: #5fd8ff; }
 .bar .track { flex: 1; height: 13px; border-radius: 7px; background: rgba(0, 0, 0, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.55); overflow: hidden; }
 .bar .track i { display: block; height: 100%; width: 100%; transform-origin: left; background: currentColor; }
-.bar b { font: 700 13px system-ui, sans-serif; color: #fff; min-width: 30px; text-align: right; text-shadow: 0 1px 2px #000; }
-#wellGuide { position: absolute; top: calc(var(--safe-t) + 52px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; color: #7ee8ff; font: 700 14px system-ui, sans-serif; text-shadow: 0 1px 3px #000; pointer-events: none; background: rgba(10, 30, 50, 0.45); border-radius: 16px; padding: 3px 12px 3px 8px; }
+.bar b { font: 700 13px var(--font-body); color: #fff; min-width: 30px; text-align: right; text-shadow: 0 1px 2px #000; }
+#wellGuide { position: absolute; top: calc(var(--safe-t) + 52px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; color: #7ee8ff; font: 700 14px var(--font-body); text-shadow: 0 1px 3px #000; pointer-events: none; background: rgba(10, 30, 50, 0.45); border-radius: 16px; padding: 3px 12px 3px 8px; }
 #wellArrow { filter: drop-shadow(0 1px 2px #000); }
 #vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 30, 30, 0.55)); transition: opacity 0.35s; }
 #vignette.on { opacity: 1; transition: none; }
@@ -58,14 +67,14 @@ h1 { font-size: clamp(26px, 6vw, 44px); line-height: 1.1; margin: 0 0 8px; color
 h2 { margin: 0 0 8px; color: var(--gold); }
 .sub { font-size: 18px; opacity: 0.9; margin: 0 0 18px; }
 .tiny { font-size: 13px; opacity: 0.65; margin-top: 14px; }
-button.primary { font: 700 20px system-ui, sans-serif; padding: 14px 34px; border-radius: 999px; border: 0; background: linear-gradient(#ffd77a, #e9a93c); color: #2a1535; min-height: 52px; touch-action: manipulation; }
+button.primary { font: 700 20px var(--font-body); padding: 14px 34px; border-radius: 999px; border: 0; background: linear-gradient(#ffd77a, #e9a93c); color: #2a1535; min-height: 52px; touch-action: manipulation; }
 button.primary:active { transform: scale(0.97); }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 4px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 16px; }
 .row:first-child { border-top: 0; justify-content: center; }
 .row label { flex: 1; }
 .row small { display: block; opacity: 0.65; font-size: 13px; }
 .seg { display: flex; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 10px; overflow: hidden; }
-.seg button { background: transparent; color: #fff; border: 0; padding: 10px 12px; min-width: 52px; min-height: 44px; font: 600 14px system-ui, sans-serif; touch-action: manipulation; }
+.seg button { background: transparent; color: #fff; border: 0; padding: 10px 12px; min-width: 52px; min-height: 44px; font: 600 14px var(--font-body); touch-action: manipulation; }
 .seg button.on { background: var(--gold); color: #2a1535; }
 .slider { width: 220px; max-width: 45vw; height: 44px; accent-color: var(--gold); touch-action: pan-y; }
 .switch { width: 54px; height: 32px; border-radius: 16px; background: rgba(255, 255, 255, 0.25); border: 0; position: relative; flex: none; touch-action: manipulation; }
@@ -81,14 +90,14 @@ button.primary:active { transform: scale(0.97); }
 #shareBar { display: flex; height: 12px; border-radius: 7px; overflow: hidden; background: rgba(0, 0, 0, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.6); position: relative; }
 #shareBar i { display: block; height: 100%; transition: width 0.4s; }
 #shareBar b { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #fff; box-shadow: 0 0 4px #000; }
-#shareLine { display: flex; justify-content: space-between; font: 700 13px system-ui, sans-serif; text-shadow: 0 1px 3px #000; }
+#shareLine { display: flex; justify-content: space-between; font: 700 13px var(--font-body); text-shadow: 0 1px 3px #000; }
 #compass { position: relative; height: 30px; background: rgba(10, 8, 30, 0.4); border-radius: 15px; overflow: hidden; }
-#compass .mk { position: absolute; top: 3px; width: 24px; height: 24px; margin-left: -12px; display: flex; align-items: center; justify-content: center; font: 800 11px system-ui, sans-serif; text-shadow: 0 1px 2px #000; }
+#compass .mk { position: absolute; top: 3px; width: 24px; height: 24px; margin-left: -12px; display: flex; align-items: center; justify-content: center; font: 800 11px var(--font-body); text-shadow: 0 1px 2px #000; }
 #compass .mk svg { filter: drop-shadow(0 1px 2px #000); }
 #compass .mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, 0.35); }
-#castleInfo { position: absolute; left: calc(var(--safe-l) + 14px); top: calc(var(--safe-t) + 64px); font: 600 13px/1.35 system-ui, sans-serif; background: rgba(26, 16, 48, 0.6); border-radius: 10px; padding: 5px 9px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+#castleInfo { position: absolute; left: calc(var(--safe-l) + 14px); top: calc(var(--safe-t) + 64px); font: 600 13px/1.35 var(--font-body); background: rgba(26, 16, 48, 0.6); border-radius: 10px; padding: 5px 9px; pointer-events: none; text-shadow: 0 1px 2px #000; }
 #ui.lefty #castleInfo { left: auto; right: calc(var(--safe-r) + 76px); }
-#foeInfo { position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--safe-t) + 90px); width: 200px; font: 700 13px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; pointer-events: none; }
+#foeInfo { position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--safe-t) + 90px); width: 200px; font: 700 13px var(--font-body); text-align: center; text-shadow: 0 1px 3px #000; pointer-events: none; }
 #foeInfo .track { height: 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.6); overflow: hidden; margin-top: 2px; }
 #foeInfo .track i { display: block; height: 100%; width: 100%; transform-origin: left; background: #ff6b6b; }
 .act.upg { position: absolute; right: calc(var(--safe-r) + 240px); bottom: calc(var(--safe-b) + 28px); width: 86px; height: 86px; color: #ffe08a; border-color: #ffe08a; background: rgba(40, 30, 10, 0.65); font-size: 12px; }
@@ -97,19 +106,19 @@ button.primary:active { transform: scale(0.97); }
 .act.upg span { margin-top: 2px; text-align: center; line-height: 1.05; }
 #branchPicker { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(10, 6, 24, 0.55); z-index: 6; }
 #branchOptions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
-#branchOptions button { flex: 1 1 150px; min-height: 84px; border-radius: 14px; border: 2px solid var(--gold); background: rgba(255, 255, 255, 0.08); color: #fff; font: 700 16px system-ui, sans-serif; padding: 8px; touch-action: manipulation; }
+#branchOptions button { flex: 1 1 150px; min-height: 84px; border-radius: 14px; border: 2px solid var(--gold); background: rgba(255, 255, 255, 0.08); color: #fff; font: 700 16px var(--font-body); padding: 8px; touch-action: manipulation; }
 #branchOptions button small { display: block; font-weight: 500; opacity: 0.8; margin-top: 3px; font-size: 13px; }
 #branchOptions button svg { display: block; margin: 0 auto 2px; }
-button.ghost { font: 600 16px system-ui, sans-serif; padding: 10px 20px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.6); background: transparent; color: #fff; min-height: 48px; touch-action: manipulation; }
+button.ghost { font: 600 16px var(--font-body); padding: 10px 20px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.6); background: transparent; color: #fff; min-height: 48px; touch-action: manipulation; }
 button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 #tutorial { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + 12px); width: min(400px, 46vw); background: rgba(26, 16, 48, 0.82); border: 1.5px solid var(--gold); border-radius: 14px; padding: 8px 12px; pointer-events: auto; text-align: center; }
 #tutorial p { margin: 0 0 2px; font-size: 14px; line-height: 1.25; }
-#tutorial button { background: transparent; border: 0; color: #ffd98a; text-decoration: underline; font: 600 13px system-ui, sans-serif; padding: 6px 10px; min-height: 36px; touch-action: manipulation; }
+#tutorial button { background: transparent; border: 0; color: #ffd98a; text-decoration: underline; font: 600 13px var(--font-body); padding: 6px 10px; min-height: 36px; touch-action: manipulation; }
 .card.menu { max-width: 800px; padding: 10px 16px; }
 .card.menu h2 { margin-bottom: 2px; font-size: 20px; }
 .card.menu .seg button { min-height: 40px; padding: 8px 10px; }
 #chapterList { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 6px; }
-#chapterList button { text-align: left; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); color: #fff; padding: 6px 9px; min-height: 58px; font: 700 14px/1.15 system-ui, sans-serif; touch-action: manipulation; }
+#chapterList button { text-align: left; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); color: #fff; padding: 6px 9px; min-height: 58px; font: 700 14px/1.15 var(--font-body); touch-action: manipulation; }
 #chapterList button small { display: block; font-weight: 500; opacity: 0.8; font-size: 12px; margin-top: 2px; }
 #chapterList button.sel { border-color: var(--gold); background: rgba(243, 201, 105, 0.18); }
 #chapterList button:disabled { opacity: 0.45; }
@@ -130,15 +139,15 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 #sideTools { position: absolute; right: calc(var(--safe-r) + 20px); bottom: calc(var(--safe-b) + 140px); display: flex; flex-direction: row-reverse; gap: 10px; pointer-events: none; }
 #ui.lefty #sideTools { right: auto; left: calc(var(--safe-l) + 20px); flex-direction: row; }
 #sideTools .act.small { width: 56px; height: 56px; position: relative; }
-#sideTools .act i { position: absolute; bottom: 4px; font: 700 11px system-ui, sans-serif; font-style: normal; color: #cfe; }
+#sideTools .act i { position: absolute; bottom: 4px; font: 700 11px var(--font-body); font-style: normal; color: #cfe; }
 #ui.no-tt #sideTools .tt { display: none; }
 .act.wpn { color: #ffb25a; border-color: #ffd58a; background: rgba(60, 20, 20, 0.65); }
-.act.wpn b { position: absolute; bottom: 3px; font: 800 12px system-ui, sans-serif; color: #fff; }
+.act.wpn b { position: absolute; bottom: 3px; font: 800 12px var(--font-body); color: #fff; }
 .act.wpn svg { margin-bottom: 8px; }
 .act.wpn.cant { color: #8a8aa8; border-color: #8a8aa8; }
 .act.wpn.hidden, #sideTools .hidden { display: none; }
-#palaceInfo { font: 600 11px system-ui, sans-serif; text-align: center; text-shadow: 0 1px 3px #000; opacity: 0.9; }
-.act.spell em { position: absolute; top: 6px; font: 800 12px system-ui, sans-serif; font-style: normal; color: #ffd58a; letter-spacing: 1px; }
+#palaceInfo { font: 600 11px var(--font-body); text-align: center; text-shadow: 0 1px 3px #000; opacity: 0.9; }
+.act.spell em { position: absolute; top: 6px; font: 800 12px var(--font-body); font-style: normal; color: #ffd58a; letter-spacing: 1px; }
 
 .act.sig { position: absolute; right: calc(var(--safe-r) + 140px); bottom: calc(var(--safe-b) + 28px); width: 84px; height: 84px; color: #bfe9ff; border-color: #bfe9ff; background: rgba(14, 24, 52, 0.65); font-size: 13px; }
 #ui.lefty .act.sig { right: auto; left: calc(var(--safe-l) + 140px); }
@@ -154,7 +163,7 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 /* ---- M5c: hub cards, accessibility ---- */
 #chapterList button { display: flex; flex-direction: column; gap: 2px; padding: 0 0 6px; overflow: hidden; min-height: 0; }
 #chapterList .art { position: relative; display: block; height: 26px; width: 100%; border-bottom: 2px solid rgba(255, 255, 255, 0.25); }
-#chapterList .art i { position: absolute; left: 8px; bottom: 0; font: 800 17px system-ui, sans-serif; font-style: normal; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); }
+#chapterList .art i { position: absolute; left: 8px; bottom: 0; font: 800 17px var(--font-body); font-style: normal; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); }
 #chapterList .art u { position: absolute; right: 8px; top: 6px; text-decoration: none; font-size: 16px; }
 #chapterList button b, #chapterList button small { padding: 0 9px; }
 #chapterDetail { font-size: 13px; line-height: 1.4; margin: 4px 0 6px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.07); }
@@ -183,3 +192,39 @@ html.rm * { transition: none !important; animation: none !important; }
 #coopSeats .seat b { display: block; font-size: 16px; }
 .coop-error { color: #ff9a9a; text-align: center; min-height: 1.2em; margin: 4px 0; font-size: 14px; }
 #coopChapter { flex-wrap: wrap; }
+
+/* ---- Arabesque look (M6 polish): Arabian-nights type, gold ornaments, lattice backdrop ---- */
+h1, h2, button.primary, #endTitle, .coop-code b, #chapterList button b { font-family: var(--font-title); font-weight: 400; }
+h1 { letter-spacing: 1.5px; text-shadow: 0 2px 0 #7a4a10, 0 4px 14px rgba(0, 0, 0, 0.55); }
+h2 { letter-spacing: 0.5px; font-size: 24px; }
+button.primary { font-size: 24px; letter-spacing: 0.5px; border: 2px solid #fff0b8; box-shadow: 0 2px 0 #7a4a10, 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 0 0 2px rgba(122, 74, 16, 0.35); }
+button.ghost { font-family: var(--font-title); letter-spacing: 0.4px; font-size: 18px; border-color: rgba(243, 201, 105, 0.75); }
+.ar { font-family: var(--font-arabic); font-weight: 700; direction: rtl; color: var(--gold); line-height: 1.5; margin: 0; }
+.ar.big { font-size: clamp(26px, 5vw, 38px); text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); }
+.ar.small { font-size: 18px; opacity: 0.9; }
+.card.wide h2::after, #endTitle::after { content: ''; display: block; height: 16px; width: 200px; max-width: 70%; margin: 2px auto 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23f3c969' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23f3c969'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='1' x2='0'%3E%3Cstop offset='0' stop-color='%23f3c969' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23f3c969'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='8' y='8.2' width='85' height='1.6' fill='url(%23g)'/%3E%3Crect x='127' y='8.2' width='85' height='1.6' fill='url(%23h)'/%3E%3Cg fill='none' stroke='%23f3c969' stroke-width='1.4'%3E%3Crect x='101' y='1' width='16' height='16' transform='rotate(0 109 9)'/%3E%3Crect x='101' y='1' width='16' height='16' transform='rotate(45 109 9)'/%3E%3C/g%3E%3Ccircle cx='109' cy='9' r='2.2' fill='%23f3c969'/%3E%3C/svg%3E") center / contain no-repeat; }
+.card.wide { border: 2px solid rgba(243, 201, 105, 0.7); box-shadow: 0 0 0 5px rgba(26, 16, 48, 0.9), 0 0 0 6px rgba(243, 201, 105, 0.35), 0 10px 40px rgba(0, 0, 0, 0.5); border-radius: 22px 22px 18px 18px; }
+.overlay { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23f3c969' stroke-opacity='0.11' stroke-width='1'%3E%3Crect x='14' y='14' width='36' height='36'/%3E%3Crect x='14' y='14' width='36' height='36' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M0 0l14 14M64 0L50 14M0 64l14-14M64 64L50 50'/%3E%3C/g%3E%3C/svg%3E"), radial-gradient(ellipse at 50% 30%, rgba(90, 40, 100, 0.88), rgba(14, 8, 30, 0.96)); background-size: 64px 64px, auto; }
+.row, .menu-row { border-top-color: rgba(243, 201, 105, 0.2); }
+.row label, .menu-row label { font-size: 18px; }
+.row small { font-size: 15px; }
+.seg { border-color: rgba(243, 201, 105, 0.6); }
+.seg button { font-size: 17px; font-weight: 700; }
+.tiny { font-size: 15px; }
+.sub { font-size: 21px; }
+#chapterList button b { font-size: 16px; letter-spacing: 0.3px; }
+#chapterList button { border-color: rgba(243, 201, 105, 0.35); }
+#chapterList button small { font-size: 14px; }
+#toast, #tutorial p, #castleInfo, #shareLine, #foeInfo { font-size: 15px; }
+#palaceInfo { font-size: 13px; line-height: 1.2; }
+h2 .ar.small { display: inline-block; margin-left: 10px; font-size: 20px; vertical-align: middle; }
+#shareLine, #timer { font-size: 15px; font-weight: 700; }
+.bar b { font-size: 16px; }
+.act { font-size: 16px; }
+#toast { border-color: rgba(243, 201, 105, 0.55); font-size: 17px; }
+#castleInfo { font-size: 15px; }
+#compass .mk { font-family: var(--font-body); }
+#coopSeats .seat { font-size: 16px; border-color: rgba(243, 201, 105, 0.4); }
+#coopSeats .seat b { font-size: 18px; font-family: var(--font-title); font-weight: 400; }
+.coop-code span { font-family: var(--font-title); font-size: 20px; }
+.coop-join input { font-family: ui-monospace, Menlo, monospace; }

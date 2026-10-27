@@ -2,6 +2,7 @@
 import type { ChapterConfig } from '../data/chapters';
 import type { Element } from '../data/elements';
 import type { SimEvent } from '../sim/entities';
+import musicData from '../data/music.json';
 import { AmbientBed } from './ambient';
 import { AudioEngine } from './engine';
 import { MusicDirector } from './music';
@@ -34,7 +35,7 @@ export class GameAudio {
   start(chapter: ChapterConfig): void {
     if (!this.engine.unlock()) return;
     this.spec = musicSpecFor(chapter);
-    void this.music.play(this.spec, (chapter.music as { file?: string | null }).file ?? null);
+    void this.music.play(this.spec, (chapter.music as { file?: string | null }).file ?? musicData.track);
     this.ambient.start(chapter.ambient.sound);
   }
 
@@ -53,11 +54,13 @@ export class GameAudio {
   }
 
   pause(): void {
+    this.music.pause();
     this.engine.suspend();
   }
 
   resume(): void {
     this.engine.resume();
+    this.music.resume();
   }
 
   /** Stereo pan and distance gain for a world-space sound, relative to the listener. */

@@ -158,6 +158,13 @@ Phone result: works well, no fps drop. Changes:
 6. Drop-out test: close the tab on B for 10 s: the AI should fly B's wizard, then reopen the invite link: B returns to the match.
 7. Tell me about lag, any jumps, and the data use (about 0.7 Mbit/s each way).
 
+### After M6: music, billing, Arabesque look (2026-10-27)
+- **Billing confirmed (owner):** incoming WebSocket messages bill 20:1, outgoing and protocol pings are free: `gate.messageWeight` 0.05, so the free plan covers 120+ co-op matches a day.
+- **Background music:** the owner's track "Searing Horizon Strike" replaces the procedural music in every chapter (Opus 96 kbps, 2.0 MB, streamed from a Blob, swells in fights, offline-safe). Procedural music stays as the fallback.
+- **Arabesque UI:** Aladin / Amiri / Aref Ruqaa fonts (local, OFL), Arabic accents, gold khatam dividers, double gold frame, lattice backdrop, warmer wording.
+- **Why co-op was not visible on the Cloudflare link:** `origin/main` still holds M5a (the live link builds `main`); everything since lives on the session branch `ccr-b5f6d664-9r8k51` (see the git history). Co-op appears after the branch is merged to `main` (or from the branch's preview URL if Workers Builds previews are on).
+**Tests:** 254 passing. Bundle: JS 212.7 KB gzip; the track (2.0 MB) and fonts (~100 KB) are separate files that the service worker precaches.
+
 ## RESUME HERE (written 2026-10-27, end of M6)
 **State:** M1-M6 done. `npm run check` exits 0 (252 tests, 212.7 KB gzip JS). **M6 is a CHECKPOINT: stop and report.** Waiting for: the M3-M6 phone feedback (FPS/warmth per preset, bloom cost, the economy and archer changes, co-op feel with two phones, ping, data use), the answer on the 20:1 WebSocket billing ratio, and any wish for follow-ups (3-4 player co-op, voice/ping markers, delta-compressed snapshots, public matchmaking).
 **Tips:** co-op dev needs `npm run dev:server` next to `npm run dev`; never `pkill -f` with a pattern that appears in your own command line (it kills the shell: use `pgrep -x workerd` or kill by pid); the room-creation limit (6/hour/IP) also applies locally, so restart wrangler with `--persist-to <fresh dir>` between test runs.

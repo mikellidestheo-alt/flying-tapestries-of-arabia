@@ -122,5 +122,10 @@
       "lowHpBelow": 0.4,
       "lowHpWeight": 0.25
     }
+  },
+  "track": "music/searing-horizon-strike.ogg",
+  "trackGain": {
+    "calm": 0.8,
+    "combat": 1.0
   }
 }

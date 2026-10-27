@@ -12,7 +12,10 @@ export class MusicDirector {
   private timer: number | null = null;
   private nextBarTime = 0;
   private bar = 0;
-  private fileSource: AudioBufferSourceNode | null = null;
+  /** Recorded track (streamed through an <audio> element: a decoded 3-minute track would take ~65 MB of RAM). */
+  private fileEl: HTMLAudioElement | null = null;
+  private fileUrl: string | null = null;
+  private fileGain: GainNode | null = null;
   private token = 0;
   private intensity = 0;
 
@@ -23,6 +26,9 @@ export class MusicDirector {
   /** Combat intensity 0..1 (see intensity.ts); takes effect from the next scheduled bar. */
   setIntensity(i: number): void {
     this.intensity = Math.max(0, Math.min(1, i));
+    // The recorded track swells a little as the fight heats up.
+    const ctx = this.engine.ctx;
+    if (this.fileGain && ctx) this.fileGain.gain.setTargetAtTime(music.trackGain.calm + (music.trackGain.combat - music.trackGain.calm) * this.intensity, ctx.currentTime, 0.8);
   }
 
   /** Start (or restart) music for a chapter. `file` is an optional recorded OGG url. */
@@ -49,18 +55,37 @@ export class MusicDirector {
       const type = res.headers.get('content-type') ?? '';
       // The site falls back to index.html for unknown paths: only accept real audio.
       if (!res.ok || !/audio|ogg|octet/.test(type)) return false;
-      const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+      const blob = await res.blob(); // a plain GET: works from the offline cache too (no range requests)
       if (token !== this.token) return true;
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.loop = true;
-      src.connect(this.engine.music);
-      src.start();
-      this.fileSource = src;
+      const objectUrl = URL.createObjectURL(blob);
+      const el = new Audio(objectUrl);
+      el.loop = true;
+      el.preload = 'auto';
+      const gain = ctx.createGain();
+      gain.gain.value = music.trackGain.calm;
+      ctx.createMediaElementSource(el).connect(gain);
+      gain.connect(this.engine.music);
+      await el.play();
+      if (token !== this.token) {
+        el.pause();
+        URL.revokeObjectURL(objectUrl);
+        return true;
+      }
+      this.fileEl = el;
+      this.fileUrl = objectUrl;
+      this.fileGain = gain;
       return true;
     } catch {
-      return false;
+      return false; // fall back to the procedural music
     }
+  }
+
+  pause(): void {
+    this.fileEl?.pause();
+  }
+
+  resume(): void {
+    void this.fileEl?.play().catch(() => undefined);
   }
 
   private tick(): void {
@@ -89,12 +114,11 @@ export class MusicDirector {
     if (this.timer !== null) window.clearInterval(this.timer);
     this.timer = null;
     this.inst.stopDrone();
-    try {
-      this.fileSource?.stop();
-    } catch {
-      /* already stopped */
-    }
-    this.fileSource = null;
+    this.fileEl?.pause();
+    if (this.fileUrl) URL.revokeObjectURL(this.fileUrl);
+    this.fileEl = null;
+    this.fileUrl = null;
+    this.fileGain = null;
     this.planner = null;
   }
 }

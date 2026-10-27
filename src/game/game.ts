@@ -181,6 +181,7 @@ export class Game {
     this.settingsFromMenu = fromMenu;
     this.panel.refresh();
     $('#settingsTitle').textContent = fromMenu ? 'Settings' : 'Paused';
+    $('#settingsArabic').textContent = fromMenu ? 'الإعدادات' : '';
     this.show('#pauseActions', !fromMenu);
     this.show('#closeSettingsBtn', fromMenu);
     this.show('#menuScreen', false);
@@ -273,6 +274,7 @@ export class Game {
   private coopLost(text: string): void {
     this.phase = 'ended';
     $('#endTitle').textContent = 'Co-op ended';
+    $('#endArabic').textContent = '';
     $('#endReason').textContent = text;
     $('#endShares').replaceChildren();
     this.show('#endNext', false);
@@ -310,6 +312,7 @@ export class Game {
       writeSave(this.save);
     }
     $('#endTitle').textContent = won ? 'Victory!' : 'Defeat';
+    $('#endArabic').textContent = won ? 'النصر' : 'الهزيمة';
     $('#endReason').textContent = sim.match.reason;
     const shares = $('#endShares');
     shares.replaceChildren();

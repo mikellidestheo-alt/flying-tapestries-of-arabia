@@ -31,7 +31,7 @@ Push to `main` -> Cloudflare builds and deploys automatically. Build logs: proje
 ## Free-plan budget (checked in M6 against Cloudflare's current docs)
 | Limit (free plan, per day, resets 00:00 UTC) | Value | How co-op stays inside it |
 |---|---|---|
-| Durable Object requests (HTTP, RPC, **incoming WebSocket messages**, alarms) | 100,000 | Each player sends one tiny run-length-encoded input message every 4 ticks (7.5/s). The Gate counts every message (conservatively 1 each; docs mention a 20:1 ratio for WebSocket messages that I could not confirm: set `gate.messageWeight` in `src/data/net.json` to 0.05 once the dashboard confirms it). New rooms stop at 70,000 counted messages, running rooms are wound down at 90,000. |
+| Durable Object requests (HTTP, RPC, **incoming WebSocket messages**, alarms) | 100,000 | Each player sends one tiny run-length-encoded input message every 4 ticks (7.5/s). Cloudflare bills incoming WebSocket messages at 20:1 (confirmed by the owner): the Gate counts each message as 0.05 requests (`gate.messageWeight` in `src/data/net.json`), so a 12 minute two-player match is about 11k messages = about 550 requests, i.e. over 120 matches a day. Outgoing messages are free. New rooms stop at 70,000 counted requests, running rooms are wound down at 90,000. |
 | Durable Object duration | 13,000 GB-s (128 MB per object) | A running match is about 0.125 GB x seconds: a 12 minute match is about 90 GB-s, so over 140 matches/day. Lobbies use the hibernation API. Matches are capped at 30 minutes, lobbies at 10, idle players are dropped after 45 s. |
 | SQLite rows written / read | 100,000 / 5,000,000 | Only the tiny Gate state (and a lobby record) are stored: a handful of writes per match. |
 | Worker requests | 100,000 | Only `/api/*` and `/ws/*` reach the Worker: a few per match. Static files are free. |
@@ -47,4 +47,4 @@ Bandwidth is not metered; snapshots average about 5-6 KB at 15 Hz (about 85 KB/s
 - No accounts, no personal data, no secrets anywhere in the repo.
 
 ## Things that would cost money (we avoid them)
-Everything above is on the free plan. If the daily budget is ever too small for your friends, the options are Workers Paid ($5/month, 1M+ requests) or raising `messageWeight` accuracy once the real billing ratio is confirmed; neither is done without asking.
+Everything above is on the free plan. If the daily budget is ever too small for your friends, the option is Workers Paid ($5/month, 1M+ requests); not done without asking.

@@ -23,7 +23,7 @@
     "roomTtlSeconds": 7200,
     "createPerIpPerHour": 6,
     "dailyRoomCap": 80,
-    "messageWeight": 1,
+    "messageWeight": 0.05,
     "dailyMessageBudget": 70000,
     "hardMessageBudget": 90000,
     "reportEverySeconds": 30
