@@ -13,7 +13,7 @@ describe('chapter configs', () => {
 
   it('every chapter is a four-player match: three rivals', () => {
     expect(CHAPTERS.map((c) => c.rivals.length)).toEqual([3, 3, 3, 3, 3, 3]);
-    expect([1, 2, 3, 4, 5, 6].map(rivalCountForChapter)).toEqual([3, 3, 3, 3, 3, 3]);
+    expect([1, 2, 3, 4, 5, 6].map(() => rivalCountForChapter())).toEqual([3, 3, 3, 3, 3, 3]);
   });
 
   it('rival personalities are mixed in every chapter', () => {

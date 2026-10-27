@@ -68,7 +68,7 @@ export const CHAPTERS: ChapterConfig[] = [ch1, ch2, ch3, ch4, ch5, ch6] as unkno
 
 /** Every chapter is a four-player free-for-all: you plus three rivals (changed from 1/1/2/2/3/3 on user request). */
 export const RIVALS_PER_CHAPTER = 3;
-export function rivalCountForChapter(_n: number): number {
+export function rivalCountForChapter(): number {
   return RIVALS_PER_CHAPTER;
 }
 
@@ -83,7 +83,7 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(typeof c.id === 'string' && /^[a-z0-9-]+$/.test(c.id), 'id must be kebab-case');
   need(Number.isInteger(c.number) && c.number >= 1 && c.number <= 6, 'number must be 1-6');
   need(c.name.length > 0, 'name missing');
-  need(c.rivals.length === rivalCountForChapter(c.number), `needs ${rivalCountForChapter(c.number)} rivals`);
+  need(c.rivals.length === rivalCountForChapter(), `needs ${rivalCountForChapter()} rivals`);
   need(new Set(c.rivals.map((r) => r.id)).size === c.rivals.length, 'rival ids must be unique');
   need(new Set(c.rivals.map((r) => r.name)).size === c.rivals.length, 'rival names must be unique');
   for (const r of c.rivals) {
