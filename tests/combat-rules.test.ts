@@ -4,7 +4,9 @@ import { matchSetupFromChapter } from '../src/data/matchSetup';
 import matchData from '../src/data/match.json';
 import simData from '../src/data/sim.json';
 import { damageCastle } from '../src/sim/castles';
-import { CREATURES, MAX_SPELL_TIER, MONSTER_FACTION, hurtCreature, nextSpellUpgrade, spellAt, tryUpgradeSpell } from '../src/sim/combat';
+import { ELEMENTS } from '../src/data/elements';
+import { effectiveDamage, castsPerSecond } from '../src/sim/balance';
+import { CREATURES, KITS, MAX_SPELL_TIER, MONSTER_FACTION, hurtCreature, nextSpellUpgrade, spellAt, tryUpgradeSpell } from '../src/sim/combat';
 import { ACTION_CRATER, ACTION_SPELL, ACTION_SPELLUP, Sim, type PlayerInput } from '../src/sim/sim';
 
 const input = (steer = 0, throttle = 0, actions = 0): PlayerInput => ({ steer, throttle, actions });
@@ -17,20 +19,22 @@ const hold = (s: Sim, n: number) => {
 };
 
 describe('weapon tiers (3 per wizard attack)', () => {
-  it('each tier is stronger, costlier to cast, and no less mana-efficient', () => {
-    let prev = spellAt('fireball', 1);
-    for (let t = 2; t <= MAX_SPELL_TIER; t++) {
-      const cur = spellAt('fireball', t);
-      expect(cur.damage).toBeGreaterThan(prev.damage);
-      expect(cur.area).toBeGreaterThan(prev.area);
-      expect(cur.manaCost).toBeGreaterThanOrEqual(prev.manaCost);
-      expect(cur.damage / cur.manaCost).toBeGreaterThanOrEqual(prev.damage / prev.manaCost);
-      expect(cur.effects[0]!.dps).toBeGreaterThan(prev.effects[0]!.dps);
-      expect(cur.upgradeCost!).toBeGreaterThan(prev.upgradeCost ?? 0);
-      expect(cur.upgradeCost!).toBeLessThanOrEqual(simData.player.maxMana); // affordable from a full pool
-      prev = cur;
+  it('every wizard: each tier hits at least as hard, fires at least as fast, costs more, and is stronger overall', () => {
+    for (const el of ELEMENTS) {
+      let prev = spellAt(KITS[el].primary, 1);
+      for (let t = 2; t <= MAX_SPELL_TIER; t++) {
+        const cur = spellAt(KITS[el].primary, t);
+        expect(cur.damage, `${el} t${t} damage`).toBeGreaterThanOrEqual(prev.damage);
+        expect(cur.cooldownTicks, `${el} t${t} cooldown`).toBeLessThanOrEqual(prev.cooldownTicks);
+        expect(cur.manaCost, `${el} t${t} mana`).toBeGreaterThanOrEqual(prev.manaCost);
+        expect(cur.area, `${el} t${t} area`).toBeGreaterThanOrEqual(prev.area);
+        expect(effectiveDamage(cur) * castsPerSecond(cur)).toBeGreaterThan(effectiveDamage(prev) * castsPerSecond(prev));
+        expect(cur.upgradeCost!).toBeGreaterThan(prev.upgradeCost ?? 0);
+        expect(cur.upgradeCost!).toBeLessThanOrEqual(simData.player.maxMana); // affordable from a full pool
+        prev = cur;
+      }
+      expect(nextSpellUpgrade(el, MAX_SPELL_TIER)).toBeNull();
     }
-    expect(nextSpellUpgrade(MAX_SPELL_TIER)).toBeNull();
   });
 
   it('buying a tier spends mana, raises the tier, refuses when broke and stops at the top', () => {
@@ -245,12 +249,13 @@ describe('evil genies (ranged monsters)', () => {
       if (p.hp < hp0 - 0.5) break;
     }
     expect(fired).toBe(true);
-    expect(s.projectiles.every((q) => q.faction === MONSTER_FACTION || q.faction === 1 || q.faction === 0)).toBe(true);
+    expect(s.projectiles.filter((q) => q.spell === 'genie-bolt').every((q) => q.faction === MONSTER_FACTION && q.owner === -1)).toBe(true);
     expect(p.hp).toBeLessThan(hp0);
   });
 
   it('monster bolts never hurt other monsters, nests or castles', () => {
     const s = make();
+    s.players.forEach((w, i) => { if (i > 0) w.active = false; }); // keep rival wizards out of this experiment
     const c = s.castles[1]!;
     const hp0 = c.hp;
     s.spawnCreature('dust-sprite', c.x - 5, c.z, 0);

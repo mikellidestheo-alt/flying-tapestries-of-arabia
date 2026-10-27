@@ -1,0 +1,49 @@
+{
+  "tolerance": 0.05,
+  "areaBase": 3,
+  "areaCoef": 0.045,
+  "dotUptime": 0.7,
+  "chainHit": 0.5,
+  "aftershockHit": 0.6,
+  "slowValuePerSec": 8,
+  "freezeValuePerSec": 22,
+  "primaryBudget": {
+    "dps": [
+      80,
+      118,
+      165
+    ],
+    "efficiency": [
+      2.9,
+      3.3,
+      3.7
+    ]
+  },
+  "signature": {
+    "valuePerSecond": 6.5,
+    "tolerance": 0.2,
+    "efficiency": 2.2,
+    "targetsBase": 8,
+    "targetsCoef": 0.03,
+    "wallValue": 55,
+    "dashValue": 55
+  },
+  "roles": {
+    "creatureHp": 75,
+    "structureHp": 160,
+    "ttkSpread": 2.4,
+    "ttdSpread": 6.0,
+    "ttdMaxNonEarth": 6
+  },
+  "winRate": {
+    "tolerance": 0.1,
+    "chapters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  }
+}

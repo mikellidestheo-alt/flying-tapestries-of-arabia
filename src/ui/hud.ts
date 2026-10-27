@@ -2,7 +2,7 @@
 import castleData from '../data/castles.json';
 import simData from '../data/sim.json';
 import { BRANCHES, castleStats, nextUpgrade, tierDef } from '../sim/castles';
-import { nextSpellUpgrade, spellAt, spellFor } from '../sim/combat';
+import { nextSpellUpgrade, primaryDef, signatureDef } from '../sim/combat';
 import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 
@@ -61,7 +61,6 @@ export class Hud {
   private pickerOpen = false;
 
   constructor() {
-    this.spellCost.textContent = String(spellAt(spellFor(), 1).manaCost);
     this.upgrade.addEventListener('click', () => this.pressUpgrade());
     $('#branchCancel').addEventListener('click', () => this.closePicker());
   }
@@ -122,7 +121,7 @@ export class Hud {
       this.manaFill.style.transform = `scaleX(${p.mana / simData.player.maxMana})`;
       this.manaText.textContent = String(mana);
     }
-    const def = spellAt(spellFor(), p.spellTier);
+    const def = primaryDef(p);
     const cd = Math.round((p.spellCd / def.cooldownTicks) * 100);
     if (cd !== this.last.cd) {
       this.last.cd = cd;
@@ -135,7 +134,7 @@ export class Hud {
     }
 
     // Weapon tier pips, spell cost, and the weapon-upgrade button.
-    const up = nextSpellUpgrade(p.spellTier);
+    const up = nextSpellUpgrade(p.element, p.spellTier);
     const can = !!up && p.mana >= up.cost;
     if (p.spellTier !== this.last.wtier || can !== this.last.wcan) {
       this.last.wtier = p.spellTier;

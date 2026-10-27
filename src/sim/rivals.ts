@@ -5,9 +5,9 @@ import castleData from '../data/castles.json';
 import rivalData from '../data/rivals.json';
 import { clamp, datan2, wrapAngle } from './dmath';
 import { nextUpgrade } from './castles';
-import { nextSpellUpgrade, spellAt, spellFor } from './combat';
+import { CREATURES, nextSpellUpgrade, primaryDef, signatureDef } from './combat';
 import { DIFFICULTIES } from './match';
-import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
+import { ACTION_DEPOSIT, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput, type PlayerState, type Sim } from './sim';
 
 export type Personality = keyof typeof rivalData.personalities;
 const AI = rivalData.ai;
@@ -54,7 +54,7 @@ function decide(sim: Sim, p: PlayerState, ai: RivalAI): void {
   const diff = DIFFICULTIES[setup.difficulty];
   const skill = 0.5 + 0.5 * setup.aiLevel;
   const castle = sim.castles.find((c) => c.faction === p.faction)!;
-  const spellCost = spellAt(spellFor(), p.spellTier).manaCost;
+  const spellCost = primaryDef(p).manaCost;
   const need = clamp(1 - p.mana / 90, 0, 1);
   const best: Candidate = { kind: 'explore', id: 0, x: castle.x + sim.rng.range(-320, 320), z: castle.z + sim.rng.range(-320, 320), score: 0.1 };
   const offer = (c: Candidate) => {
@@ -213,7 +213,7 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
   const steer = clamp(wrapAngle(p.heading - desired) * AI.steerGain, -1, 1);
 
   let actions = 0;
-  const def = spellAt(spellFor(), p.spellTier);
+  const def = primaryDef(p);
   if (combat && p.mana >= def.manaCost) {
     let range = AI.combatRange;
     if (ai.goal === 'castle') range = AI.castleAttackRange;
@@ -221,8 +221,33 @@ export function rivalInput(sim: Sim, index: number): PlayerInput {
     if (d < range && aligned && sim.rng.next() < diff.rivalAccuracy * (0.5 + 0.5 * setup.aiLevel)) actions |= ACTION_SPELL;
   }
   // Buy better weapons when flush: aggressive rivals do it first.
-  const wu = nextSpellUpgrade(p.spellTier);
+  const wu = nextSpellUpgrade(p.element, p.spellTier);
   if (wu && p.mana >= wu.cost + 40 && sim.rng.next() < 0.04 + 0.04 * (ai.personality === 'aggressive' ? 1 : 0)) actions |= ACTION_SPELLUP;
+  // Signature spell, used the way each element is meant to be played.
+  const sig = signatureDef(p);
+  if (p.sigCd === 0 && p.freezeTicks === 0 && p.mana >= sig.manaCost + 15 && sim.rng.next() < 0.3) {
+    const maxHp = sim.maxHpFor(p);
+    let nearest = Infinity;
+    for (const w of sim.players) {
+      if (w.active && w.faction !== p.faction && w.hp > 0) nearest = Math.min(nearest, dist(w.x, w.z, p.x, p.z));
+    }
+    for (const c of sim.creatures) if (CREATURES[c.type]!.hostile) nearest = Math.min(nearest, dist(c.x, c.z, p.x, p.z));
+    const aimedAtGoal = combat && Math.abs(wrapAngle(p.heading - toGoal)) < 0.3;
+    switch (p.element) {
+      case 'fire': // rain fire on a target (or a castle) that is in range
+        if (aimedAtGoal && d < 90 && d > 18) actions |= ACTION_SIGNATURE;
+        break;
+      case 'water': // freeze anyone who gets close
+        if (nearest < 24) actions |= ACTION_SIGNATURE;
+        break;
+      case 'earth': // throw up a wall when hurt and facing the attacker
+        if (aimedAtGoal && p.hp < maxHp * 0.75 && d < 120) actions |= ACTION_SIGNATURE;
+        break;
+      case 'air': // escape when hurt, or burst across the map
+        if ((p.hp < maxHp * 0.45 && nearest < 100) || (d > 280 && !combat)) actions |= ACTION_SIGNATURE;
+        break;
+    }
+  }
   let branch = 0;
   if (ai.goal === 'home') {
     const up = nextUpgrade(castle);

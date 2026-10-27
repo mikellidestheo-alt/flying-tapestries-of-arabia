@@ -31,7 +31,8 @@
     "orbs": 120,
     "creatures": 24,
     "wells": 3,
-    "events": 160
+    "events": 160,
+    "zones": 24
   },
   "player": {
     "maxHp": 100,

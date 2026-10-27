@@ -113,7 +113,7 @@
       "wallHp": 1200,
       "archers": 6,
       "archerRange": 100,
-      "archerDamage": 3.4,
+      "archerDamage": 3.0,
       "archerRate": 0.95,
       "income": 1.5,
       "visual": {
@@ -135,7 +135,7 @@
       "wallHp": 1800,
       "archers": 8,
       "archerRange": 112,
-      "archerDamage": 3.2,
+      "archerDamage": 2.6,
       "archerRate": 1.0,
       "income": 2.1,
       "visual": {

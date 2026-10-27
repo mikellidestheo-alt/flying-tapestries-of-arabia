@@ -13,7 +13,7 @@ import { GameRenderer } from '../render/gameRenderer';
 import { GOVERNOR, PRESETS, QualityGovernor, guessPreset } from '../render/quality';
 import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } from '../save';
 import { tierDef } from '../sim/castles';
-import { spellAt, spellFor } from '../sim/combat';
+import { KITS, primaryDef, spellAt } from '../sim/combat';
 import { ACTION_SPELL, SIM_DT, Sim } from '../sim/sim';
 import { DebugOverlay } from '../ui/debugOverlay';
 import { Hud } from '../ui/hud';
@@ -63,7 +63,7 @@ export class Game {
     this.controls.onPress = (bit) => {
       if (this.save.settings.haptics) vibrate(12);
       const p = this.sim?.players[0];
-      if (bit === ACTION_SPELL && p && p.mana < spellAt(spellFor(), p.spellTier).manaCost) this.audio.denied();
+      if (bit === ACTION_SPELL && p && p.mana < primaryDef(p).manaCost) this.audio.denied();
     };
     this.debug = new DebugOverlay($('#debug'));
     this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r), {
@@ -331,7 +331,7 @@ export class Game {
           if (e.x === p.x && e.z === p.z) this.hud.showToast(`Bounty! +${Math.round(e.v)} mana`);
           break;
         case 'spellUpgrade':
-          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Weapon upgraded: ${spellAt(spellFor(), e.v).name}!`);
+          if (e.x === p.x && e.z === p.z) this.hud.showToast(`Weapon upgraded: ${spellAt(KITS[p.element].primary, e.v).name}!`);
           break;
         case 'nestDestroyed': this.hud.showToast('Nest destroyed: mana released!'); break;
         default: break;

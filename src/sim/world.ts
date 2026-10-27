@@ -75,6 +75,9 @@ export function stepCreatures(sim: Sim): void {
       hurtCreature(sim, c, c.burnDps * SIM_DT, 0);
       if (c.burnTicks === 0) c.burnDps = 0;
     }
+    if (c.slowTicks > 0 && --c.slowTicks === 0) c.slowMult = 1;
+    if (c.freezeTicks > 0) c.freezeTicks--;
+    const mobility = c.freezeTicks > 0 ? 0 : c.slowTicks > 0 ? c.slowMult : 1;
     if (c.hp <= 0) continue;
 
     const { p: target, d2 } = nearestPlayer(sim, c.x, c.y, c.z);
@@ -134,8 +137,8 @@ export function stepCreatures(sim: Sim): void {
     const dz = tz - c.z;
     const len = Math.sqrt(dx * dx + dz * dz);
     if (len > 0.5 && speed > 0) {
-      c.vx = (dx / len) * speed;
-      c.vz = (dz / len) * speed;
+      c.vx = (dx / len) * speed * mobility;
+      c.vz = (dz / len) * speed * mobility;
     } else {
       c.vx *= 0.8;
       c.vz *= 0.8;
@@ -149,7 +152,7 @@ export function stepCreatures(sim: Sim): void {
 
     // Ranged attack: a curse bolt aimed with a little lead and a seeded error.
     if (c.cd > 0) c.cd--;
-    if (def.ranged && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.ranged.range && sim.projectiles.length < simData.caps.projectiles) {
+    if (def.ranged && c.freezeTicks === 0 && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.ranged.range && sim.projectiles.length < simData.caps.projectiles) {
       const bolt = SPELLS[def.ranged.spell]!;
       const t = dist / bolt.speed;
       let dx = target.x + target.vx * t * 0.8 - c.x;
@@ -170,7 +173,7 @@ export function stepCreatures(sim: Sim): void {
       sim.emit('monsterFire', c.x, c.y + 1.5, c.z, 0);
     }
     // Melee attack.
-    if (def.hostile && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.attackRange && target.invuln === 0) {
+    if (def.hostile && c.freezeTicks === 0 && c.state === CREATURE_CHASE && c.cd === 0 && dist <= def.attackRange && target.invuln === 0) {
       const dmg = def.attackDamage * (sim.setup ? DIFFICULTIES[sim.setup.difficulty].enemyDamage : 1);
       target.hp -= dmg;
       target.lastHitBy = -1;

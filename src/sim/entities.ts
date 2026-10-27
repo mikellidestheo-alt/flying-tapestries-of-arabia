@@ -59,11 +59,32 @@ export interface Creature {
   cd: number;
   burnTicks: number;
   burnDps: number;
+  slowTicks: number;
+  slowMult: number;
+  freezeTicks: number;
   homeX: number;
   homeZ: number;
   wx: number;
   wz: number;
   wanderUntil: number;
+}
+
+/** A lasting area effect: Firestorm (damage over time) or a delayed burst (Quake Boulder's aftershock). */
+export interface Zone {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  r: number;
+  ticksLeft: number;
+  faction: number;
+  owner: number;
+  /** Damage per second to everything hostile inside (0 for bursts). */
+  dps: number;
+  /** One-off damage applied when ticksLeft reaches 0 (0 for damage-over-time zones). */
+  burst: number;
+  structureMult: number;
+  element: string;
 }
 
 export interface Well {
@@ -127,6 +148,12 @@ export interface Structure {
 export type SimEventType =
   | 'arrow'
   | 'upgrade'
+  | 'chain'
+  | 'nova'
+  | 'wallRaised'
+  | 'dash'
+  | 'zoneStart'
+  | 'quake'
   | 'spellUpgrade'
   | 'bounty'
   | 'monsterFire'

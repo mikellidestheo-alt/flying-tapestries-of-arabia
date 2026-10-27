@@ -5,13 +5,15 @@ import flightData from '../data/flight.json';
 import matchData from '../data/match.json';
 import castleData from '../data/castles.json';
 import { clamp, dcos, dsin, wrapAngle } from './dmath';
+import type { Element } from '../data/elements';
 import { DeltaStore, DELTA_BUMP, DELTA_CRATER } from './deltas';
 import { Prng, hashInts } from './prng';
 import {
   CREATURE_WANDER,
-  type Castle, type Creature, type Faction, type Orb, type Projectile, type SimEvent, type SimEventType, type Structure, type Well,
+  type Castle, type Creature, type Faction, type Orb, type Projectile, type SimEvent, type SimEventType, type Structure, type Well, type Zone,
 } from './entities';
 import { CREATURES, creatureHp, stepProjectiles, tryCast, tryUpgradeSpell } from './combat';
+import { stepWizardStatuses, stepZones, trySignature } from './spells';
 import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryDeposit, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
@@ -28,6 +30,7 @@ export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
 export const ACTION_DEPOSIT = 16;
 export const ACTION_SPELLUP = 32;
+export const ACTION_SIGNATURE = 64;
 
 export interface PlayerInput {
   /** -1 (left) .. 1 (right) */
@@ -74,6 +77,19 @@ export interface PlayerState {
   lastHitTick: number;
   /** Weapon tier 1-3 (bought with personal mana). */
   spellTier: number;
+  /** Which of the four wizards this is; picks the spell kit. */
+  element: Element;
+  /** Signature spell cooldown (ticks). */
+  sigCd: number;
+  // Status effects (ticks remaining).
+  burnTicks: number;
+  burnDps: number;
+  burnBy: number;
+  slowTicks: number;
+  slowMult: number;
+  freezeTicks: number;
+  boostTicks: number;
+  boostMult: number;
 }
 
 export interface SimOptions {
@@ -86,6 +102,8 @@ export interface SimOptions {
   match?: MatchSetup;
   /** Drive the human wizards with the rival AI (balance simulations, AI-vs-AI tests). */
   autopilot?: Personality;
+  /** Wizard element per human player when there is no match setup (sandbox). Defaults to fire. */
+  elements?: Element[];
 }
 
 function sanitize(v: number): number {
@@ -103,6 +121,7 @@ export class Sim {
   creatures: Creature[] = [];
   wells: Well[] = [];
   structures: Structure[] = [];
+  zones: Zone[] = [];
   castles: Castle[] = [];
   factions: Faction[] = [];
   ai: RivalAI[] = [];
@@ -134,14 +153,14 @@ export class Sim {
       const home = this.homeOf(0);
       const x = home.x + i * 8;
       const y = this.terrain.surfaceAt(x, home.z + 14) + this.flight.hoverHeight + (setup ? 10 : 0);
-      this.players.push(this.newWizard(x, y, home.z + 14, 0, false, -1));
+      this.players.push(this.newWizard(x, y, home.z + 14, 0, false, -1, setup?.humanElements[i] ?? opts.elements?.[i] ?? 'fire'));
     }
     if (setup) {
       setup.rivals.forEach((r, i) => {
         const f = i + 1;
         const home = this.homeOf(f);
         const y = this.terrain.surfaceAt(home.x, home.z + 14) + this.flight.hoverHeight + 10;
-        const w = this.newWizard(home.x, y, home.z + 14, f, true, this.ai.length);
+        const w = this.newWizard(home.x, y, home.z + 14, f, true, this.ai.length, r.element);
         w.hp = this.maxHpFor(w);
         this.players.push(w);
         this.ai.push(makeRivalAI(r.personality, i));
@@ -162,11 +181,12 @@ export class Sim {
     return findSpawn(params);
   }
 
-  private newWizard(x: number, y: number, z: number, faction: number, isRival: boolean, rivalIndex: number): PlayerState {
+  private newWizard(x: number, y: number, z: number, faction: number, isRival: boolean, rivalIndex: number, element: Element): PlayerState {
     return {
       x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0,
       hp: simData.player.maxHp, mana: simData.player.startMana, spellCd: 0, invuln: 0, kills: 0, deaths: 0, casts: 0,
-      drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1, lastHitTick: -9999, spellTier: 1,
+      drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1, lastHitTick: -9999, spellTier: 1, element, sigCd: 0, burnTicks: 0, burnDps: 0, burnBy: -1,
+      slowTicks: 0, slowMult: 1, freezeTicks: 0, boostTicks: 0, boostMult: 1,
     };
   }
 
@@ -250,8 +270,11 @@ export class Sim {
       if ((input.actions | 0) & ACTION_UPGRADE) tryUpgrade(this, p, input);
       if ((input.actions | 0) & ACTION_DEPOSIT) tryDeposit(this, p);
       if ((input.actions | 0) & ACTION_SPELLUP) tryUpgradeSpell(this, p);
+      if ((input.actions | 0) & ACTION_SIGNATURE) trySignature(this, i);
     }
     stepProjectiles(this);
+    stepZones(this);
+    stepWizardStatuses(this);
     stepCreatures(this);
     stepNests(this);
     stepCastles(this);
@@ -265,15 +288,20 @@ export class Sim {
   private stepPlayer(p: PlayerState, input: PlayerInput): void {
     const f = this.flight;
     const dt = SIM_DT;
-    const steer = sanitize(input.steer);
+    const frozen = p.freezeTicks > 0;
+    const steer = frozen ? 0 : sanitize(input.steer);
     const throttle = sanitize(input.throttle);
 
     // Speed: ease toward a target set by the throttle (cruise when the stick is centred).
-    const target =
+    // Slow effects scale it, a freeze stops the flyer, Gale Dash overrides everything.
+    let target =
       throttle >= 0
         ? f.cruiseSpeed + (f.maxSpeed - f.cruiseSpeed) * throttle
         : f.cruiseSpeed + (f.minSpeed - f.cruiseSpeed) * -throttle;
-    const rate = target > p.speed ? f.accel : f.decel;
+    if (p.slowTicks > 0) target *= p.slowMult;
+    if (frozen) target = 0;
+    if (p.boostTicks > 0) target = f.maxSpeed * p.boostMult;
+    const rate = p.boostTicks > 0 ? f.accel * 4 : target > p.speed ? f.accel : f.decel * (frozen ? 2 : 1);
     p.speed = p.speed < target ? Math.min(target, p.speed + rate * dt) : Math.max(target, p.speed - rate * dt);
 
     // Turning has inertia, and is a little slower at high speed.
@@ -372,7 +400,7 @@ export class Sim {
     const hp = creatureHp(type, this.setup?.difficulty ?? 'normal');
     this.creatures.push({
       id: this.nextId++, type, nest, x, y, z, px: x, py: y, pz: z, vx: 0, vz: 0, hp,
-      state: CREATURE_WANDER, cd: 0, burnTicks: 0, burnDps: 0, homeX: x, homeZ: z, wx: x, wz: z, wanderUntil: 0,
+      state: CREATURE_WANDER, cd: 0, burnTicks: 0, burnDps: 0, slowTicks: 0, slowMult: 1, freezeTicks: 0, homeX: x, homeZ: z, wx: x, wz: z, wanderUntil: 0,
     });
   }
 

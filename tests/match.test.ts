@@ -4,7 +4,9 @@ import castleData from '../src/data/castles.json';
 import matchData from '../src/data/match.json';
 import { matchSetupFromChapter } from '../src/data/matchSetup';
 import { BRANCHES, MAX_TIER, TIERS, archerDps, castleStats, damageCastle, nextUpgrade } from '../src/sim/castles';
-import { SPELLS } from '../src/sim/combat';
+import { ELEMENTS } from '../src/data/elements';
+import { BALANCE, castsPerSecond } from '../src/sim/balance';
+import { KITS, SPELLS, spellAt } from '../src/sim/combat';
 import { factionShare, incomeMultiplier } from '../src/sim/match';
 import { ACTION_DEPOSIT, ACTION_SPELL, ACTION_UPGRADE, Sim, type PlayerInput } from '../src/sim/sim';
 import { buildingTopAt } from '../src/sim/terrain';
@@ -74,12 +76,15 @@ describe('castle tiers and upgrades', () => {
     }
   });
 
-  it('archer DPS stays a support role: at most 60% of one wizard, with any branch picks', () => {
-    const wizard = (SPELLS.fireball!.damage * 30) / SPELLS.fireball!.cooldownTicks;
+  it('archer DPS stays a support role at every tier and branch pick: at most 60% of a wizard\'s budgeted DPS and 75% of the weakest wizard\'s raw single-target DPS', () => {
+    const budget = BALANCE.primaryBudget.dps[0]!;
+    const weakestRaw = Math.min(...ELEMENTS.map((el) => { const t1 = spellAt(KITS[el].primary, 1); return t1.damage * castsPerSecond(t1); }));
     for (let tier = 1; tier <= MAX_TIER; tier++) {
       for (const branches of [[], ['archers'], ['archers', 'archers'], ['walls'], ['income', 'archers']]) {
         const picks = branches.slice(0, castleData.branchTiers.filter((t) => t <= tier).length);
-        expect(archerDps(tier, picks), `tier ${tier} ${picks}`).toBeLessThanOrEqual(wizard * 0.6);
+        const dps = archerDps(tier, picks);
+        expect(dps, `tier ${tier} ${picks} vs budget`).toBeLessThanOrEqual(budget * 0.6);
+        expect(dps, `tier ${tier} ${picks} vs weakest raw`).toBeLessThanOrEqual(weakestRaw * 0.75);
       }
     }
   });

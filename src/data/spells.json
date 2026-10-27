@@ -1,28 +1,27 @@
 {
-  "fireball": {
-    "name": "Fireball",
-    "element": "fire",
-    "manaCost": 12,
-    "cooldownTicks": 12,
-    "speed": 78,
-    "maxRange": 230,
-    "gravity": 7,
-    "damage": 22,
-    "area": 7.5,
-    "falloff": 0.45,
-    "hitRadius": 1.6,
-    "effects": [
-      {
-        "type": "burn",
-        "dps": 4,
-        "durationTicks": 90
-      }
-    ],
-    "terrain": {
-      "radius": 5.5,
-      "amount": -1.8,
-      "kind": 1
+  "kits": {
+    "fire": {
+      "primary": "fireball",
+      "signature": "firestorm"
     },
+    "water": {
+      "primary": "frostchain",
+      "signature": "frostnova"
+    },
+    "earth": {
+      "primary": "boulder",
+      "signature": "stonewall"
+    },
+    "air": {
+      "primary": "lightning",
+      "signature": "galedash"
+    }
+  },
+  "fireball": {
+    "element": "fire",
+    "maxRange": 230,
+    "falloff": 0.45,
+    "interceptHp": 16,
     "aimAssist": {
       "range": 200,
       "cosMin": 0.86,
@@ -31,22 +30,46 @@
       "homingMaxAngle": 0.9,
       "homingRange": 150
     },
-    "structureMult": 1.0,
-    "interceptHp": 16,
+    "structureMult": 1,
+    "speed": 78,
+    "gravity": 7,
+    "area": 7.5,
+    "hitRadius": 1.6,
+    "effects": [
+      {
+        "type": "burn",
+        "dps": 3,
+        "durationTicks": 90
+      }
+    ],
+    "terrain": {
+      "radius": 5.5,
+      "amount": -1.8,
+      "kind": 1
+    },
+    "cds": [
+      11,
+      12,
+      13
+    ],
+    "name": "Fireball",
+    "damage": 23.6,
+    "manaCost": 12,
+    "cooldownTicks": 13,
+    "tierNames": [
+      "Fireball",
+      "Blazing Fireball",
+      "Inferno Orb"
+    ],
     "tiers": [
       {
-        "name": "Blazing Fireball",
-        "upgradeCost": 90,
-        "manaCost": 14,
-        "cooldownTicks": 11,
         "speed": 82,
-        "damage": 30,
         "area": 9.5,
         "hitRadius": 1.9,
         "effects": [
           {
             "type": "burn",
-            "dps": 6,
+            "dps": 4,
             "durationTicks": 100
           }
         ],
@@ -54,21 +77,26 @@
           "radius": 7,
           "amount": -2.2,
           "kind": 1
-        }
+        },
+        "cds": [
+          10,
+          11,
+          12
+        ],
+        "name": "Blazing Fireball",
+        "damage": 26.3,
+        "manaCost": 13,
+        "cooldownTicks": 11,
+        "upgradeCost": 90
       },
       {
-        "name": "Inferno Orb",
-        "upgradeCost": 180,
-        "manaCost": 17,
-        "cooldownTicks": 10,
         "speed": 86,
-        "damage": 40,
         "area": 12,
         "hitRadius": 2.3,
         "effects": [
           {
             "type": "burn",
-            "dps": 9,
+            "dps": 5,
             "durationTicks": 120
           }
         ],
@@ -76,14 +104,386 @@
           "radius": 9,
           "amount": -2.8,
           "kind": 1
-        }
+        },
+        "cds": [
+          9,
+          10,
+          11
+        ],
+        "name": "Inferno Orb",
+        "damage": 29.2,
+        "manaCost": 15,
+        "cooldownTicks": 10,
+        "upgradeCost": 180
+      }
+    ]
+  },
+  "frostchain": {
+    "element": "water",
+    "maxRange": 240,
+    "falloff": 0.4,
+    "interceptHp": 14,
+    "aimAssist": {
+      "range": 200,
+      "cosMin": 0.86,
+      "distanceWeight": 0.18,
+      "homingStrength": 0.2,
+      "homingMaxAngle": 0.9,
+      "homingRange": 150
+    },
+    "structureMult": 0.8,
+    "speed": 95,
+    "gravity": 3,
+    "area": 4,
+    "hitRadius": 1.5,
+    "effects": [
+      {
+        "type": "slow",
+        "mult": 0.65,
+        "durationTicks": 70
       }
     ],
+    "chain": {
+      "count": 2,
+      "radius": 22,
+      "falloff": 0.65
+    },
+    "cds": [
+      13,
+      14,
+      15
+    ],
+    "name": "Frost Chain",
+    "damage": 17.8,
+    "manaCost": 12,
+    "cooldownTicks": 13,
     "tierNames": [
-      "Fireball",
-      "Blazing Fireball",
-      "Inferno Orb"
+      "Frost Chain",
+      "Glacial Chain",
+      "Absolute Zero"
+    ],
+    "tiers": [
+      {
+        "speed": 98,
+        "area": 4.5,
+        "hitRadius": 1.7,
+        "effects": [
+          {
+            "type": "slow",
+            "mult": 0.55,
+            "durationTicks": 85
+          }
+        ],
+        "chain": {
+          "count": 3,
+          "radius": 26,
+          "falloff": 0.65
+        },
+        "cds": [
+          12,
+          13,
+          14
+        ],
+        "name": "Glacial Chain",
+        "damage": 21.3,
+        "manaCost": 14,
+        "cooldownTicks": 12,
+        "upgradeCost": 90
+      },
+      {
+        "speed": 100,
+        "area": 5,
+        "hitRadius": 1.9,
+        "effects": [
+          {
+            "type": "slow",
+            "mult": 0.5,
+            "durationTicks": 95
+          },
+          {
+            "type": "freeze",
+            "durationTicks": 12
+          }
+        ],
+        "chain": {
+          "count": 3,
+          "radius": 30,
+          "falloff": 0.7
+        },
+        "cds": [
+          11,
+          12,
+          13
+        ],
+        "name": "Absolute Zero",
+        "damage": 24,
+        "manaCost": 18,
+        "cooldownTicks": 12,
+        "upgradeCost": 180
+      }
     ]
+  },
+  "boulder": {
+    "element": "earth",
+    "maxRange": 190,
+    "falloff": 0.35,
+    "interceptHp": 34,
+    "aimAssist": {
+      "range": 200,
+      "cosMin": 0.86,
+      "distanceWeight": 0.18,
+      "homingStrength": 0.14,
+      "homingMaxAngle": 0.9,
+      "homingRange": 150
+    },
+    "speed": 52,
+    "gravity": 14,
+    "area": 8,
+    "hitRadius": 2.2,
+    "structureMult": 2.6,
+    "effects": [],
+    "terrain": {
+      "radius": 8,
+      "amount": -2.6,
+      "kind": 1
+    },
+    "cds": [
+      18,
+      20,
+      22
+    ],
+    "name": "Boulder",
+    "damage": 47.9,
+    "manaCost": 20,
+    "cooldownTicks": 22,
+    "tierNames": [
+      "Boulder",
+      "Granite Boulder",
+      "Quake Boulder"
+    ],
+    "tiers": [
+      {
+        "speed": 55,
+        "area": 9.5,
+        "hitRadius": 2.4,
+        "structureMult": 2.7,
+        "effects": [
+          {
+            "type": "slow",
+            "mult": 0.75,
+            "durationTicks": 40
+          }
+        ],
+        "terrain": {
+          "radius": 10,
+          "amount": -3.2,
+          "kind": 1
+        },
+        "cds": [
+          17,
+          19,
+          21
+        ],
+        "name": "Granite Boulder",
+        "damage": 61.8,
+        "manaCost": 25,
+        "cooldownTicks": 21,
+        "upgradeCost": 90
+      },
+      {
+        "speed": 58,
+        "area": 11,
+        "hitRadius": 2.6,
+        "structureMult": 2.8,
+        "effects": [
+          {
+            "type": "slow",
+            "mult": 0.7,
+            "durationTicks": 60
+          }
+        ],
+        "aftershock": {
+          "delayTicks": 12,
+          "radius": 11,
+          "damageMult": 0.5
+        },
+        "terrain": {
+          "radius": 12,
+          "amount": -4,
+          "kind": 1
+        },
+        "cds": [
+          16,
+          18,
+          20
+        ],
+        "name": "Quake Boulder",
+        "damage": 63.4,
+        "manaCost": 30,
+        "cooldownTicks": 20,
+        "upgradeCost": 180
+      }
+    ]
+  },
+  "lightning": {
+    "element": "air",
+    "maxRange": 340,
+    "gravity": 0,
+    "area": 2,
+    "falloff": 0.3,
+    "interceptHp": 6,
+    "aimAssist": {
+      "range": 200,
+      "cosMin": 0.9,
+      "distanceWeight": 0.18,
+      "homingStrength": 0.05,
+      "homingMaxAngle": 0.9,
+      "homingRange": 150
+    },
+    "structureMult": 0.7,
+    "effects": [],
+    "speed": 190,
+    "hitRadius": 1.2,
+    "cds": [
+      7,
+      8,
+      9
+    ],
+    "name": "Lightning Bolt",
+    "damage": 24,
+    "manaCost": 8,
+    "cooldownTicks": 9,
+    "tierNames": [
+      "Lightning Bolt",
+      "Storm Bolt",
+      "Thunder Arc"
+    ],
+    "tiers": [
+      {
+        "speed": 200,
+        "cds": [
+          6,
+          7,
+          8
+        ],
+        "name": "Storm Bolt",
+        "damage": 27.5,
+        "cooldownTicks": 7,
+        "upgradeCost": 90,
+        "manaCost": 8,
+        "effects": []
+      },
+      {
+        "speed": 210,
+        "hitRadius": 1.3,
+        "chain": {
+          "count": 1,
+          "radius": 22,
+          "falloff": 0.6
+        },
+        "cds": [
+          5,
+          6,
+          7
+        ],
+        "name": "Thunder Arc",
+        "damage": 29.6,
+        "manaCost": 10,
+        "cooldownTicks": 7,
+        "upgradeCost": 180,
+        "effects": []
+      }
+    ]
+  },
+  "firestorm": {
+    "speed": 0,
+    "maxRange": 0,
+    "gravity": 0,
+    "area": 0,
+    "falloff": 0,
+    "hitRadius": 0,
+    "structureMult": 0.6,
+    "interceptHp": 0,
+    "damage": 0,
+    "effects": [],
+    "name": "Firestorm",
+    "element": "fire",
+    "kind": "zone",
+    "manaCost": 40,
+    "cooldownTicks": 407,
+    "castRange": 55,
+    "radius": 14,
+    "durationTicks": 150,
+    "dps": 15
+  },
+  "frostnova": {
+    "speed": 0,
+    "maxRange": 0,
+    "gravity": 0,
+    "area": 0,
+    "falloff": 0,
+    "hitRadius": 0,
+    "structureMult": 0.5,
+    "interceptHp": 0,
+    "damage": 16,
+    "effects": [
+      {
+        "type": "slow",
+        "mult": 0.5,
+        "durationTicks": 120
+      }
+    ],
+    "name": "Frost Nova",
+    "element": "water",
+    "kind": "nova",
+    "manaCost": 18,
+    "cooldownTicks": 183,
+    "radius": 26
+  },
+  "stonewall": {
+    "speed": 0,
+    "maxRange": 0,
+    "gravity": 0,
+    "area": 0,
+    "falloff": 0,
+    "hitRadius": 0,
+    "structureMult": 0,
+    "interceptHp": 0,
+    "damage": 0,
+    "effects": [],
+    "name": "Stone Wall",
+    "element": "earth",
+    "kind": "wall",
+    "manaCost": 25,
+    "cooldownTicks": 254,
+    "wall": {
+      "segments": 5,
+      "spacing": 6.5,
+      "distance": 22,
+      "amount": 11,
+      "radius": 5.5
+    }
+  },
+  "galedash": {
+    "speed": 0,
+    "maxRange": 0,
+    "gravity": 0,
+    "area": 0,
+    "falloff": 0,
+    "hitRadius": 0,
+    "structureMult": 0,
+    "interceptHp": 0,
+    "damage": 0,
+    "effects": [],
+    "name": "Gale Dash",
+    "element": "air",
+    "kind": "dash",
+    "manaCost": 25,
+    "cooldownTicks": 254,
+    "dash": {
+      "speedMult": 1.75,
+      "durationTicks": 75
+    }
   },
   "genie-bolt": {
     "name": "Curse Bolt",
@@ -100,5 +500,46 @@
     "effects": [],
     "interceptHp": 8,
     "structureMult": 0
-  }
+  },
+  "combos": [
+    {
+      "id": "steam",
+      "name": "Steam Cloud",
+      "needs": [
+        "water",
+        "fire"
+      ],
+      "description": "Water bolts crossing a fire zone make a scalding, vision-blocking steam cloud.",
+      "durationTicks": 150,
+      "radius": 16,
+      "dps": 12,
+      "slowMult": 0.7
+    },
+    {
+      "id": "firetornado",
+      "name": "Fire Tornado",
+      "needs": [
+        "air",
+        "fire"
+      ],
+      "description": "Lightning through a Firestorm whips it into a roaming fire tornado.",
+      "durationTicks": 120,
+      "radius": 10,
+      "dps": 22,
+      "slowMult": 1
+    },
+    {
+      "id": "channel",
+      "name": "Earth Channel",
+      "needs": [
+        "earth",
+        "water"
+      ],
+      "description": "Frost Chain bolts fired along a Stone Wall are channelled and chain twice as far.",
+      "durationTicks": 180,
+      "radius": 12,
+      "dps": 0,
+      "slowMult": 0.5
+    }
+  ]
 }
