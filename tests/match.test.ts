@@ -221,7 +221,7 @@ describe('castle damage', () => {
     expect(c.hp).toBe(hp);
   });
 
-  it('a tier-1 castle is destroyed: faction eliminated, last castle standing wins', () => {
+  it('a tier-1 castle is destroyed: faction eliminated; the last castle standing wins', () => {
     const s = make();
     const rival = s.castles[1]!;
     rival.hp = 1;
@@ -229,6 +229,12 @@ describe('castle damage', () => {
     expect(rival.ruined).toBe(true);
     expect(s.factions[1]!.eliminated).toBe(true);
     expect(s.players[1]!.active).toBe(false);
+    hold(s, 31);
+    expect(s.match.status).toBe('playing'); // two rivals still stand
+    for (const c of s.castles.slice(2)) {
+      c.hp = 1;
+      damageCastle(s, c, 10);
+    }
     hold(s, 31);
     expect(s.match.status).toBe('won');
   });
@@ -292,16 +298,22 @@ describe('win condition and comeback', () => {
     expect(s.match.status).toBe('playing');
   });
 
-  it('sudden death lowers the target share and a hard end crowns the leader', () => {
+  it('sudden death lowers the target share so the leader can win', () => {
     const s = make();
     const cb = CHAPTERS[0]!.comeback;
-    s.factions[0]!.captured = 500;
-    s.factions[1]!.captured = 700; // 41.7% vs 58.3%: below the 60% target
-    s.tick = Math.floor(cb.suddenDeathMinute * 60 * 30) - 31;
-    hold(s, 31);
+    // 38% / 32% / 15% / 15%: nobody reaches the normal 42% goal, but the leader clears the sudden-death goal.
+    s.factions[0]!.captured = 380;
+    s.factions[1]!.captured = 320;
+    s.factions[2]!.captured = 150;
+    s.factions[3]!.captured = 150;
+    s.tick = Math.floor(cb.suddenDeathMinute * 60 * 30) - 61;
+    hold(s, 30);
+    expect(s.match.status).toBe('playing');
+    expect(s.match.suddenDeath).toBe(false);
+    hold(s, 61);
     expect(s.match.suddenDeath).toBe(true);
     expect(s.match.targetShare).toBe(cb.suddenDeathShare);
-    expect(s.match.status).toBe('lost'); // rival already over the lowered 40% bar
+    expect(s.match.status).toBe('won');
   });
 
   it('gives trailing factions an income bonus after the comeback minute', () => {

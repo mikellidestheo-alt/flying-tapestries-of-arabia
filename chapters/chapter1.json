@@ -77,16 +77,26 @@
       "id": "r1",
       "name": "Zafira the Dustcaller",
       "personality": "greedy"
+    },
+    {
+      "id": "r2",
+      "name": "Jabir the Sandstalker",
+      "personality": "aggressive"
+    },
+    {
+      "id": "r3",
+      "name": "Nadia of the Wells",
+      "personality": "defensive"
     }
   ],
-  "targetShare": 0.6,
+  "targetShare": 0.42,
   "matchLengthMinutes": 11,
   "aiLevel": 0.25,
   "comeback": {
     "startMinute": 7,
     "trailingIncomeBonus": 0.35,
     "suddenDeathMinute": 12,
-    "suddenDeathShare": 0.4
+    "suddenDeathShare": 0.32
   },
   "structureStyle": {
     "wall": "#e8c68a",

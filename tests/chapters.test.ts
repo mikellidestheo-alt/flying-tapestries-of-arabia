@@ -11,9 +11,13 @@ describe('chapter configs', () => {
     expect(validateChapter(c)).toEqual([]);
   });
 
-  it('uses 1/1/2/2/3/3 rivals', () => {
-    expect(CHAPTERS.map((c) => c.rivals.length)).toEqual([1, 1, 2, 2, 3, 3]);
-    expect([1, 2, 3, 4, 5, 6].map(rivalCountForChapter)).toEqual([1, 1, 2, 2, 3, 3]);
+  it('every chapter is a four-player match: three rivals', () => {
+    expect(CHAPTERS.map((c) => c.rivals.length)).toEqual([3, 3, 3, 3, 3, 3]);
+    expect([1, 2, 3, 4, 5, 6].map(rivalCountForChapter)).toEqual([3, 3, 3, 3, 3, 3]);
+  });
+
+  it('rival personalities are mixed in every chapter', () => {
+    for (const c of CHAPTERS) expect(new Set(c.rivals.map((r) => r.personality)).size).toBe(3);
   });
 
   it('has unique ids and terrain seeds', () => {

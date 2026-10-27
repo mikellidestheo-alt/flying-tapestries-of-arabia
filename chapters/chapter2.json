@@ -89,16 +89,26 @@
       "id": "r1",
       "name": "Karim the Spice Baron",
       "personality": "defensive"
+    },
+    {
+      "id": "r2",
+      "name": "Rania Lanternkeeper",
+      "personality": "greedy"
+    },
+    {
+      "id": "r3",
+      "name": "Mourad the Haggler",
+      "personality": "aggressive"
     }
   ],
-  "targetShare": 0.6,
+  "targetShare": 0.42,
   "matchLengthMinutes": 12,
   "aiLevel": 0.4,
   "comeback": {
     "startMinute": 8,
     "trailingIncomeBonus": 0.35,
     "suddenDeathMinute": 13,
-    "suddenDeathShare": 0.4
+    "suddenDeathShare": 0.32
   },
   "structureStyle": {
     "wall": "#e2a878",

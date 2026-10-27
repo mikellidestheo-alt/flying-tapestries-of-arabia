@@ -81,16 +81,21 @@
       "id": "r2",
       "name": "Samira of the Echoes",
       "personality": "greedy"
+    },
+    {
+      "id": "r3",
+      "name": "Tahir Redcloak",
+      "personality": "defensive"
     }
   ],
-  "targetShare": 0.45,
+  "targetShare": 0.4,
   "matchLengthMinutes": 13,
   "aiLevel": 0.55,
   "comeback": {
     "startMinute": 9,
     "trailingIncomeBonus": 0.4,
     "suddenDeathMinute": 14,
-    "suddenDeathShare": 0.35
+    "suddenDeathShare": 0.31
   },
   "structureStyle": {
     "wall": "#e0a47a",

@@ -21,7 +21,7 @@ The repo is PUBLIC. Never commit secrets, tokens or personal data. Assume anyone
 3. **Data not code.** All tunable numbers live in data files: `src/data/*.json`, `chapters/*.json`, and (later) the spell table and castle-tier table. Adding or retuning a chapter must never touch engine code.
 4. **One spell table** (damage, mana cost, cooldown, area, duration, effects, co-op combos) and **one castle-tier table** (cost, wall HP, archers, archer range/damage/rate, income, visual kit, branches). Balance tests read these.
 5. **Terrain deformation** is stored as capped deltas (position, radius, amount); never mutate base terrain. Deltas are what get synced in co-op.
-6. **Chapter configs** (`chapters/chapterN.json`) are validated by `tests/chapters.test.ts` (rival count 1/1/2/2/3/3, personalities, palette, music scale...).
+6. **Chapter configs** (`chapters/chapterN.json`) are validated by `tests/chapters.test.ts` (three rivals per chapter, personalities, palette, music scale...).
 7. **Co-op is server-authoritative** (one Durable Object per match). Clients send inputs, receive snapshots at 15-20 Hz, interpolate and predict locally.
 8. **Quality is local and visual only.** Presets and the adaptive governor never change the sim.
 9. Tests: if one fails, fix the cause. Never weaken or delete a test to pass it.

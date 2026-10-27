@@ -81,16 +81,21 @@
       "id": "r2",
       "name": "Hamid the Lamplighter",
       "personality": "defensive"
+    },
+    {
+      "id": "r3",
+      "name": "Soraya Pearlseeker",
+      "personality": "greedy"
     }
   ],
-  "targetShare": 0.45,
+  "targetShare": 0.4,
   "matchLengthMinutes": 13,
   "aiLevel": 0.65,
   "comeback": {
     "startMinute": 9,
     "trailingIncomeBonus": 0.4,
     "suddenDeathMinute": 14,
-    "suddenDeathShare": 0.35
+    "suddenDeathShare": 0.31
   },
   "structureStyle": {
     "wall": "#d8c9a8",
