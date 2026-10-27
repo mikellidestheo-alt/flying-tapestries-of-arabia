@@ -96,9 +96,9 @@
     "radiusStep": 0.2
   },
   "bloom": {
-    "strength": 0.55,
+    "strength": 0.42,
     "radius": 0.5,
-    "threshold": 0.82,
+    "threshold": 0.88,
     "resolutionScale": 0.5,
     "msaaSamples": 4,
     "minRenderScale": 0.75

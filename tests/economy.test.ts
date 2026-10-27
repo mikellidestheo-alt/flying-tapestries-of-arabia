@@ -143,6 +143,18 @@ describe('castle archers', () => {
     expect(s.creatures.find((q) => q.type === 'oryx')!.hp).toBe(oryxHp);
   });
 
+  it('even a palace lets a wizard survive a few seconds in range (a risk, not instant death)', () => {
+    const { s, c } = staged(5);
+    const foe = s.players[1]!;
+    foe.invuln = 0;
+    foe.hp = 100;
+    for (let t = 0; t < 90; t++) {
+      foe.x = c.x + 40; foe.z = c.z; foe.y = c.y + 12; foe.vx = foe.vz = 0;
+      s.step(idle);
+    }
+    expect(foe.hp).toBeGreaterThan(55); // three seconds under full palace fire
+  });
+
   it('a higher-tier castle hurts an intruding wizard faster', () => {
     const timeToHurt = (tier: number) => {
       const { s, c } = staged(tier);
@@ -177,7 +189,8 @@ describe('castle defences scale from weak to strongest', () => {
     expect(dps[0]!).toBeGreaterThan(0);
     for (let i = 1; i < dps.length; i++) expect(dps[i]!).toBeGreaterThan(dps[i - 1]!);
     expect(dps[4]!).toBeGreaterThan(dps[0]! * 30);
-    expect(castleStats(5, []).archerRange).toBeGreaterThan(castleStats(1, []).archerRange * 2);
+    expect(castleStats(5, []).archerRange).toBeGreaterThan(castleStats(1, []).archerRange * 1.4);
+    expect(castleStats(5, []).archerRange).toBeLessThan(110); // attackers can get close
   });
 
   it('even a tier-1 outpost shoots an enemy wizard, and a hostile creature, in range, but weakly', () => {

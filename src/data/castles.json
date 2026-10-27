@@ -66,9 +66,9 @@
       "cost": 80,
       "wallHp": 520,
       "archers": 2,
-      "archerRange": 85,
-      "archerDamage": 6,
-      "archerRate": 1.2,
+      "archerRange": 68,
+      "archerDamage": 5.5,
+      "archerRate": 1.1,
       "income": 2.0,
       "visual": {
         "wallRadius": 10.5,
@@ -87,10 +87,10 @@
       "name": "Citadel",
       "cost": 170,
       "wallHp": 800,
-      "archers": 4,
-      "archerRange": 100,
-      "archerDamage": 8,
-      "archerRate": 1.3,
+      "archers": 3,
+      "archerRange": 78,
+      "archerDamage": 6,
+      "archerRate": 1.15,
       "income": 3.0,
       "visual": {
         "wallRadius": 12,
@@ -109,10 +109,10 @@
       "name": "Fortress",
       "cost": 300,
       "wallHp": 1200,
-      "archers": 6,
-      "archerRange": 115,
-      "archerDamage": 9,
-      "archerRate": 1.4,
+      "archers": 5,
+      "archerRange": 86,
+      "archerDamage": 7,
+      "archerRate": 1.2,
       "income": 4.3,
       "visual": {
         "wallRadius": 13,
@@ -131,10 +131,10 @@
       "name": "Palace",
       "cost": 520,
       "wallHp": 1800,
-      "archers": 8,
-      "archerRange": 130,
-      "archerDamage": 11,
-      "archerRate": 1.5,
+      "archers": 6,
+      "archerRange": 95,
+      "archerDamage": 8,
+      "archerRate": 1.3,
       "income": 6.0,
       "visual": {
         "wallRadius": 14.5,
@@ -182,8 +182,8 @@
   },
   "destroyLoot": 150,
   "archerVsWizard": {
-    "damageMult": 0.5,
-    "hitChance": 0.55,
+    "damageMult": 0.4,
+    "hitChance": 0.5,
     "priorityBias": 0.5
   }
 }
