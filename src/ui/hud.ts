@@ -63,7 +63,7 @@ export class Hud {
   private last = { wtier: 0, wcan: false, palace: '', hp: -1, mana: -1, cd: -1, nomana: false, share: '', timer: '', castle: '', foe: '', up: '' };
   reducedFlashing = false;
   onUpgrade: (branch: number) => void = () => undefined;
-  private pickerOpen = false;
+  pickerOpen = false;
 
   constructor() {
     this.upgrade.addEventListener('click', () => this.pressUpgrade());
@@ -288,8 +288,13 @@ export class Hud {
     if (!mine) return;
     const up = nextUpgrade(mine);
     if (!up) return;
+    const mana = this.sim?.players[this.sim.localPlayer]?.mana ?? 0;
+    if (mana < up.cost) {
+      this.showToast(`Not enough mana: ${up.cost} needed, you have ${Math.floor(mana)}.`);
+      return;
+    }
     if (up.needsBranch) {
-      this.openPicker(up.tier);
+      this.openPicker(up.tier); // the wizard hovers in place until a path is chosen (see Controls.hold)
       return;
     }
     this.onUpgrade(0);

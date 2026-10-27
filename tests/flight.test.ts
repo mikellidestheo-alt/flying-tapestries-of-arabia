@@ -73,3 +73,49 @@ describe('flight', () => {
     expect(s.terrain.deltas.list.length).toBe(2);
   });
 });
+
+describe('holding in place (castle path picker)', () => {
+  it('hovers without drifting while held, then flies on', async () => {
+    const { ACTION_HOLD, Sim } = await import('../src/sim/sim');
+    const { CHAPTERS } = await import('../src/data/chapters');
+    const s = new Sim({ terrain: CHAPTERS[0]!.terrain });
+    const p = s.players[0]!;
+    for (let t = 0; t < 60; t++) s.step([{ steer: 0.3, throttle: 1, actions: 0 }]);
+    const moving = Math.hypot(p.vx, p.vz);
+    expect(moving).toBeGreaterThan(10);
+    for (let t = 0; t < 30; t++) s.step([{ steer: 1, throttle: 1, actions: ACTION_HOLD }]);
+    const x = p.x;
+    const z = p.z;
+    const h = p.heading;
+    for (let t = 0; t < 60; t++) s.step([{ steer: 1, throttle: 1, actions: ACTION_HOLD }]);
+    expect(Math.hypot(p.x - x, p.z - z)).toBeLessThan(0.01); // steering is ignored too
+    expect(p.heading).toBeCloseTo(h, 5);
+    expect(p.speed).toBe(0);
+    expect(p.y).toBeGreaterThan(s.terrain.surfaceAt(p.x, p.z)); // still hovering above the ground
+    for (let t = 0; t < 60; t++) s.step([{ steer: 0, throttle: 0, actions: 0 }]);
+    expect(Math.hypot(p.x - x, p.z - z)).toBeGreaterThan(5); // released: flies on
+  });
+
+  it('a hold cannot be used to stall forever', async () => {
+    const { ACTION_HOLD, Sim } = await import('../src/sim/sim');
+    const { CHAPTERS } = await import('../src/data/chapters');
+    const sim = (await import('../src/data/sim.json')).default;
+    const s = new Sim({ terrain: CHAPTERS[0]!.terrain });
+    const p = s.players[0]!;
+    const x = p.x;
+    const z = p.z;
+    for (let t = 0; t < sim.player.maxHoldTicks + 120; t++) s.step([{ steer: 0, throttle: 0, actions: ACTION_HOLD }]);
+    expect(Math.hypot(p.x - x, p.z - z)).toBeGreaterThan(5); // the cap ran out and the wizard moved on
+  });
+
+  it('prediction honours the hold as well, so co-op clients stay in sync', async () => {
+    const { ACTION_HOLD, Sim } = await import('../src/sim/sim');
+    const { CHAPTERS } = await import('../src/data/chapters');
+    const s = new Sim({ terrain: CHAPTERS[0]!.terrain });
+    const p = s.players[0]!;
+    for (let t = 0; t < 40; t++) s.step([{ steer: 0, throttle: 1, actions: 0 }]);
+    const x = p.x;
+    for (let t = 0; t < 40; t++) s.predictPlayer(p, { steer: 0, throttle: 1, actions: ACTION_HOLD });
+    expect(Math.abs(p.x - x)).toBeLessThan(0.5);
+  });
+});

@@ -496,6 +496,7 @@ export class Game {
     this.acc += dt;
     let steps = 0;
     while (this.acc >= SIM_DT && steps < simData.maxFrameSteps) {
+      this.controls.hold = this.hud.pickerOpen; // the path picker suspends the wizard in place
       if (this.replica) {
         const input = this.phase === 'playing' ? this.controls.sample() : NEUTRAL_INPUT;
         this.replica.tick(input, performance.now());

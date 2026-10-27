@@ -165,6 +165,12 @@ Phone result: works well, no fps drop. Changes:
 - **Why co-op was not visible on the Cloudflare link:** `origin/main` still holds M5a (the live link builds `main`); everything since lives on the session branch `ccr-b5f6d664-9r8k51` (see the git history). Co-op appears after the branch is merged to `main` (or from the branch's preview URL if Workers Builds previews are on).
 **Tests:** 254 passing. Bundle: JS 212.7 KB gzip; the track (2.0 MB) and fonts (~100 KB) are separate files that the service worker precaches.
 
+### Castle hold + weak tier-1 defences, released to main (2026-10-27)
+- Opening the castle path picker now suspends the wizard in place until a path is chosen (20 s cap); the picker needs enough mana.
+- Tier-1 castles have one weak archer; defences grow to the tier-5 palace. All castles' archers attack hostile creatures, enemy wizards and enemy bolts.
+- `main` was fast-forwarded to the session branch on the owner's instruction, so Cloudflare's Git integration builds and deploys everything since M5a (M5b-M6, music, Arabesque UI, co-op).
+**Tests:** 259 passing.
+
 ## RESUME HERE (written 2026-10-27, end of M6)
 **State:** M1-M6 done. `npm run check` exits 0 (252 tests, 212.7 KB gzip JS). **M6 is a CHECKPOINT: stop and report.** Waiting for: the M3-M6 phone feedback (FPS/warmth per preset, bloom cost, the economy and archer changes, co-op feel with two phones, ping, data use), the answer on the 20:1 WebSocket billing ratio, and any wish for follow-ups (3-4 player co-op, voice/ping markers, delta-compressed snapshots, public matchmaking).
 **Tips:** co-op dev needs `npm run dev:server` next to `npm run dev`; never `pkill -f` with a pattern that appears in your own command line (it kills the shell: use `pgrep -x workerd` or kill by pid); the room-creation limit (6/hour/IP) also applies locally, so restart wrangler with `--persist-to <fresh dir>` between test runs.

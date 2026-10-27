@@ -30,6 +30,8 @@ export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
 export const ACTION_SPELLUP = 32;
 export const ACTION_SIGNATURE = 64;
+/** Hover in place (the castle path picker is open): no steering, no drift. Capped per hold (player.maxHoldTicks). */
+export const ACTION_HOLD = 128;
 
 export interface PlayerInput {
   /** -1 (left) .. 1 (right) */
@@ -56,6 +58,8 @@ export interface PlayerState {
   turnRate: number;
   /** Cooldown for the debug terrain tools (ticks). */
   cooldown: number;
+  /** Consecutive ticks spent holding in place (ACTION_HOLD). */
+  holdTicks: number;
   hp: number;
   mana: number;
   spellCd: number;
@@ -189,7 +193,7 @@ export class Sim {
 
   private newWizard(x: number, y: number, z: number, faction: number, isRival: boolean, rivalIndex: number, element: Element): PlayerState {
     return {
-      x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0,
+      x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0, holdTicks: 0,
       hp: simData.player.maxHp, mana: simData.player.startMana, spellCd: 0, invuln: 0, kills: 0, deaths: 0, casts: 0,
       drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1, lastHitTick: -9999, spellTier: 1, element, sigCd: 0, burnTicks: 0, burnDps: 0, burnBy: -1,
       slowTicks: 0, slowMult: 1, freezeTicks: 0, boostTicks: 0, boostMult: 1,
@@ -296,7 +300,7 @@ export class Sim {
    * Terrain tools and spells are not predicted (they are server business).
    */
   predictPlayer(p: PlayerState, input: PlayerInput): void {
-    this.stepPlayer(p, { steer: input.steer, throttle: input.throttle, actions: 0 });
+    this.stepPlayer(p, { steer: input.steer, throttle: input.throttle, actions: input.actions & ACTION_HOLD });
   }
 
   /** Let the rival AI fly a human's wizard (a teammate who dropped out of a co-op match), or hand it back with `null`. */
@@ -320,34 +324,48 @@ export class Sim {
     const steer = frozen ? 0 : sanitize(input.steer);
     const throttle = sanitize(input.throttle);
 
-    // Speed: ease toward a target set by the throttle (cruise when the stick is centred).
-    // Slow effects scale it, a freeze stops the flyer, Gale Dash overrides everything.
-    let target =
-      throttle >= 0
-        ? f.cruiseSpeed + (f.maxSpeed - f.cruiseSpeed) * throttle
-        : f.cruiseSpeed + (f.minSpeed - f.cruiseSpeed) * -throttle;
-    if (p.slowTicks > 0) target *= p.slowMult;
-    if (frozen) target = 0;
-    if (p.boostTicks > 0) target = f.maxSpeed * p.boostMult;
-    const rate = p.boostTicks > 0 ? f.accel * 4 : target > p.speed ? f.accel : f.decel * (frozen ? 2 : 1);
-    p.speed = p.speed < target ? Math.min(target, p.speed + rate * dt) : Math.max(target, p.speed - rate * dt);
+    // Holding in place (the castle path picker is open): hover, no steering, no drift. Capped so it cannot be abused to stall.
+    const holdWanted = ((input.actions | 0) & ACTION_HOLD) !== 0 && !p.isRival;
+    const hold = holdWanted && p.holdTicks < simData.player.maxHoldTicks;
+    p.holdTicks = holdWanted ? p.holdTicks + 1 : 0;
+    if (hold) {
+      p.speed = 0;
+      p.turnRate = 0;
+      p.vx = 0;
+      p.vz = 0;
+    }
+    let speedFrac = 0;
+    if (!hold) {
+      // Speed: ease toward a target set by the throttle (cruise when the stick is centred).
+      // Slow effects scale it, a freeze stops the flyer, Gale Dash overrides everything.
+      let target =
+        throttle >= 0
+          ? f.cruiseSpeed + (f.maxSpeed - f.cruiseSpeed) * throttle
+          : f.cruiseSpeed + (f.minSpeed - f.cruiseSpeed) * -throttle;
+      if (p.slowTicks > 0) target *= p.slowMult;
+      if (frozen) target = 0;
+      if (p.boostTicks > 0) target = f.maxSpeed * p.boostMult;
+      const rate = p.boostTicks > 0 ? f.accel * 4 : target > p.speed ? f.accel : f.decel * (frozen ? 2 : 1);
+      p.speed = p.speed < target ? Math.min(target, p.speed + rate * dt) : Math.max(target, p.speed - rate * dt);
 
-    // Turning has inertia, and is a little slower at high speed.
-    const speedFrac = clamp((p.speed - f.cruiseSpeed) / (f.maxSpeed - f.cruiseSpeed), 0, 1);
-    const turnScale = 1 - (1 - f.highSpeedTurnScale) * speedFrac;
-    const wantTurn = steer * f.maxTurnRate * turnScale;
-    p.turnRate += (wantTurn - p.turnRate) * clamp(f.turnResponse * dt, 0, 1);
-    p.heading = wrapAngle(p.heading - p.turnRate * dt); // steer right = clockwise from above
+      // Turning has inertia, and is a little slower at high speed.
+      speedFrac = clamp((p.speed - f.cruiseSpeed) / (f.maxSpeed - f.cruiseSpeed), 0, 1);
+      const turnScale = 1 - (1 - f.highSpeedTurnScale) * speedFrac;
+      const wantTurn = steer * f.maxTurnRate * turnScale;
+      p.turnRate += (wantTurn - p.turnRate) * clamp(f.turnResponse * dt, 0, 1);
+      p.heading = wrapAngle(p.heading - p.turnRate * dt); // steer right = clockwise from above
 
-    // Horizontal momentum: velocity chases the heading direction with limited grip.
+      // Horizontal momentum: velocity chases the heading direction with limited grip.
+      const hx = dsin(p.heading);
+      const hz = dcos(p.heading);
+      const grip = clamp(f.grip * dt, 0, 1);
+      p.vx += (hx * p.speed - p.vx) * grip;
+      p.vz += (hz * p.speed - p.vz) * grip;
+      p.x += p.vx * dt;
+      p.z += p.vz * dt;
+    }
     const fx = dsin(p.heading);
     const fz = dcos(p.heading);
-    const grip = clamp(f.grip * dt, 0, 1);
-    p.vx += (fx * p.speed - p.vx) * grip;
-    p.vz += (fz * p.speed - p.vz) * grip;
-    p.x += p.vx * dt;
-    p.z += p.vz * dt;
-
     // Hover above terrain (and rooftops, castles): spring toward the highest nearby surface.
     const ahead = f.lookAheadSeconds;
     let ground = this.terrain.surfaceAt(p.x, p.z);

@@ -44,7 +44,8 @@
     "absorbRadius": 3.6,
     "magnetRadius": 16,
     "magnetSpeed": 46,
-    "barMana": 300
+    "barMana": 300,
+    "maxHoldTicks": 600
   },
   "orbs": {
     "ambientEveryTicks": 18,

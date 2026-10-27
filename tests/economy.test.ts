@@ -169,3 +169,48 @@ describe('castle archers', () => {
     expect(hurt).toBeGreaterThanOrEqual(2); // archers spread their arrows
   });
 });
+
+describe('castle defences scale from weak to strongest', () => {
+  it('tier 1 has one weak archer, the top tier is the strongest by a wide margin', () => {
+    const dps = [1, 2, 3, 4, 5].map((t) => archerDps(t, []));
+    expect(castleStats(1, []).archers).toBe(1);
+    expect(dps[0]!).toBeGreaterThan(0);
+    for (let i = 1; i < dps.length; i++) expect(dps[i]!).toBeGreaterThan(dps[i - 1]!);
+    expect(dps[4]!).toBeGreaterThan(dps[0]! * 30);
+    expect(castleStats(5, []).archerRange).toBeGreaterThan(castleStats(1, []).archerRange * 2);
+  });
+
+  it('even a tier-1 outpost shoots an enemy wizard, and a hostile creature, in range, but weakly', () => {
+    const wizardRun = () => {
+      const s = make();
+      const c = s.castles[0]!;
+      expect(c.tier).toBe(1);
+      s.players[0]!.invuln = 1e9;
+      const foe = s.players[1]!;
+      foe.invuln = 0;
+      foe.hp = 100;
+      let lowest = 100;
+      for (let t = 0; t < 300; t++) {
+        foe.x = c.x + 30; foe.z = c.z + 10; foe.y = c.y + 12; foe.vx = foe.vz = 0;
+        s.step(idle);
+        lowest = Math.min(lowest, foe.hp); // natural regeneration would hide a few points of damage at the end
+      }
+      return lowest;
+    };
+    const hp = wizardRun();
+    expect(hp).toBeLessThan(100);
+    expect(hp).toBeGreaterThan(60); // weak: ten seconds of one tier-1 archer is a scratch
+
+    const s = make();
+    const c = s.castles[0]!;
+    s.players[0]!.invuln = 1e9;
+    s.spawnCreature('dust-sprite', c.x + 30, c.z);
+    const sprite = s.creatures[0]!;
+    const hp0 = sprite.hp;
+    for (let t = 0; t < 150; t++) {
+      sprite.x = c.x + 30; sprite.z = c.z; sprite.y = c.y + 6;
+      s.step(idle);
+    }
+    expect(sprite.hp).toBeLessThan(hp0);
+  });
+});

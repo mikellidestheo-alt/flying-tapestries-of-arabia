@@ -114,6 +114,7 @@ describe('water: Frost Chain slows, chains and (tier 3) freezes', () => {
 describe('fire: Firestorm and burn', () => {
   it('Firestorm burns hostiles inside for its duration and spares your own side', () => {
     const { s, p } = arena('fire');
+    for (const c of s.castles) c.archerCd.fill(1e9); // castle archers (tier 1 has one now) would also shoot the dummies: keep them out of this test
     const sig = signatureDef(p);
     const inside = dummy(s, 0, 55);
     const outside = dummy(s, 90, 55);

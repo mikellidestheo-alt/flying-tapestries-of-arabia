@@ -1,6 +1,6 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_MOUND, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_HOLD, ACTION_MOUND, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -175,6 +175,9 @@ export class Controls {
   }
 
   /** Ask the sim to upgrade the castle next tick (branch 1-3, or 0 when the tier has no choice). */
+  /** True while the castle path picker is open: the wizard hovers in place until a choice is made. */
+  hold = false;
+
   requestUpgrade(branch: number): void {
     this.upgradeBranch = branch;
   }
@@ -216,6 +219,7 @@ export class Controls {
       branch = this.upgradeBranch;
       this.upgradeBranch = -1;
     }
+    if (this.hold) return { steer: 0, throttle: 0, actions: act | ACTION_HOLD, branch };
     return { steer, throttle, actions: act, branch };
   }
 }
