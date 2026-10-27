@@ -13,5 +13,6 @@ export function matchSetupFromChapter(chapter: ChapterConfig, humanElements: Ele
     aiLevel: chapter.aiLevel,
     comeback: chapter.comeback,
     difficulty,
+    enemyDensity: chapter.enemyDensity,
   };
 }

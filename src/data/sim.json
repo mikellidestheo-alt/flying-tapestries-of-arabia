@@ -28,7 +28,7 @@
   },
   "caps": {
     "projectiles": 32,
-    "orbs": 120,
+    "orbs": 160,
     "creatures": 24,
     "wells": 3,
     "events": 160,
@@ -46,36 +46,36 @@
     "magnetSpeed": 46
   },
   "orbs": {
-    "ambientEveryTicks": 40,
-    "ambientNearMax": 36,
+    "ambientEveryTicks": 22,
+    "ambientNearMax": 48,
     "ambientRadiusMin": 35,
     "ambientRadiusMax": 170,
     "ambientAltitude": 2.6,
-    "ambientValue": 4,
+    "ambientValue": 5,
     "lifetimeTicks": 3600,
     "despawnDistance": 260
   },
   "creatureSpawning": {
-    "targetNear": 7,
-    "ringMin": 120,
-    "ringMax": 200,
+    "targetNear": 2,
+    "ringMin": 110,
+    "ringMax": 190,
     "despawnDistance": 320,
     "spawnEveryTicks": 60,
     "firstSpawnTick": 45,
-    "wildTarget": 5
+    "wildTarget": 3
   },
   "wells": {
-    "firstTick": 600,
-    "minIntervalTicks": 1200,
-    "maxIntervalTicks": 2100,
-    "maxActive": 2,
-    "minDistance": 150,
-    "maxDistance": 380,
-    "reserve": 160,
+    "firstTick": 360,
+    "minIntervalTicks": 700,
+    "maxIntervalTicks": 1200,
+    "maxActive": 3,
+    "minDistance": 110,
+    "maxDistance": 260,
+    "reserve": 220,
     "lifeTicks": 3900,
     "drawRadius": 15,
     "drawMaxHeight": 45,
-    "drawPerSecond": 32,
+    "drawPerSecond": 40,
     "fadeTicks": 60
   }
 }

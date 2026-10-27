@@ -125,5 +125,6 @@
       "fogTighten": 0.42,
       "layer": 0.2
     }
-  }
+  },
+  "enemyDensity": 1.25
 }

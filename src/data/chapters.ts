@@ -72,6 +72,8 @@ export interface ChapterConfig {
   palaceWinMana: number;
   matchLengthMinutes: number;
   aiLevel: number;
+  /** Hostile creature population multiplier (1 = base). */
+  enemyDensity: number;
   comeback: {
     startMinute: number;
     trailingIncomeBonus: number;
@@ -125,6 +127,7 @@ export function validateChapter(c: ChapterConfig): string[] {
   need(c.comeback.suddenDeathMinute > c.matchLengthMinutes - 3, 'sudden death should start near match end');
   need(c.terrain.waterLevel < c.terrain.baseHeight + c.terrain.swellAmplitude, 'terrain: waterLevel above land');
   need(c.creatureSet.length > 0, 'creatureSet empty');
+  need(c.enemyDensity >= 0.3 && c.enemyDensity <= 2, 'enemyDensity must be 0.3-2');
   for (const [k, v] of Object.entries(c.structureStyle)) need(HEX.test(v), `structureStyle.${k} must be #rrggbb`);
   need(HEX.test(c.nest.color) && HEX.test(c.nest.glow), 'nest colours must be #rrggbb');
   if (c.weather?.sandstorm) {

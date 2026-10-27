@@ -327,7 +327,7 @@ export class EntityRenderer {
 
   private build(): void {
     const caps = PRESETS[this.quality].caps;
-    this.glow = new GlowLayer(caps.orbs + caps.projectiles + caps.particles + 64);
+    this.glow = new GlowLayer(caps.orbs + caps.projectiles * 8 + caps.particles + 64);
     this.particles = new Particles(caps.particles);
     for (const [type, geom] of this.typeGeoms) {
       const mesh = new THREE.InstancedMesh(geom, this.creatureMat, Math.min(caps.creatures, simData.caps.creatures));
@@ -369,6 +369,19 @@ export class EntityRenderer {
     return this.sim?.players[owner]?.element ?? 'fire';
   }
 
+  private tierOf(owner: number): number {
+    return this.sim?.players[owner]?.spellTier ?? 1;
+  }
+
+  /** A flat expanding ring of particles (shockwave). `alt` alternates a second colour. */
+  private ring(x: number, y: number, z: number, r0: number, speed: number, count: number, rgb: readonly [number, number, number], alt: readonly [number, number, number] | null): void {
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      const c = alt && i % 2 ? alt : rgb;
+      this.particles.spawn(x + Math.cos(a) * r0 * 0.3, y, z + Math.sin(a) * r0 * 0.3, Math.cos(a) * speed, 0.6, Math.sin(a) * speed, 0.5, 2.2 * this.flashScale, c[0], c[1], c[2]);
+    }
+  }
+
   /** Turn a sim event into particles. Audio/HUD consume the same events elsewhere. */
   handleEvent(e: SimEvent): void {
     const P = this.particles;
@@ -377,7 +390,9 @@ export class EntityRenderer {
     switch (e.type) {
       case 'cast': {
         const el = this.elementOf(e.v);
-        P.burst(this.rnd, n(10), e.x, e.y, e.z, el === 'air' ? 14 : 9, 0.35, 1.1 * f, ...ELEMENT_RGB[el]!);
+        const tier = this.tierOf(e.v);
+        P.burst(this.rnd, n(10 + (tier - 1) * 8), e.x, e.y, e.z, el === 'air' ? 14 : 9, 0.35, (1.1 + (tier - 1) * 0.5) * f, ...ELEMENT_RGB[el]!);
+        if (tier >= 2) this.ring(e.x, e.y, e.z, 3 + tier * 1.5, 8 + tier * 3, n(10 + tier * 4), ELEMENT_RGB[el]!, tier === 3 ? WHITE_HOT : null);
         break;
       }
       case 'impact': {
@@ -386,6 +401,12 @@ export class EntityRenderer {
           break;
         }
         const el = this.elementOf(e.v);
+        const tier = this.tierOf(e.v);
+        if (tier >= 2) {
+          // Upgraded weapons land harder: an expanding shockwave ring in the element's colour, doubled at tier 3.
+          this.ring(e.x, e.y + 0.4, e.z, 5 + tier * 2, 10 + tier * 5, n(14 + tier * 8), ELEMENT_RGB[el]!, tier === 3 ? WHITE_HOT : null);
+          if (tier === 3) this.ring(e.x, e.y + 1.2, e.z, 3, 16, n(22), ELEMENT_RGB[el]!, null);
+        }
         if (el === 'water') {
           P.burst(this.rnd, n(24), e.x, e.y + 0.5, e.z, 14, 0.7, 1.4 * f, ...ICE, 8, 0.5);
           P.burst(this.rnd, n(10), e.x, e.y + 0.5, e.z, 6, 0.9, 2.6, ...FROST_WHITE, 2, 0.8);
@@ -468,6 +489,10 @@ export class EntityRenderer {
         }
         break;
       }
+      case 'castleRelease':
+        P.burst(this.rnd, n(30), e.x, e.y, e.z, 18, 1.2, 2.2 * f, ...MANA, 8, 0.8);
+        P.burst(this.rnd, n(16), e.x, e.y, e.z, 14, 1.0, 3.4, ...DUST, 4, 0.4);
+        break;
       case 'castleHit':
         P.burst(this.rnd, n(8), e.x, e.y, e.z, 10, 0.5, 2.0 * f, ...DUST, 6, 0.4);
         break;
@@ -552,26 +577,55 @@ export class EntityRenderer {
       const tier = p.tier ?? 1;
       const big = 1 + (tier - 1) * 0.45;
       const el = this.elementOf(p.owner);
+      // Each tier has its own look: tier 2 adds orbiting satellites and a denser trail, tier 3 a
+      // white-hot core, a wider satellite ring, a halo and a heavy trail.
+      const ph = time * (5 + tier * 2) + p.id * 1.7;
+      const sat = (count: number, radius: number, rgb: readonly [number, number, number], size: number, lift = 0) => {
+        for (let k = 0; k < count; k++) {
+          const a = ph + (k / count) * Math.PI * 2;
+          glow.add(x + Math.cos(a) * radius, y + Math.sin(a * 1.3) * radius * 0.6 + lift, z + Math.sin(a) * radius, rgb[0], rgb[1], rgb[2], 0.9, size);
+        }
+      };
+      const trailN = tier === 1 ? 1 : tier === 2 ? 2 : 4;
       if (el === 'water') {
         glow.add(x, y, z, ICE[0], ICE[1], ICE[2], 1, 3.8 * big);
         glow.add(x, y, z, 1, 1, 1, 1, 1.7 * big);
-        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.4, 1.8 * big * this.flashScale, FROST_WHITE[0], FROST_WHITE[1], FROST_WHITE[2], 0);
+        // Crystal shards spiral round the bolt: 2 at tier 2, 5 at tier 3 (with a pale halo).
+        if (tier >= 2) sat(tier === 2 ? 2 : 5, 1.6 + tier * 0.5, FROST_WHITE, 1.3);
+        if (tier === 3) glow.add(x, y, z, 0.7, 0.95, 1, 0.5, 8);
+        for (let k = 0; k < trailN; k++) this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.4, 1.8 * big * this.flashScale, FROST_WHITE[0], FROST_WHITE[1], FROST_WHITE[2], 0);
       } else if (el === 'earth') {
         glow.add(x, y, z, ROCK[0], ROCK[1], ROCK[2], 1, 5.2 * big);
         glow.add(x, y, z, 0.9, 0.75, 0.5, 1, 2.6 * big);
-        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 4, this.rnd() * 2, (this.rnd() - 0.5) * 4, 0.55, 3.0 * big, DUST[0], DUST[1], DUST[2], 4);
+        // Rock chips tumble around it (2 / 5) and tier 3 glows with molten seams.
+        if (tier >= 2) sat(tier === 2 ? 2 : 5, 2.4 + tier * 0.7, ROCK, 1.8);
+        if (tier === 3) glow.add(x, y, z, 1, 0.5, 0.2, 0.7, 7);
+        for (let k = 0; k < trailN; k++) this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 4, this.rnd() * 2, (this.rnd() - 0.5) * 4, 0.55, 3.0 * big, DUST[0], DUST[1], DUST[2], 4);
       } else if (el === 'air') {
         // A long streak: bright points along the path travelled since the last frame.
-        for (let k = 0; k < 6; k++) {
-          const t = k / 5;
-          glow.add(lerp(p.px, p.x) - p.vx * 0.03 * t, lerp(p.py, p.y) - p.vy * 0.03 * t, lerp(p.pz, p.z) - p.vz * 0.03 * t, 0.8, 0.9, 1, 1 - t * 0.6, 2.4 * big * (1 - t * 0.4));
+        const len = 6 + (tier - 1) * 3;
+        for (let k = 0; k < len; k++) {
+          const t = k / (len - 1);
+          glow.add(x - p.vx * 0.03 * t * (1 + (tier - 1) * 0.5), y - p.vy * 0.03 * t * (1 + (tier - 1) * 0.5), z - p.vz * 0.03 * t * (1 + (tier - 1) * 0.5), 0.8, 0.9, 1, 1 - t * 0.6, 2.4 * big * (1 - t * 0.4));
         }
-        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, 0.18, 1.4 * this.flashScale, SPARK[0], SPARK[1], SPARK[2], 0);
+        // Forks: jittering side-arcs (tier 2), a double bolt with a flash halo (tier 3).
+        if (tier >= 2) {
+          const j = tier === 2 ? 1.6 : 2.4;
+          for (let k = 0; k < tier + 1; k++) {
+            const t = this.rnd();
+            glow.add(x - p.vx * 0.03 * t * 3 + (this.rnd() - 0.5) * j * 2, y - p.vy * 0.03 * t * 3 + (this.rnd() - 0.5) * j * 2, z - p.vz * 0.03 * t * 3 + (this.rnd() - 0.5) * j * 2, 1, 1, 1, 0.9, 1.4);
+          }
+        }
+        if (tier === 3) glow.add(x, y, z, 0.6, 0.75, 1, 0.55, 9);
+        for (let k = 0; k < trailN; k++) this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, (this.rnd() - 0.5) * 2, 0.18, 1.4 * this.flashScale, SPARK[0], SPARK[1], SPARK[2], 0);
       } else {
         const hot = tier === 3 ? WHITE_HOT : FIRE;
         glow.add(x, y, z, hot[0], hot[1], hot[2], 1, 4.2 * big);
         glow.add(x, y, z, 1, 0.95, 0.7, 1, 1.9 * big);
-        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32 + 0.05 * tier, 2.0 * big * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
+        // Embers circle the fireball (2 / 4) and the inferno orb has a red halo and a flame tail.
+        if (tier >= 2) sat(tier === 2 ? 2 : 4, 1.8 + tier * 0.6, EMBER, 1.6);
+        if (tier === 3) glow.add(x, y, z, 1, 0.25, 0.1, 0.55, 10);
+        for (let k = 0; k < trailN; k++) this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 3, this.rnd() * 2, (this.rnd() - 0.5) * 3, 0.32 + 0.05 * tier, 2.0 * big * this.flashScale, FIRE[0], FIRE[1], FIRE[2], 0);
       }
     }
 

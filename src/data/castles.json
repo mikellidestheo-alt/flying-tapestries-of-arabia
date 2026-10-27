@@ -173,5 +173,10 @@
       "shape": "disc"
     }
   ],
-  "depositPerSecond": 70
+  "depositPerSecond": 70,
+  "damageRelease": {
+    "step": 0.2,
+    "base": 25,
+    "perTier": 10
+  }
 }

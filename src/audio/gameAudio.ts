@@ -98,6 +98,7 @@ export class GameAudio {
       case 'quake': this.sfx.quake(pan, gain); break;
       case 'monsterFire': this.sfx.monsterFire(pan, gain); break;
       case 'bounty': if (this.isLocal(e, l)) this.sfx.bounty(degreeHz(this.spec, 0), 0.9); break;
+      case 'castleRelease': this.sfx.bounty(degreeHz(this.spec, 4), 0.55 * gain); break;
       case 'spellUpgrade': if (this.isLocal(e, l)) this.sfx.weaponUp(0.9); break;
       case 'hit': this.sfx.hit(pan, gain * 0.8); break;
       case 'kill': this.sfx.kill(pan, gain); break;

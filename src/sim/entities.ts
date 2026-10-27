@@ -130,6 +130,8 @@ export interface Castle {
   threat: number;
   /** Cached upgrade availability flag for the HUD. */
   lastHit: number;
+  /** How many 20% damage steps have already released mana since the castle was last at full HP. */
+  released: number;
 }
 
 export interface Structure {
@@ -158,6 +160,7 @@ export type SimEventType =
   | 'bounty'
   | 'monsterFire'
   | 'castleHit'
+  | 'castleRelease'
   | 'castleDowngrade'
   | 'castleDestroyed'
   | 'nestDestroyed'

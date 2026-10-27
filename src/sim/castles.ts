@@ -85,7 +85,7 @@ export function makeCastle(id: number, faction: number, x: number, y: number, z:
   const stats = castleStats(1, []);
   return {
     id, faction, x, y, z, tier: 1, branches: [], hp: stats.wallHp, maxHp: stats.wallHp, bank: 0, invuln: 0,
-    ruined: false, archerCd: Array.from({ length: MAX_ARCHER_SLOTS }, (_, i) => 4 + i * 3), threat: 0, lastHit: -999,
+    ruined: false, released: 0, archerCd: Array.from({ length: MAX_ARCHER_SLOTS }, (_, i) => 4 + i * 3), threat: 0, lastHit: -999,
   };
 }
 
@@ -147,6 +147,7 @@ export function tryUpgrade(sim: Sim, p: PlayerState, input: PlayerInput): boolea
   const stats = castleStats(c.tier, c.branches);
   c.maxHp = stats.wallHp;
   c.hp = stats.wallHp;
+  c.released = 0;
   refreshObstacle(sim, c);
   sim.emit('upgrade', c.x, c.y, c.z, c.tier);
   return true;
@@ -189,7 +190,19 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
   c.hp -= amount;
   c.lastHit = sim.tick;
   sim.emit('castleHit', c.x, c.y + 6, c.z, amount);
-  if (c.hp > 0) return;
+  if (c.hp > 0) {
+    // Every 20% of the wall's HP knocked off shakes loose mana (paid from the bank first) for whoever is attacking.
+    const rel = castleData.damageRelease;
+    const steps = Math.floor((c.maxHp - c.hp) / (c.maxHp * rel.step) + 1e-9);
+    while (c.released < steps) {
+      c.released++;
+      const value = rel.base + rel.perTier * c.tier;
+      c.bank -= Math.min(c.bank, value);
+      dropLoot(sim, c, value);
+      sim.emit('castleRelease', c.x, c.y + 6, c.z, value);
+    }
+    return;
+  }
   if (c.tier > 1) {
     const attackerWizard = sim.players[attacker];
     if (attackerWizard && attackerWizard.faction !== c.faction) {
@@ -203,6 +216,7 @@ export function damageCastle(sim: Sim, c: Castle, amount: number, attacker = -1)
     const stats = castleStats(c.tier, c.branches);
     c.maxHp = stats.wallHp;
     c.hp = c.maxHp;
+    c.released = 0;
     c.invuln = castleData.downgradeInvulnTicks;
     refreshObstacle(sim, c);
     sim.emit('castleDowngrade', c.x, c.y + 6, c.z, c.tier);

@@ -326,6 +326,9 @@ export class Game {
         case 'castleDowngrade':
           this.hud.showToast(e.x === sim.castles[0]!.x ? 'Your castle was battered down a tier!' : 'An enemy castle lost a tier!');
           break;
+        case 'castleRelease':
+          if ((e.x - p.x) ** 2 + (e.z - p.z) ** 2 < 140 * 140) this.hud.showToast(e.x === sim.castles[0]!.x ? 'Your walls cracked: mana spilled out!' : `Castle cracked: ${Math.round(e.v)} mana released! Grab it!`);
+          break;
         case 'castleDestroyed': this.hud.showToast('A castle has fallen!'); break;
         case 'bounty':
           if (e.x === p.x && e.z === p.z) this.hud.showToast(`Bounty! +${Math.round(e.v)} mana`);

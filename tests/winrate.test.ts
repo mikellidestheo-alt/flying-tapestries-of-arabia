@@ -26,7 +26,7 @@ describe.skipIf(process.env.FAST === '1')('AI-vs-AI win rates by element', () =>
             const setup: MatchSetup = {
               humanElements: [el(0)],
               rivals: c.rivals.map((r, i) => ({ id: r.id, name: r.name, personality: r.personality, element: el(i + 1) })),
-              targetShare: c.targetShare, palaceWinMana: c.palaceWinMana, aiLevel: c.aiLevel, comeback: c.comeback, difficulty: 'normal',
+              targetShare: c.targetShare, palaceWinMana: c.palaceWinMana, aiLevel: c.aiLevel, comeback: c.comeback, difficulty: 'normal', enemyDensity: c.enemyDensity,
             };
             const sim = new Sim({ terrain: c.terrain, creatureTypes: c.creatureSet, match: setup, autopilot: PERSONALITIES[(chapterNumber + pi) % 3]! });
             let ticks = 0;

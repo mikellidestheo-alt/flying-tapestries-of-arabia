@@ -35,6 +35,8 @@ export interface MatchSetup {
   };
   difficulty: DifficultyId;
   nestCount?: number;
+  /** Hostile creature population multiplier (chapter data; later chapters are busier). */
+  enemyDensity?: number;
 }
 
 export type MatchStatus = 'playing' | 'won' | 'lost';

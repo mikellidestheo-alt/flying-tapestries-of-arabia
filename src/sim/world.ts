@@ -48,8 +48,9 @@ export function stepCreatures(sim: Sim): void {
     const hostileTypes = sim.creatureTypes.filter((t) => CREATURES[t]!.hostile);
     const wildTypes = sim.creatureTypes.filter((t) => !CREATURES[t]!.hostile);
     const n = sim.players.length;
+    const density = sim.setup?.enemyDensity ?? 1;
     let pool: string[] = [];
-    if (hostile < sp.targetNear * n && hostileTypes.length > 0 && (wild >= sp.wildTarget * n || wildTypes.length === 0 || sim.rng.next() < 0.6)) pool = hostileTypes;
+    if (hostile < Math.ceil(sp.targetNear * density * n) && hostileTypes.length > 0 && (wild >= sp.wildTarget * n || wildTypes.length === 0 || sim.rng.next() < 0.6)) pool = hostileTypes;
     else if (wild < sp.wildTarget * n && wildTypes.length > 0) pool = wildTypes;
     if (pool.length > 0) {
       const target = sim.players[sim.rng.int(0, sim.players.length)]!;
@@ -341,7 +342,7 @@ export function stepNests(sim: Sim): void {
     if (d2 > cfg.wakeRadius * cfg.wakeRadius) continue;
     let alive = 0;
     for (const c of sim.creatures) if (c.nest === s.id) alive++;
-    if (alive >= cfg.maxSpawned) continue;
+    if (alive >= Math.max(1, Math.round(cfg.maxSpawned * (sim.setup?.enemyDensity ?? 1)))) continue;
     sim.spawnCreature(guards[sim.rng.int(0, guards.length)]!, s.x + sim.rng.range(-6, 6), s.z + sim.rng.range(-6, 6), s.id);
     s.spawnCd = cfg.spawnEveryTicks;
   }
