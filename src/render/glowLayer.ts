@@ -1,6 +1,7 @@
 // One additive Points object draws every glowing thing (mana orbs, bolts, sparks): a single
 // draw call, no textures. This is the cheap "fake bloom" used on every quality preset.
 import * as THREE from 'three';
+import { TO_LINEAR_GLSL, linearOut } from './colorspace';
 
 export class GlowLayer {
   readonly points: THREE.Points;
@@ -25,7 +26,7 @@ export class GlowLayer {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       fog: false,
-      uniforms: { pxScale: { value: 600 } },
+      uniforms: { pxScale: { value: 600 }, linearOut },
       vertexShader: /* glsl */ `
         attribute vec4 color4; attribute float size;
         uniform float pxScale; varying vec4 vColor;
@@ -37,12 +38,13 @@ export class GlowLayer {
         }`,
       fragmentShader: /* glsl */ `
         precision mediump float; varying vec4 vColor;
+        ${TO_LINEAR_GLSL}
         void main() {
           float r = length(gl_PointCoord - 0.5) * 2.0;
           if (r > 1.0) discard;
           float glow = (1.0 - r) * (1.0 - r);
           float core = smoothstep(0.4, 0.0, r);
-          gl_FragColor = vec4(vColor.rgb * (0.55 + core), vColor.a * glow);
+          gl_FragColor = vec4(toLinearOut(vColor.rgb * (0.55 + core)), vColor.a * glow);
         }`,
     });
     this.points = new THREE.Points(this.geom, this.mat);

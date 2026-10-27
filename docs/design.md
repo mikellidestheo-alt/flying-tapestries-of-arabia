@@ -55,7 +55,7 @@ Statuses: burn (damage over time), slow (speed multiplier), freeze (can't move, 
 1 Oasis Dawn | 2 Rooftops of the Spice Bazaar | 3 Canyons of Rose Stone | 4 Pearl Harbour by Moonlight | 5 The Sunken Sand City | 6 The Sultan's Sky Palace. Every chapter is a four-player match (you + 3 rivals). Rival elements: those the player(s) did not choose first; extras duplicate.
 
 ## Music and audio (M2+)
-Procedural Web Audio: oud-like pluck, ney-like flute, darbuka, drone. Maqam scales (Hijaz, Bayati, Nahawand), maqsum/saidi/baladi rhythms. Adaptive calm/combat layers; synthesized per-element SFX; OGG drop-in per chapter.
+Procedural Web Audio: oud-like pluck, ney-like flute, darbuka, drone. Maqam scales (Hijaz, Bayati, Nahawand), maqsum/saidi/baladi rhythms. Adaptive calm/combat layers (M5c: a threat estimate drives driving ghost notes, off-beat teks, a running oud line and heavy dums; the calm line is untouched); synthesized per-element SFX; OGG drop-in per chapter.
 
 ## Controls
 Left floating stick (or optional tilt) steers/throttles; right-side buttons cast; separate pause button; left-handed mirror; landscape lock, fullscreen on first tap, wake lock, safe areas, haptics.
@@ -63,8 +63,8 @@ Left floating stick (or optional tilt) steers/throttles; right-side buttons cast
 ## Co-op (M6)
 One Durable Object per match, WebSocket, authoritative sim at 30 Hz, snapshots 15-20 Hz, interpolation + local prediction. Room code + link; reject third player; combos (Water+Fire steam, Air+Fire fire tornado, Earth walls channel Water); difficulty director (~1.6x). Abuse protection and free-plan budget in the M6 report.
 
-## Accessibility
-Element colours are colour-blind-safe AND each has a distinct icon/shape; reduced-flashing option; readable text sizes. (M1 buttons already differ in shape: round Crater, rounded-square Mound.)
+## Accessibility (M5c)
+Element colours are colour-blind-safe AND each has a distinct icon/shape; faction banners differ in shape and there is an optional colour-blind faction palette. Settings: reduced flashing, text size (3 steps), high contrast, reduced motion. (M1 buttons already differ in shape: round Crater, rounded-square Mound.)
 
 ## Rival AI (M3)
 Rivals pick a goal every ~0.3 s from candidates scored by personality weights (aggression, greed, defense, hunt, upgrade eagerness) and the chapter's AI level: nearest orbs, mana wells, hostile creatures, nests, enemy wizards, defending their castle, raiding enemy castles (more tempting as the match goes on), returning home to heal or upgrade. They steer and cast through the same `PlayerInput` path as humans. Difficulty scales rival aggression, accuracy, HP and income.

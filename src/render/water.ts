@@ -1,6 +1,7 @@
 // Water: a single large plane at the chapter's water level. 'shader' mode has gentle
 // ripples and sun sparkle; 'flat' mode (Low preset) is a plain fogged colour.
 import * as THREE from 'three';
+import { TO_LINEAR_GLSL, linearOut } from './colorspace';
 import type { ChapterConfig } from '../data/chapters';
 
 export type WaterMode = 'shader' | 'flat';
@@ -40,6 +41,7 @@ export class Water {
         }`,
       fragmentShader: /* glsl */ `
         precision mediump float;
+        ${TO_LINEAR_GLSL}
         uniform vec3 shallow; uniform vec3 deep; uniform vec3 sunColor; uniform vec3 sunDir;
         uniform float time;
         varying vec3 vWorld;
@@ -54,7 +56,7 @@ export class Water {
           vec3 refl = reflect(-view, n);
           float spec = pow(max(dot(refl, normalize(sunDir)), 0.0), 60.0);
           c += sunColor * spec * 1.4;
-          gl_FragColor = vec4(c, 0.9);
+          gl_FragColor = vec4(toLinearOut(c), 0.9);
           #include <fog_fragment>
         }`,
     });
@@ -79,6 +81,7 @@ export class Water {
           }`,
         fragmentShader: /* glsl */ `
           precision mediump float;
+          ${TO_LINEAR_GLSL}
           uniform vec3 shallow; uniform vec3 deep; uniform vec3 sunColor; uniform float time;
           varying vec3 vWorld;
           #include <fog_pars_fragment>
@@ -90,11 +93,12 @@ export class Water {
             float billow = 0.5 + 0.28 * a + 0.16 * b + 0.06 * c;
             vec3 col = mix(deep, shallow, smoothstep(0.25, 0.8, billow));
             col += sunColor * 0.12 * smoothstep(0.65, 1.0, billow);
-            gl_FragColor = vec4(col, 1.0);
+            gl_FragColor = vec4(toLinearOut(col), 1.0);
             #include <fog_fragment>
           }`,
       });
     }
+    this.shader.uniforms.linearOut = linearOut; // merged uniforms are copies, so share the global one explicitly
     this.flat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(p.waterShallow).lerp(new THREE.Color(p.waterDeep), 0.45),
     });

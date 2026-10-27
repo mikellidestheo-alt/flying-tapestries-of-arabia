@@ -14,9 +14,15 @@ export class MusicDirector {
   private bar = 0;
   private fileSource: AudioBufferSourceNode | null = null;
   private token = 0;
+  private intensity = 0;
 
   constructor(private engine: AudioEngine) {
     this.inst = new Instruments(engine);
+  }
+
+  /** Combat intensity 0..1 (see intensity.ts); takes effect from the next scheduled bar. */
+  setIntensity(i: number): void {
+    this.intensity = Math.max(0, Math.min(1, i));
   }
 
   /** Start (or restart) music for a chapter. `file` is an optional recorded OGG url. */
@@ -30,6 +36,7 @@ export class MusicDirector {
     this.spec = spec;
     this.planner = new MusicPlanner(spec);
     this.bar = 0;
+    this.intensity = 0;
     this.nextBarTime = ctx.currentTime + 0.2;
     this.inst.startDrone(degreeHz(spec, -7), music.layers.calm.drone);
     this.timer = window.setInterval(() => this.tick(), music.tickMs);
@@ -59,14 +66,18 @@ export class MusicDirector {
   private tick(): void {
     const ctx = this.engine.ctx;
     if (!ctx || !this.planner || !this.spec) return;
-    const step = stepSeconds(this.spec.tempoBpm);
     while (this.nextBarTime < ctx.currentTime + music.scheduleAheadSeconds) {
       const t0 = this.nextBarTime;
-      for (const e of this.planner.planBar(this.bar)) {
+      const I = this.intensity;
+      // The pulse quickens a little and the drums swell as the fight heats up.
+      const step = stepSeconds(this.spec.tempoBpm * (1 + music.combat.tempoBoost * I));
+      const drums = music.layers.calm.drums * (1 + music.combat.drumBoost * I);
+      const events = [...this.planner.planBar(this.bar), ...this.planner.planCombat(this.bar, I)];
+      for (const e of events) {
         const t = t0 + e.step * step;
         if (e.inst === 'oud') this.inst.oud(t, e.freq!, (e.dur ?? 1) * step, e.vel * music.layers.calm.oud);
         else if (e.inst === 'ney') this.inst.ney(t, e.freq!, (e.dur ?? 2) * step, e.vel * music.layers.calm.ney);
-        else this.inst.drum(t, e.inst, e.vel * music.layers.calm.drums);
+        else this.inst.drum(t, e.inst, e.vel * drums);
       }
       this.bar++;
       this.nextBarTime += step * 8;

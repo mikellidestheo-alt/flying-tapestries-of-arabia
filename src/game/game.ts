@@ -3,18 +3,22 @@
 import simData from '../data/sim.json';
 import castleData from '../data/castles.json';
 import gameData from '../data/game.json';
+import musicData from '../data/music.json';
 import { CHAPTERS, getChapter, type ChapterConfig } from '../data/chapters';
 import { ELEMENTS, assignRivalElements, type Element } from '../data/elements';
 import { matchSetupFromChapter } from '../data/matchSetup';
+import { applyFactionPalette } from '../data/factionPalette';
 import { GameAudio } from '../audio/gameAudio';
+import { IntensityFollower, threatTarget } from '../audio/intensity';
 import { Controls } from '../input/controls';
 import { enterFullscreen, releaseWakeLock, requestWakeLock, vibrate } from '../platform';
 import { GameRenderer } from '../render/gameRenderer';
 import { GOVERNOR, PRESETS, QualityGovernor, guessPreset } from '../render/quality';
 import { hasSavedSettings, loadSave, writeSave, type SaveData, type Settings } from '../save';
 import { tierDef } from '../sim/castles';
-import { KITS, primaryDef, spellAt } from '../sim/combat';
-import { ACTION_SPELL, SIM_DT, Sim } from '../sim/sim';
+import { CREATURES, KITS, primaryDef, spellAt } from '../sim/combat';
+import { CREATURE_CHASE } from '../sim/entities';
+import { ACTION_SPELL, SIM_DT, SIM_TICK_RATE, Sim } from '../sim/sim';
 import { DebugOverlay } from '../ui/debugOverlay';
 import { Hud } from '../ui/hud';
 import { Menu } from '../ui/menu';
@@ -40,6 +44,7 @@ export class Game {
   private panel: SettingsPanel;
   private menu: Menu;
   private tutorial: Tutorial | null = null;
+  private intensity = new IntensityFollower();
   private ui = $('#ui');
   private phase: Phase = 'title';
   private settingsFromMenu = false;
@@ -174,6 +179,7 @@ export class Game {
     this.chapterIndex = idx;
     const chapter = getChapter(idx);
     this.chapter = chapter;
+    applyFactionPalette(this.save.settings.colorBlind);
     const human = this.wizardElement();
     const setup = matchSetupFromChapter(chapter, [human], this.save.settings.difficulty);
     const sim = new Sim({ terrain: chapter.terrain, creatureTypes: chapter.creatureSet, match: setup });
@@ -193,6 +199,7 @@ export class Game {
     this.show('#menuScreen', false);
     this.show('#endScreen', false);
     this.show('#pauseScreen', false);
+    this.intensity = new IntensityFollower();
     this.audio.start(chapter);
     this.audio.setVolumes(this.save.settings.musicVolume, this.save.settings.sfxVolume, this.save.settings.muted);
     void enterFullscreen();
@@ -219,8 +226,13 @@ export class Game {
     this.tutorial = null;
     this.save.progress.tutorialDone = true;
     writeSave(this.save);
+    const prog = this.save.progress;
+    prog.played++;
     if (won) {
-      const prog = this.save.progress;
+      prog.wins++;
+      const secs = Math.round(sim.tick / SIM_TICK_RATE);
+      const best = prog.bestSeconds[this.chapterIndex] ?? 0;
+      if (best === 0 || secs < best) prog.bestSeconds[this.chapterIndex] = secs;
       prog.cleared |= 1 << this.chapterIndex;
       prog.unlockedChapters = Math.max(prog.unlockedChapters, this.chapterIndex + 2);
       writeSave(this.save);
@@ -260,6 +272,11 @@ export class Game {
     this.debug.setVisible(s.debugOverlay);
     this.ui.classList.toggle('dev', s.debugOverlay);
     this.ui.classList.toggle('no-tt', !s.terrainTools);
+    const root = document.documentElement;
+    root.style.setProperty('--tz', String(s.textScale));
+    root.classList.toggle('hc', s.highContrast);
+    root.classList.toggle('rm', s.reducedMotion);
+    this.renderer.setReducedMotion(s.reducedMotion);
     this.audio.setVolumes(s.musicVolume, s.sfxVolume, s.muted);
     this.renderer.setReducedFlashing(s.reducedFlashing);
     this.hud.reducedFlashing = s.reducedFlashing;
@@ -342,6 +359,35 @@ export class Game {
     }
   }
 
+  // ------------------------------------------------------------ adaptive music
+  /** Estimate how dangerous the moment is for the local player and steer the music's combat layers. */
+  private updateMusicIntensity(sim: Sim, dt: number): void {
+    const p = sim.players[0]!;
+    const T = musicData.combat.threat;
+    let hostileNear = 0;
+    for (const c of sim.creatures) {
+      if (c.state !== CREATURE_CHASE || !CREATURES[c.type]!.hostile) continue;
+      if ((c.x - p.x) ** 2 + (c.z - p.z) ** 2 < T.creatureRange * T.creatureRange) hostileNear++;
+    }
+    let rivalsNear = 0;
+    for (const w of sim.players) {
+      if (w === p || !w.active || w.faction === p.faction) continue;
+      if ((w.x - p.x) ** 2 + (w.z - p.z) ** 2 < T.rivalRange * T.rivalRange) rivalsNear++;
+    }
+    let boltsNear = 0;
+    for (const b of sim.projectiles) {
+      if (b.faction === p.faction) continue;
+      if ((b.x - p.x) ** 2 + (b.z - p.z) ** 2 < T.boltRange * T.boltRange) boltsNear++;
+    }
+    const castle = sim.castles.find((c) => c.faction === p.faction);
+    const target = threatTarget({
+      hostileNear, rivalsNear, boltsNear,
+      secondsSinceCastleHit: castle ? (sim.tick - castle.lastHit) / SIM_TICK_RATE : Infinity,
+      hpFrac: p.hp / sim.maxHpFor(p),
+    });
+    this.audio.setIntensity(this.intensity.update(target, dt));
+  }
+
   // ------------------------------------------------------------ main loop
   private loop(now: number): void {
     if (!this.running) return;
@@ -385,6 +431,7 @@ export class Game {
     if (now - this.hudAt > 100) {
       this.hudAt = now;
       this.hud.update(sim);
+      this.updateMusicIntensity(sim, 0.1);
       if (this.tutorial) {
         this.tutorial.update(sim, 0.1);
         if (this.tutorial.finished) this.finishTutorial();

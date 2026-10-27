@@ -8,7 +8,7 @@ Short working plan. The milestone list and status live in `docs/milestones.md`; 
 3. **M2** one spell, mana orbs, one enemy, first procedural music layer.
 4. **M3** (checkpoint) castle tiers + archers, rival AI, win/comeback, chapter system, difficulty, tutorial, save, chapters 1-2, offline service worker.
 5. **M4** four wizards, spell table, balance script, AI-vs-AI test.
-6. **M5a, M5b** (done) chapters 3-6; see "RESUME HERE" at the end of `docs/milestones.md`. **M5c** (next, checkpoint) VFX, adaptive music, menus, hub, accessibility, stress test.
+6. **M5a, M5b, M5c** (done; M5c is a checkpoint awaiting phone feedback) chapters 3-6, bloom, adaptive music, hub, accessibility, stress test; see "RESUME HERE" at the end of `docs/milestones.md`. VFX, adaptive music, menus, hub, accessibility, stress test.
 7. **M6** (checkpoint) 2-player co-op on a Durable Object, free-plan research first.
 
 ## Assumptions

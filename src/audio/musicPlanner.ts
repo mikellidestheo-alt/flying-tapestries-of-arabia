@@ -56,6 +56,34 @@ export class MusicPlanner {
     this.rng = new Prng(hashInts(spec.tempoBpm, spec.rootMidi, spec.motif.length, spec.id.length));
   }
 
+  /**
+   * Extra events layered on top of planBar as the fight heats up (intensity 0..1): driving ghost notes,
+   * off-beat teks, a running oud line and heavy doubled dums. Seeded per bar so it is deterministic.
+   */
+  planCombat(barIndex: number, intensity: number): PlannedEvent[] {
+    const c = music.combat;
+    const out: PlannedEvent[] = [];
+    if (intensity < c.kaFrom) return out;
+    const spec = this.spec;
+    const rng = new Prng(hashInts(barIndex, spec.rootMidi, spec.tempoBpm, 0x636f6d62));
+    const pat = parsePattern(spec.rhythm);
+    const rh = RHYTHMS[spec.rhythm]!;
+    for (const s of [1, 3, 5, 7]) if (pat[s] === '-') out.push({ step: s, inst: 'ka', vel: 0.25 + 0.3 * intensity });
+    if (intensity >= c.tekFrom) for (const s of [2, 6]) if (pat[s] === '-') out.push({ step: s, inst: 'tek', vel: 0.35 + 0.3 * intensity });
+    if (intensity >= c.oudRunFrom) {
+      for (let s = 0; s < 8; s++) {
+        if (rh.oudSteps.includes(s)) continue;
+        const degree = spec.motif[(barIndex * 3 + s) % spec.motif.length]! + (rng.next() < 0.3 ? 1 : 0);
+        out.push({ step: s, inst: 'oud', freq: degreeHz(spec, degree - 7), dur: 0.8, vel: 0.35 + 0.3 * intensity });
+      }
+    }
+    if (intensity >= c.heavyFrom) {
+      for (const s of [3, 7]) out.push({ step: s, inst: 'dum', vel: 0.7 });
+      out.push({ step: 0, inst: 'ney', freq: degreeHz(spec, spec.motif[barIndex % spec.motif.length]! + 14), dur: 8, vel: 0.5 });
+    }
+    return out;
+  }
+
   /** Events for one bar (barIndex counts from 0). Pure function of the planner's seeded state. */
   planBar(barIndex: number): PlannedEvent[] {
     const spec = this.spec;

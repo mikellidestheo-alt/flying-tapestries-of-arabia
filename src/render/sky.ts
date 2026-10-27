@@ -1,5 +1,6 @@
 // Sky dome: a gradient shader (no textures) with a soft sun glow, kept centred on the camera.
 import * as THREE from 'three';
+import { TO_LINEAR_GLSL, linearOut } from './colorspace';
 import type { ChapterConfig } from '../data/chapters';
 
 export class Sky {
@@ -21,6 +22,7 @@ export class Sky {
         sunColor: { value: new THREE.Color(p.sun) },
         sunDir: { value: sunDir },
         time: { value: 0 },
+        linearOut,
       },
       vertexShader: /* glsl */ `
         varying vec3 vDir;
@@ -31,6 +33,7 @@ export class Sky {
       defines: { STARS: chapter.palette.stars ? 1 : 0, MOON: chapter.palette.moon ? 1 : 0 },
       fragmentShader: /* glsl */ `
         precision highp float;
+        ${TO_LINEAR_GLSL}
         uniform vec3 top; uniform vec3 mid; uniform vec3 horizon; uniform vec3 fogColor;
         uniform vec3 sunColor; uniform vec3 sunDir; uniform float time;
         varying vec3 vDir;
@@ -67,7 +70,7 @@ export class Sky {
           float twinkle = 0.65 + 0.35 * sin(time * (1.5 + rr * 4.0) + rr * 60.0);
           c += vec3(0.9, 0.93, 1.0) * st * twinkle * smoothstep(0.08, 0.4, h) * (1.0 - md * 0.0);
           #endif
-          gl_FragColor = vec4(c, 1.0);
+          gl_FragColor = vec4(toLinearOut(c), 1.0);
         }`,
     });
     this.mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), this.material);

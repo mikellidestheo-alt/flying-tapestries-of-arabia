@@ -36,6 +36,11 @@ export class GameAudio {
     this.ambient.start(chapter.ambient.sound);
   }
 
+  /** Combat intensity 0..1 from the game loop; drives the adaptive music layers. */
+  setIntensity(i: number): void {
+    this.music.setIntensity(i);
+  }
+
   stopMusic(): void {
     this.music.stop();
     this.ambient.stop();

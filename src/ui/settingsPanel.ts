@@ -43,7 +43,11 @@ export class SettingsPanel {
     this.switchRow('Tilt steering (experimental)', 'Tilt the phone to steer. Hold it comfortably, then turn this on.', s.tilt, (v) => this.change({ tilt: v }));
     this.switchRow('Terrain tools', 'Crater and Mound buttons above the fire button (8 mana each).', s.terrainTools, (v) => this.change({ terrainTools: v }));
     this.switchRow('Vibration', 'Short haptic buzz on actions.', s.haptics, (v) => this.change({ haptics: v }));
-    this.switchRow('Reduced flashing', 'Softens bright flashes (used by effects in later updates).', s.reducedFlashing, (v) => this.change({ reducedFlashing: v }));
+    this.switchRow('Reduced flashing', 'Softens bright flashes and thins out effect bursts.', s.reducedFlashing, (v) => this.change({ reducedFlashing: v }));
+    this.segRow('Text size', 'Makes menus, HUD text and toasts bigger.', [['1', 'Normal'], ['1.2', 'Large'], ['1.4', 'Largest']], String(s.textScale), (v) => this.change({ textScale: Number(v) }));
+    this.switchRow('High contrast', 'Thicker outlines and darker panels behind text.', s.highContrast, (v) => this.change({ highContrast: v }));
+    this.switchRow('Reduced motion', 'Steady camera: no zoom while boosting and no sand haze.', s.reducedMotion, (v) => this.change({ reducedMotion: v }));
+    this.switchRow('Colour-blind colours', 'Safer faction colours (banner shapes always differ). Applies to your next match.', s.colorBlind, (v) => this.change({ colorBlind: v }));
     this.switchRow('Debug overlay', 'FPS, frame time, entity counts, latency.', s.debugOverlay, (v) => this.change({ debugOverlay: v }));
   }
 

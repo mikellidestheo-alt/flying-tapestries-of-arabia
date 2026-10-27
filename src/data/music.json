@@ -1,20 +1,126 @@
 {
   "scales": {
-    "hijaz": [0, 1, 4, 5, 7, 8, 10],
-    "bayati": [0, 1.5, 3, 5, 7, 8, 10],
-    "nahawand": [0, 2, 3, 5, 7, 8, 11],
-    "rast": [0, 2, 3.5, 5, 7, 9, 10.5],
-    "saba": [0, 1.5, 3, 4, 7, 8, 10]
+    "hijaz": [
+      0,
+      1,
+      4,
+      5,
+      7,
+      8,
+      10
+    ],
+    "bayati": [
+      0,
+      1.5,
+      3,
+      5,
+      7,
+      8,
+      10
+    ],
+    "nahawand": [
+      0,
+      2,
+      3,
+      5,
+      7,
+      8,
+      11
+    ],
+    "rast": [
+      0,
+      2,
+      3.5,
+      5,
+      7,
+      9,
+      10.5
+    ],
+    "saba": [
+      0,
+      1.5,
+      3,
+      4,
+      7,
+      8,
+      10
+    ]
   },
   "rhythms": {
-    "maqsum": { "pattern": "D T - T D - T -", "ghost": [1, 5], "oudSteps": [0, 2, 3, 4, 6] },
-    "saidi": { "pattern": "D T - - D D T -", "ghost": [3, 7], "oudSteps": [0, 2, 4, 5, 6] },
-    "baladi": { "pattern": "D D - T D - T -", "ghost": [2, 7], "oudSteps": [0, 1, 3, 4, 6] }
+    "maqsum": {
+      "pattern": "D T - T D - T -",
+      "ghost": [
+        1,
+        5
+      ],
+      "oudSteps": [
+        0,
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    "saidi": {
+      "pattern": "D T - - D D T -",
+      "ghost": [
+        3,
+        7
+      ],
+      "oudSteps": [
+        0,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    "baladi": {
+      "pattern": "D D - T D - T -",
+      "ghost": [
+        2,
+        7
+      ],
+      "oudSteps": [
+        0,
+        1,
+        3,
+        4,
+        6
+      ]
+    }
   },
   "layers": {
-    "calm": { "drone": 0.5, "oud": 0.9, "drums": 0.55, "ney": 0.6 }
+    "calm": {
+      "drone": 0.5,
+      "oud": 0.9,
+      "drums": 0.55,
+      "ney": 0.6
+    }
   },
   "phraseBars": 4,
   "scheduleAheadSeconds": 0.14,
-  "tickMs": 25
+  "tickMs": 25,
+  "combat": {
+    "kaFrom": 0.2,
+    "tekFrom": 0.45,
+    "oudRunFrom": 0.6,
+    "heavyFrom": 0.75,
+    "drumBoost": 0.5,
+    "tempoBoost": 0.08,
+    "attackPerSecond": 0.6,
+    "releasePerSecond": 0.08,
+    "threat": {
+      "creatureRange": 80,
+      "creatureWeight": 0.14,
+      "rivalRange": 130,
+      "rivalWeight": 0.3,
+      "boltRange": 70,
+      "boltWeight": 0.12,
+      "castleHitSeconds": 6,
+      "castleHitWeight": 0.4,
+      "lowHpBelow": 0.4,
+      "lowHpWeight": 0.25
+    }
+  }
 }

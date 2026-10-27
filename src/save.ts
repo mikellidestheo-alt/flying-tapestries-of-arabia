@@ -17,6 +17,11 @@ export interface Settings {
   muted: boolean;
   difficulty: 'easy' | 'normal' | 'hard';
   terrainTools: boolean;
+  /** Accessibility: UI text scale (1, 1.2 or 1.4), stronger outlines, steadier camera, colour-blind-safe faction colours. */
+  textScale: number;
+  highContrast: boolean;
+  reducedMotion: boolean;
+  colorBlind: boolean;
 }
 
 export interface Progress {
@@ -25,6 +30,11 @@ export interface Progress {
   tutorialDone: boolean;
   /** Bitmask of cleared chapters (bit n-1 = chapter n). */
   cleared: number;
+  /** Best winning time in seconds per chapter (0 = not won yet). */
+  bestSeconds: number[];
+  /** Matches won and played. */
+  wins: number;
+  played: number;
 }
 
 export interface SaveData {
@@ -47,9 +57,13 @@ export const DEFAULT_SETTINGS: Settings = {
   muted: false,
   difficulty: 'normal',
   terrainTools: true,
+  textScale: 1,
+  highContrast: false,
+  reducedMotion: false,
+  colorBlind: false,
 };
 
-export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false, cleared: 0 };
+export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false, cleared: 0, bestSeconds: [0, 0, 0, 0, 0, 0], wins: 0, played: 0 };
 
 const KEY = 'fta-save-v1';
 
@@ -81,7 +95,11 @@ export function loadSave(): SaveData {
   const settings = mergeKnown(DEFAULT_SETTINGS, o.settings);
   if (!['high', 'medium', 'low'].includes(settings.quality)) settings.quality = DEFAULT_SETTINGS.quality;
   if (!['easy', 'normal', 'hard'].includes(settings.difficulty)) settings.difficulty = DEFAULT_SETTINGS.difficulty;
+  if (![1, 1.2, 1.4].includes(settings.textScale)) settings.textScale = 1;
   const progress = mergeKnown(DEFAULT_PROGRESS, o.progress);
+  const best = Array.isArray(progress.bestSeconds) ? progress.bestSeconds : [];
+  progress.bestSeconds = DEFAULT_PROGRESS.bestSeconds.map((_, i) => (typeof best[i] === 'number' && Number.isFinite(best[i]) && best[i]! > 0 ? best[i]! : 0));
+  for (const k of ['wins', 'played'] as const) if (!Number.isInteger(progress[k]) || progress[k] < 0) progress[k] = 0;
   if (!(progress.unlockedChapters >= 1 && progress.unlockedChapters <= 6)) progress.unlockedChapters = 1;
   if (!Number.isInteger(progress.cleared) || progress.cleared < 0) progress.cleared = 0;
   return { version: 1, settings, progress };

@@ -1,5 +1,6 @@
 // Chapter select, difficulty and wizard choice.
 import { CHAPTERS } from '../data/chapters';
+import creatureData from '../data/creatures.json';
 import { ELEMENTS, type Element } from '../data/elements';
 import gameData from '../data/game.json';
 import { wizardLook } from '../data/wizardLooks';
@@ -44,9 +45,14 @@ export class Menu {
       b.type = 'button';
       const locked = i >= playable;
       const cleared = (prog.cleared >> i) & 1;
-      const note = i >= gameData.playableChapters ? 'Coming soon' : locked ? 'Win the previous chapter to unlock' : `${c.rivals.length} rival${c.rivals.length > 1 ? 's' : ''} · ${cleared ? 'Cleared ✓' : c.tagline}`;
-      b.innerHTML = `${c.number}. ${c.name}<small>${note}</small>`;
+      const soon = i >= gameData.playableChapters;
+      const p = c.palette;
+      const art = `linear-gradient(180deg, ${p.skyTop} 0%, ${p.skyMid} 40%, ${p.horizon} 62%, ${p.sand} 62%, ${p.sandShade} 100%)`;
+      const best = prog.bestSeconds[i] ?? 0;
+      const status = soon ? 'Coming soon' : locked ? 'Win the previous chapter to unlock' : cleared ? `Cleared ✓${best > 0 ? ` · best ${fmtTime(best)}` : ''}` : c.tagline;
+      b.innerHTML = `<span class="art" style="background:${art}"><i>${c.number}</i>${locked ? '<u aria-hidden="true">🔒</u>' : ''}</span><b>${c.name}</b><small>${status}</small>`;
       b.disabled = locked;
+      b.setAttribute('aria-label', `Chapter ${c.number}: ${c.name}. ${status}`);
       if (i === this.selected) b.classList.add('sel');
       b.addEventListener('click', () => {
         this.selected = i;
@@ -54,6 +60,14 @@ export class Menu {
       });
       list.appendChild(b);
     });
+
+    const sel = CHAPTERS[this.selected]!;
+    const names = (id: string) => (creatureData as Record<string, { name: string; hostile?: boolean }>)[id]?.name ?? id;
+    const foes = sel.creatureSet.filter((t) => (creatureData as Record<string, { hostile?: boolean }>)[t]?.hostile !== false).map(names).join(', ');
+    const wild = sel.creatureSet.filter((t) => (creatureData as Record<string, { hostile?: boolean }>)[t]?.hostile === false).map(names).join(', ');
+    const density = sel.enemyDensity < 0.8 ? 'Calm' : sel.enemyDensity < 1.1 ? 'Busy' : 'Dangerous';
+    $('#chapterDetail').innerHTML = `<b>${sel.tagline}</b><br><span>Rivals: ${sel.rivals.map((r) => `${r.name} (${r.personality})`).join(', ')}</span><br><span>Enemies (${density}): ${foes}${wild ? ` · Mana animals: ${wild}` : ''}</span>`;
+    $('#hubStats').textContent = `Chapters cleared ${popcount(prog.cleared)}/${gameData.playableChapters} · Matches won ${prog.wins}/${prog.played}`;
 
     const s = this.host.settings();
     const dseg = $('#difficultySeg');
@@ -83,4 +97,14 @@ export class Menu {
       wseg.appendChild(b);
     }
   }
+}
+
+function popcount(n: number): number {
+  let c = 0;
+  for (let x = n; x > 0; x >>= 1) c += x & 1;
+  return c;
+}
+
+function fmtTime(secs: number): string {
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
 }

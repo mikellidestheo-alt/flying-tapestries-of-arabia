@@ -150,3 +150,24 @@ button.ghost:active { background: rgba(255, 255, 255, 0.15); }
 #ui[data-el="water"] .act.spell { color: #6fd6ff; border-color: #bfeaff; background: rgba(10, 36, 62, 0.65); }
 #ui[data-el="earth"] .act.spell { color: #d2a86a; border-color: #ecd2a0; background: rgba(48, 34, 16, 0.65); }
 #ui[data-el="air"] .act.spell { color: #e8e4ff; border-color: #ffffff; background: rgba(40, 36, 80, 0.62); }
+
+/* ---- M5c: hub cards, accessibility ---- */
+#chapterList button { display: flex; flex-direction: column; gap: 2px; padding: 0 0 6px; overflow: hidden; min-height: 0; }
+#chapterList .art { position: relative; display: block; height: 26px; width: 100%; border-bottom: 2px solid rgba(255, 255, 255, 0.25); }
+#chapterList .art i { position: absolute; left: 8px; bottom: 0; font: 800 17px system-ui, sans-serif; font-style: normal; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); }
+#chapterList .art u { position: absolute; right: 8px; top: 6px; text-decoration: none; font-size: 16px; }
+#chapterList button b, #chapterList button small { padding: 0 9px; }
+#chapterDetail { font-size: 13px; line-height: 1.4; margin: 4px 0 6px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.07); }
+#chapterDetail span { opacity: 0.85; }
+#hubStats { margin: 0 0 4px; text-align: center; }
+
+/* Accessibility: text scale (--tz), high contrast (.hc), reduced motion (.rm). */
+:root { --tz: 1; }
+#topHud, #castleInfo, #foeInfo, #toast, #tutorial, #wellGuide, #hud b, #palaceInfo, .card, .menu-actions button { zoom: var(--tz); }
+html.hc { --panel: rgba(8, 4, 20, 0.96); }
+html.hc #hud .bar .track, html.hc #shareBar, html.hc #foeInfo .track { border-width: 3px; border-color: #fff; }
+html.hc .act { border-width: 4px; border-color: #fff; background: rgba(8, 4, 20, 0.85); }
+html.hc #castleInfo, html.hc #toast, html.hc #tutorial, html.hc #wellGuide, html.hc #compass { background: rgba(8, 4, 20, 0.92); border: 2px solid #fff; }
+html.hc #shareLine, html.hc #palaceInfo, html.hc .bar b { text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 3px #000; font-weight: 800; }
+html.hc #chapterList button, html.hc .seg, html.hc button.ghost { border-color: #fff; }
+html.rm * { transition: none !important; animation: none !important; }

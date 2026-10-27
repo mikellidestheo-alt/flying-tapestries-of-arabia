@@ -11,6 +11,9 @@ import { wrapAngle } from '../sim/dmath';
 import type { Sim } from '../sim/sim';
 import { EntityRenderer } from './entityRenderer';
 import { GLOBAL_PIXEL_RATIO_CAP, PRESETS, type QualityPresetData } from './quality';
+import type { BloomPipeline } from './bloom';
+import quality from '../data/quality.json';
+import { linearOut } from './colorspace';
 import { Sky } from './sky';
 import { TapestryModel } from './tapestry';
 import { TerrainRenderer } from './terrainRenderer';
@@ -60,6 +63,9 @@ export class GameRenderer {
   private camHeading = 0;
   private camReady = false;
   private reducedFlashing = false;
+  private reducedMotion = false;
+  private bloom: BloomPipeline | null = null;
+  private bloomLoading = false;
   localIndex = 0;
 
   constructor(canvas: HTMLCanvasElement, private quality: QualityPreset) {
@@ -72,6 +78,7 @@ export class GameRenderer {
       alpha: false,
     });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.info.autoReset = false; // bloom renders several passes per frame: reset once per frame instead
     this.resize();
   }
 
@@ -107,11 +114,13 @@ export class GameRenderer {
     scene.add(sun, new THREE.HemisphereLight(chapter.palette.skyMid, chapter.palette.sand, 1.3));
 
     let sand: SandLayer | null = null;
-    if (chapter.weather?.sandstorm && this.preset.weatherLayer) {
+    if (chapter.weather?.sandstorm && this.preset.weatherLayer && !this.reducedMotion) {
       sand = new SandLayer(chapter);
       scene.add(sand.mesh);
     }
     this.world = { scene, sim, chapter, terrain, sky, water, entities, wizards, fog, sand };
+    this.bloom?.setScene(scene);
+    this.ensureBloom();
     this.localIndex = localIndex;
     this.camReady = false;
     this.applyFog();
@@ -131,14 +140,34 @@ export class GameRenderer {
     this.world = null;
   }
 
+  /** Bloom is High-only and lazy: the code is fetched the first time a High-quality chapter loads. */
+  private ensureBloom(): void {
+    if (!this.preset.bloom || this.bloom || this.bloomLoading) return;
+    this.bloomLoading = true;
+    void import('./bloom').then(({ BloomPipeline }) => {
+      this.bloomLoading = false;
+      if (!this.preset.bloom || !this.world || this.bloom) return;
+      this.bloom = new BloomPipeline(this.renderer, this.world.scene, this.camera);
+      this.bloom.resize(window.innerWidth, window.innerHeight);
+    }).catch(() => {
+      this.bloomLoading = false; // keep playing with the cheap glow
+    });
+  }
+
+  /** Bloom runs only while the preset asks for it and the governor has not had to cut resolution. */
+  private bloomActive(): boolean {
+    return !!this.bloom && this.preset.bloom && this.renderScale >= quality.bloom.minRenderScale;
+  }
+
   /** Add or remove the sand layer when the quality preset changes. */
   private setSandLayer(): void {
     const w = this.world;
     if (!w || !w.chapter.weather?.sandstorm) return;
-    if (this.preset.weatherLayer && !w.sand) {
+    const want = this.preset.weatherLayer && !this.reducedMotion;
+    if (want && !w.sand) {
       w.sand = new SandLayer(w.chapter);
       w.scene.add(w.sand.mesh);
-    } else if (!this.preset.weatherLayer && w.sand) {
+    } else if (!want && w.sand) {
       w.scene.remove(w.sand.mesh);
       w.sand.dispose();
       w.sand = null;
@@ -178,12 +207,23 @@ export class GameRenderer {
       this.world.terrain.setQuality(this.preset);
       this.world.water.setMode(this.preset.water as 'shader' | 'flat');
     }
+    if (!this.preset.bloom && this.bloom) {
+      this.bloom.dispose();
+      this.bloom = null;
+    }
+    this.ensureBloom();
     this.applyFog();
     this.resize();
   }
 
   handleEvent(e: SimEvent): void {
     this.world?.entities.handleEvent(e);
+  }
+
+  /** Steady camera: no boost zoom, calmer follow. Also drops the sand haze. */
+  setReducedMotion(on: boolean): void {
+    this.reducedMotion = on;
+    this.setSandLayer();
   }
 
   setReducedFlashing(on: boolean): void {
@@ -214,6 +254,7 @@ export class GameRenderer {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.bloom?.resize(w, h);
   }
 
   get stats(): RenderStats {
@@ -299,7 +340,7 @@ export class GameRenderer {
     this.camPos.lerp(desired, 1 - Math.exp(-7 * dt));
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(lx + Math.sin(this.camHeading) * 9, ly + 1.2, lz + Math.cos(this.camHeading) * 9);
-    const fov = 62 + lspeedFrac * 9;
+    const fov = 62 + (this.reducedMotion ? 0 : lspeedFrac * 9);
     if (Math.abs(this.camera.fov - fov) > 0.05) {
       this.camera.fov += (fov - this.camera.fov) * (1 - Math.exp(-4 * dt));
       this.camera.updateProjectionMatrix();
@@ -315,10 +356,18 @@ export class GameRenderer {
     }
     w.sky.update(this.camera, this.camera.far * 0.9, time);
     w.water.update(this.camPos.x, this.camPos.z, this.camera.far * 2.5, time);
-    this.renderer.render(w.scene, this.camera);
+    this.renderer.info.reset();
+    if (this.bloomActive()) {
+      linearOut.value = 1;
+      this.bloom!.render(dt);
+    } else {
+      linearOut.value = 0;
+      this.renderer.render(w.scene, this.camera);
+    }
   }
 
   dispose(): void {
+    this.bloom?.dispose();
     this.unloadChapter();
     this.renderer.dispose();
   }

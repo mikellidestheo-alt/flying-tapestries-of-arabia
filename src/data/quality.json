@@ -24,7 +24,8 @@
         "particles": 600
       },
       "cityDetail": 2,
-      "weatherLayer": true
+      "weatherLayer": true,
+      "bloom": true
     },
     "medium": {
       "label": "Medium",
@@ -49,7 +50,8 @@
         "particles": 350
       },
       "cityDetail": 1,
-      "weatherLayer": true
+      "weatherLayer": true,
+      "bloom": false
     },
     "low": {
       "label": "Low",
@@ -74,7 +76,8 @@
         "particles": 150
       },
       "cityDetail": 0,
-      "weatherLayer": false
+      "weatherLayer": false,
+      "bloom": false
     }
   },
   "governor": {
@@ -91,5 +94,13 @@
     "upStep": 0.05,
     "minRadiusScale": 0.6,
     "radiusStep": 0.2
+  },
+  "bloom": {
+    "strength": 0.55,
+    "radius": 0.5,
+    "threshold": 0.82,
+    "resolutionScale": 0.5,
+    "msaaSamples": 4,
+    "minRenderScale": 0.75
   }
 }
