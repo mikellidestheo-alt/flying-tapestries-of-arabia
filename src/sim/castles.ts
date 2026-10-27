@@ -7,7 +7,7 @@ import { CREATURES, hurtCreature } from './combat';
 import { incomeMultiplier } from './match';
 import type { PlayerInput, PlayerState, Sim } from './sim';
 import { SIM_DT, SIM_TICK_RATE } from './sim';
-import { baseHeight, cityFactor, type TerrainParams } from './terrain';
+import { baseHeight, cityFactor, landmarkNear, type TerrainParams } from './terrain';
 
 export type TierDef = (typeof castleData.tiers)[number];
 export type BranchId = 'archers' | 'walls' | 'income';
@@ -95,6 +95,7 @@ export function findCastleSite(p: TerrainParams, anchor: { x: number; z: number 
     const h = baseHeight(p, x, z);
     if (h < p.waterLevel + 3) return null;
     if (cityFactor(p, x, z) > 0.05) return null;
+    if (landmarkNear(p, x, z, 24)) return null;
     for (let k = 0; k < 8; k++) {
       const a = (k / 8) * 6.283185307;
       const hh = baseHeight(p, x + dcos(a) * 20, z + dsin(a) * 20);

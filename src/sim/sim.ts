@@ -18,7 +18,7 @@ import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryDeposit, t
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
 import { stepCreatures, stepNests, stepOrbs, stepPlayerVitals, stepWells } from './world';
-import { Terrain, baseHeight, cityFactor, findSpawn, type TerrainParams } from './terrain';
+import { Terrain, baseHeight, cityFactor, findSpawn, landmarkNear, type TerrainParams } from './terrain';
 
 export const SIM_DT = 1 / simData.tickRate;
 export const SIM_TICK_RATE = simData.tickRate;
@@ -244,7 +244,7 @@ export class Sim {
         const x = home.x + dcos(a) * r;
         const z = home.z + dsin(a) * r;
         const h = baseHeight(this.terrain.params, x, z);
-        if (h < this.terrain.params.waterLevel + 2 || cityFactor(this.terrain.params, x, z) > 0.05) continue;
+        if (h < this.terrain.params.waterLevel + 2 || cityFactor(this.terrain.params, x, z) > 0.05 || landmarkNear(this.terrain.params, x, z, 12)) continue;
         this.structures.push({ id: this.nextId++, kind: 'nest', x, y: h, z, hp: cfg.hp, max: cfg.hp, alive: true, spawnCd: 120, respawnAt: 0 });
         break;
       }

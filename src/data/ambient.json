@@ -1,0 +1,42 @@
+{
+  "desert-wind-soft": {
+    "layers": [
+      { "filter": "bandpass", "freq": 420, "q": 0.7, "gain": 0.16, "lfoHz": 0.13, "lfoGain": 0.07, "lfoFreq": 140 },
+      { "filter": "highpass", "freq": 2600, "q": 0.5, "gain": 0.025, "lfoHz": 0.21, "lfoGain": 0.02, "lfoFreq": 0 }
+    ]
+  },
+  "market-murmur": {
+    "layers": [
+      { "filter": "bandpass", "freq": 650, "q": 1.4, "gain": 0.13, "lfoHz": 3.1, "lfoGain": 0.05, "lfoFreq": 90 },
+      { "filter": "bandpass", "freq": 1250, "q": 2.2, "gain": 0.05, "lfoHz": 4.7, "lfoGain": 0.03, "lfoFreq": 160 },
+      { "filter": "lowpass", "freq": 240, "q": 0.5, "gain": 0.08, "lfoHz": 0.09, "lfoGain": 0.03, "lfoFreq": 0 }
+    ]
+  },
+  "canyon-echo": {
+    "layers": [
+      { "filter": "bandpass", "freq": 300, "q": 1.1, "gain": 0.17, "lfoHz": 0.08, "lfoGain": 0.08, "lfoFreq": 110 },
+      { "filter": "bandpass", "freq": 880, "q": 3.0, "gain": 0.035, "lfoHz": 0.17, "lfoGain": 0.03, "lfoFreq": 240 }
+    ],
+    "echo": { "delay": 0.43, "feedback": 0.45, "mix": 0.55 }
+  },
+  "waves-night": {
+    "layers": [
+      { "filter": "lowpass", "freq": 520, "q": 0.6, "gain": 0.18, "lfoHz": 0.11, "lfoGain": 0.14, "lfoFreq": 160 },
+      { "filter": "bandpass", "freq": 1800, "q": 0.8, "gain": 0.035, "lfoHz": 0.11, "lfoGain": 0.035, "lfoFreq": 500 },
+      { "filter": "lowpass", "freq": 260, "q": 0.5, "gain": 0.1, "lfoHz": 0.07, "lfoGain": 0.06, "lfoFreq": 0 }
+    ]
+  },
+  "sandstorm": {
+    "layers": [
+      { "filter": "bandpass", "freq": 1100, "q": 0.45, "gain": 0.28, "lfoHz": 0.35, "lfoGain": 0.1, "lfoFreq": 380 },
+      { "filter": "highpass", "freq": 3400, "q": 0.4, "gain": 0.07, "lfoHz": 0.6, "lfoGain": 0.04, "lfoFreq": 0 },
+      { "filter": "lowpass", "freq": 200, "q": 0.5, "gain": 0.16, "lfoHz": 0.18, "lfoGain": 0.06, "lfoFreq": 0 }
+    ]
+  },
+  "high-wind": {
+    "layers": [
+      { "filter": "bandpass", "freq": 900, "q": 2.2, "gain": 0.12, "lfoHz": 0.16, "lfoGain": 0.06, "lfoFreq": 420 },
+      { "filter": "bandpass", "freq": 1700, "q": 3.2, "gain": 0.04, "lfoHz": 0.23, "lfoGain": 0.03, "lfoFreq": 600 }
+    ]
+  }
+}

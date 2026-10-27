@@ -21,8 +21,40 @@ export interface CityParams {
   domeChance: number;
 }
 
+/** Carved canyons: ridged noise lines become flat-floored trenches with steep walls. */
+export interface CanyonParams {
+  scale: number;
+  warp: number;
+  /** Fraction of the ridge that is canyon (0..1). */
+  width: number;
+  /** Wall softness (smaller = steeper cliffs). */
+  softness: number;
+  depth: number;
+}
+
+/** Tall static landmarks (needles, lighthouses) on a jittered grid: obstacles for flyers and shots. */
+export interface LandmarkParams {
+  kind: string;
+  cell: number;
+  chance: number;
+  radius: number;
+  height: number;
+  /** Allowed ground height above the water level. */
+  minAboveWater: number;
+  maxAboveWater: number;
+}
+
+/** Render-only rock strata colouring (alternating bands up the cliffs). */
+export interface StrataParams {
+  band: number;
+  contrast: number;
+}
+
 export interface TerrainParams {
   city?: CityParams;
+  canyon?: CanyonParams;
+  landmarks?: LandmarkParams;
+  strata?: StrataParams;
   seed: number;
   baseHeight: number;
   /** Wide, slow undulation. */
@@ -129,7 +161,17 @@ function baseHeightOpen(p: TerrainParams, x: number, z: number): number {
   const swell = (fbm2(x * p.swellScale, z * p.swellScale, s + 17, 3) - 0.5) * 2;
   const detail = (fbm2(x * p.detailScale, z * p.detailScale, s + 23, 2) - 0.5) * 2;
 
-  const desert = p.baseHeight + swell * p.swellAmplitude + crest * p.duneAmplitude + detail * p.detailAmplitude;
+  let desert = p.baseHeight + swell * p.swellAmplitude + crest * p.duneAmplitude + detail * p.detailAmplitude;
+  if (p.canyon) {
+    const c = p.canyon;
+    const cx = (fbm2(x * c.scale * 0.6 + 70, z * c.scale * 0.6, s + 43, 2) - 0.5) * 2 * c.warp;
+    const cz = (fbm2(x * c.scale * 0.6, z * c.scale * 0.6 - 70, s + 47, 2) - 0.5) * 2 * c.warp;
+    const cn = fbm2((x + cx) * c.scale, (z + cz) * c.scale, s + 41, 3);
+    const cridge = 1 - Math.abs(2 * cn - 1);
+    const carve = smoothstep(1 - c.width, 1 - c.width + c.softness, cridge);
+    const floor = p.baseHeight - c.depth + detail * p.detailAmplitude * 0.6;
+    desert = lerp(desert, floor, carve);
+  }
 
   const o = oasisFactor(p, x, z);
   if (o <= 0) return desert;
@@ -191,6 +233,8 @@ export class Terrain {
     let s = Math.max(this.heightAt(x, z), this.params.waterLevel);
     const b = buildingTopAt(this.params, x, z);
     if (b > s) s = b;
+    const lm = landmarkTopAt(this.params, x, z);
+    if (lm > s) s = lm;
     for (let i = 0; i < this.obstacles.length; i++) {
       const o = this.obstacles[i]!;
       const dx = x - o.x;
@@ -271,9 +315,60 @@ export function findSpawn(p: TerrainParams): { x: number; z: number } {
     const z = r * dsin(a);
     const h = baseHeight(p, x, z);
     if (h < p.waterLevel + 2.5) continue;
+    if (landmarkNear(p, x, z, 24)) continue;
     fallback ??= { x, z };
     const o = oasisFactor(p, x, z);
     if (o > 0.05 && o < 0.5 && h < p.waterLevel + p.oasisRim + 4) return { x, z };
   }
   return fallback ?? { x: 0, z: 0 };
+}
+
+/** A landmark occupying grid cell (ix, iz), or null. Pure and deterministic. */
+export interface Landmark {
+  kind: string;
+  x: number;
+  z: number;
+  r: number;
+  ground: number;
+  top: number;
+}
+
+export function landmarkInCell(p: TerrainParams, ix: number, iz: number): Landmark | null {
+  const l = p.landmarks;
+  if (!l) return null;
+  if (hashInts(ix, iz, p.seed, 91) / 4294967296 > l.chance) return null;
+  const margin = l.radius + 2;
+  const span = l.cell - 2 * margin;
+  const x = ix * l.cell + margin + (hashInts(ix, iz, p.seed, 92) / 4294967296) * span;
+  const z = iz * l.cell + margin + (hashInts(ix, iz, p.seed, 93) / 4294967296) * span;
+  const ground = baseHeight(p, x, z);
+  const above = ground - p.waterLevel;
+  if (above < l.minAboveWater || above > l.maxAboveWater) return null;
+  return { kind: l.kind, x, z, r: l.radius, ground, top: ground + l.height };
+}
+
+/** Top of the landmark under (x, z), or 0. */
+export function landmarkTopAt(p: TerrainParams, x: number, z: number): number {
+  const l = p.landmarks;
+  if (!l) return 0;
+  const m = landmarkInCell(p, Math.floor(x / l.cell), Math.floor(z / l.cell));
+  if (!m) return 0;
+  const dx = x - m.x;
+  const dz = z - m.z;
+  return dx * dx + dz * dz < m.r * m.r ? m.top : 0;
+}
+
+/** True if a landmark stands within `r` of (x, z) (used to keep castles and nests clear). */
+export function landmarkNear(p: TerrainParams, x: number, z: number, r: number): boolean {
+  const l = p.landmarks;
+  if (!l) return false;
+  const ix = Math.floor(x / l.cell);
+  const iz = Math.floor(z / l.cell);
+  for (let j = -1; j <= 1; j++) {
+    for (let i = -1; i <= 1; i++) {
+      const m = landmarkInCell(p, ix + i, iz + j);
+      if (m && (m.x - x) ** 2 + (m.z - z) ** 2 < (m.r + r) ** 2) return true;
+    }
+  }
+  return false;
 }

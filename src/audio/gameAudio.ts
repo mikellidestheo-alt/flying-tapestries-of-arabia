@@ -2,6 +2,7 @@
 import type { ChapterConfig } from '../data/chapters';
 import type { Element } from '../data/elements';
 import type { SimEvent } from '../sim/entities';
+import { AmbientBed } from './ambient';
 import { AudioEngine } from './engine';
 import { MusicDirector } from './music';
 import { degreeHz, type MusicSpec } from './musicPlanner';
@@ -21,6 +22,7 @@ export class GameAudio {
   readonly engine = new AudioEngine();
   private music = new MusicDirector(this.engine);
   private sfx = new Sfx(this.engine);
+  private ambient = new AmbientBed(this.engine);
   private spec: MusicSpec | null = null;
   private ladder = 0;
   private lastOrbAt = -10;
@@ -31,10 +33,12 @@ export class GameAudio {
     if (!this.engine.unlock()) return;
     this.spec = musicSpecFor(chapter);
     void this.music.play(this.spec, (chapter.music as { file?: string | null }).file ?? null);
+    this.ambient.start(chapter.ambient.sound);
   }
 
   stopMusic(): void {
     this.music.stop();
+    this.ambient.stop();
   }
 
   setVolumes(music: number, sfx: number, muted: boolean): void {
@@ -110,6 +114,7 @@ export class GameAudio {
       case 'wellEnd': this.sfx.wellEnd(pan, gain, degreeHz(this.spec, 7)); break;
       case 'matchEnd':
         this.music.stop();
+        this.ambient.stop();
         this.sfx.sting(e.v === 1, degreeHz(this.spec, 0), 0.9);
         break;
       case 'wellDraw': this.sfx.wellDraw(0.6, degreeHz(this.spec, 14 + (Math.floor(this.clock * 3) % 3))); break;

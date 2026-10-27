@@ -5,6 +5,7 @@ import simData from '../data/sim.json';
 import type { ChapterConfig } from '../data/chapters';
 import { buildingCell, cityFactor, sampleChunkHeights, type Terrain } from '../sim/terrain';
 import { Mesher, lightingFromPalette, type Lighting } from './mesher';
+import { buildLandmarks, kitFor, type Beacon } from './kits';
 import { chunkProps } from '../sim/props';
 import { valueNoise2 } from '../sim/noise';
 import { Prng, hashInts } from '../sim/prng';
@@ -179,6 +180,7 @@ export class TerrainRenderer {
         this.group.remove(c.mesh);
         c.mesh.geometry.dispose();
         this.chunks.delete(k);
+        this.beaconsByChunk.delete(k);
       }
     }
 
@@ -235,6 +237,7 @@ export class TerrainRenderer {
     const tmp = new THREE.Color();
     const base = new THREE.Color();
     const city = this.chapter.terrain.city !== undefined;
+    const strata = this.chapter.terrain.strata;
     const ox = cx * CHUNK;
     const oz = cz * CHUNK;
     let minY = Infinity;
@@ -265,6 +268,11 @@ export class TerrainRenderer {
         const wet = smooth(water + 1.4, water - 0.5, h);
         base.copy(pal.sand).lerp(pal.bank, lush * 0.7).lerp(pal.grass, lush * lush);
         base.lerp(pal.rock, smooth(0.28, 0.5, slope) * (1 - lush * 0.8));
+        if (strata) {
+          // Alternating sandstone bands up the cliffs; stronger the steeper the wall.
+          const band = Math.sin((h + valueNoise2(wx * 0.05, wz * 0.05, 11) * 3) / strata.band * 2.4);
+          base.multiplyScalar(1 + band * strata.contrast * (0.25 + smooth(0.2, 0.55, slope)) * 0.5);
+        }
         base.lerp(pal.sandShade, wet * 0.6);
         if (city) {
           // Paved plaza under the district, with a faint cobble checker.
@@ -317,6 +325,25 @@ export class TerrainRenderer {
       const props = this.buildProps(cx, cz);
       this.pushExtra(extra, props.pos, props.col, props.idx);
     }
+    const beacons: Beacon[] = [];
+    if (lod <= 1 || this.chapter.terrain.landmarks) {
+      const lm = buildLandmarks({ chapter: this.chapter, terrain: this.terrain, cx, cz, light: this.cityLight, detail: lod === 0 ? 2 : lod === 1 ? 1 : 0 });
+      if (lm.mesher.pos.length > 0) {
+        this.pushMesher(extra, lm.mesher);
+        if (lm.maxY > maxY) maxY = lm.maxY;
+      }
+      beacons.push(...lm.beacons);
+    }
+    const kit = this.chapter.structureKit ? kitFor(this.chapter.structureKit) : null;
+    if (kit && lod <= 1) {
+      const r = kit({ chapter: this.chapter, terrain: this.terrain, cx, cz, light: this.cityLight, detail: lod === 0 ? this.quality.cityDetail + 1 : 1 });
+      if (r.mesher.pos.length > 0) {
+        this.pushMesher(extra, r.mesher);
+        if (r.maxY > maxY) maxY = r.maxY;
+      }
+      beacons.push(...r.beacons);
+    }
+    this.beaconsByChunk.set(key(cx, cz), beacons);
     if (city) {
       const b = this.buildCity(cx, cz, lod);
       if (b.maxTop > maxY) maxY = b.maxTop;
@@ -362,6 +389,21 @@ export class TerrainRenderer {
     }
     entry.lod = lod;
     entry.dirty = false;
+  }
+
+  private pushMesher(dst: { pos: number[]; col: number[]; idx: number[] }, m: Mesher): void {
+    const base = dst.pos.length / 3;
+    for (let i = 0; i < m.pos.length; i++) dst.pos.push(m.pos[i]!);
+    for (let i = 0; i < m.col.length; i++) dst.col.push(m.col[i]!);
+    for (let i = 0; i < m.pos.length / 3; i++) dst.idx.push(base + i);
+  }
+
+  /** Lit beacons (lighthouses, lanterns) of the currently loaded chunks; the entity renderer draws their glow. */
+  private beaconsByChunk = new Map<string, Beacon[]>();
+  beacons(): Beacon[] {
+    const out: Beacon[] = [];
+    for (const list of this.beaconsByChunk.values()) for (const b of list) out.push(b);
+    return out;
   }
 
   private pushExtra(dst: { pos: number[]; col: number[]; idx: number[] }, pos: ArrayLike<number>, col: ArrayLike<number>, idx: ArrayLike<number>): void {

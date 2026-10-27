@@ -4,16 +4,16 @@
   "name": "Canyons of Rose Stone",
   "tagline": "Carved red cliffs and echoing tombs.",
   "palette": {
-    "skyTop": "#2f5f9a",
-    "skyMid": "#e8967a",
-    "horizon": "#ffc89a",
+    "skyTop": "#35508f",
+    "skyMid": "#e88d82",
+    "horizon": "#ffc0a0",
     "sun": "#ffe9c0",
-    "fog": "#e3a284",
-    "sand": "#e0a07a",
-    "sandShade": "#9a4f4a",
-    "rock": "#b0524a",
+    "fog": "#e3a08a",
+    "sand": "#e6a98c",
+    "sandShade": "#a4524c",
+    "rock": "#c4645c",
     "grass": "#6a8a40",
-    "bank": "#a0a058",
+    "bank": "#b0a060",
     "waterShallow": "#4fc8c0",
     "waterDeep": "#245f86",
     "sunDir": [
@@ -21,36 +21,57 @@
       0.4,
       -0.77
     ],
-    "sunLight": "#ffd0a0",
-    "ambient": "#7a5a80"
+    "sunLight": "#ffd2a8",
+    "ambient": "#82607e"
   },
   "terrain": {
     "seed": 3303,
-    "baseHeight": 24,
-    "swellAmplitude": 22,
-    "swellScale": 0.0018,
-    "duneAmplitude": 30,
-    "duneScale": 0.006,
-    "duneWarp": 60,
-    "duneSharpness": 3,
+    "baseHeight": 44,
+    "swellAmplitude": 5,
+    "swellScale": 0.0022,
+    "duneAmplitude": 5,
+    "duneScale": 0.01,
+    "duneWarp": 40,
+    "duneSharpness": 2,
     "detailAmplitude": 0.9,
     "detailScale": 0.05,
-    "waterLevel": 4,
+    "waterLevel": 2,
     "oasisScale": 0.005,
-    "oasisThreshold": 0.69,
-    "oasisSoftness": 0.18,
-    "oasisDepth": 6,
-    "oasisRim": 3.2
+    "oasisThreshold": 0.99,
+    "oasisSoftness": 0.05,
+    "oasisDepth": 4,
+    "oasisRim": 2,
+    "canyon": {
+      "scale": 0.0036,
+      "warp": 130,
+      "width": 0.2,
+      "softness": 0.07,
+      "depth": 36
+    },
+    "landmarks": {
+      "kind": "needle",
+      "cell": 230,
+      "chance": 0.5,
+      "radius": 5,
+      "height": 40,
+      "minAboveWater": 3,
+      "maxAboveWater": 90
+    },
+    "strata": {
+      "band": 3.4,
+      "contrast": 0.38
+    }
   },
   "props": {
-    "candidatesPerChunk": 22,
-    "palmChance": 0.55,
-    "rockChance": 0.3
+    "candidatesPerChunk": 26,
+    "palmChance": 0.0,
+    "rockChance": 0.28
   },
   "structureKit": "rose-tombs",
   "creatureSet": [
     "canyon-wraith",
-    "stone-bat"
+    "stone-bat",
+    "ibex"
   ],
   "ambient": {
     "sound": "canyon-echo",

@@ -96,6 +96,7 @@ export class GameRenderer {
     });
     const entities = new EntityRenderer(this.quality, chapter);
     entities.setReducedFlashing(this.reducedFlashing);
+    entities.beaconSource = () => terrain.beacons();
     scene.add(entities.group);
 
     // Two lights, only for the tapestries and wizards (terrain/castle lighting is baked).
@@ -273,7 +274,7 @@ export class GameRenderer {
 
     const pxScale = this.renderer.domElement.height / (2 * Math.tan((this.camera.fov * Math.PI) / 360));
     w.entities.update(sim, alpha, dt, time, pxScale, this.camPos.x, this.camPos.z);
-    w.sky.update(this.camera, this.camera.far * 0.9);
+    w.sky.update(this.camera, this.camera.far * 0.9, time);
     w.water.update(this.camPos.x, this.camPos.z, this.camera.far * 2.5, time);
     this.renderer.render(w.scene, this.camera);
   }

@@ -8,7 +8,7 @@ import { damageCastle } from './castles';
 import { DIFFICULTIES } from './match';
 import type { PlayerState, Sim } from './sim';
 import { SIM_DT } from './sim';
-import { buildingTopAt } from './terrain';
+import { buildingTopAt, landmarkTopAt } from './terrain';
 
 import type { Element } from '../data/elements';
 import { KITS, MAX_SPELL_TIER, SPELLS, spellAt, type SpellDef, type SpellEffect } from './spelldefs';
@@ -33,6 +33,8 @@ export interface CreatureDef {
   orbCount: number;
   wanderRadius: number;
   hostile: boolean;
+  /** Render-only colour multiplier (variants that reuse another creature's model). */
+  tint?: [number, number, number];
   ranged?: { spell: string; range: number; preferred: number; cooldownTicks: number; aimError: number };
 }
 export const CREATURES = creatureData as unknown as Record<string, CreatureDef>;
@@ -451,6 +453,13 @@ export function stepProjectiles(sim: Sim): void {
             done = true;
             break;
           }
+        }
+      }
+      if (!done) {
+        const lm = landmarkTopAt(T.params, p.x, p.z);
+        if (lm > 0 && p.y < lm) {
+          impact(sim, p, p.x, p.y, p.z, false);
+          done = true;
         }
       }
       if (!done) {

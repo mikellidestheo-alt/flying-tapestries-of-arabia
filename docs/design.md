@@ -52,7 +52,7 @@ Statuses: burn (damage over time), slow (speed multiplier), freeze (can't move, 
 - Co-op combos (steam, fire tornado, earth channel) are defined in the spell table now and implemented in M6.
 
 ## Chapters
-1 Oasis Dawn (1 rival) | 2 Rooftops of the Spice Bazaar (1) | 3 Canyons of Rose Stone (2) | 4 Pearl Harbour by Moonlight (2) | 5 The Sunken Sand City (3) | 6 The Sultan's Sky Palace (3). Rival elements: those the player(s) did not choose first; extras duplicate.
+1 Oasis Dawn | 2 Rooftops of the Spice Bazaar | 3 Canyons of Rose Stone | 4 Pearl Harbour by Moonlight | 5 The Sunken Sand City | 6 The Sultan's Sky Palace. Every chapter is a four-player match (you + 3 rivals). Rival elements: those the player(s) did not choose first; extras duplicate.
 
 ## Music and audio (M2+)
 Procedural Web Audio: oud-like pluck, ney-like flute, darbuka, drone. Maqam scales (Hijaz, Bayati, Nahawand), maqsum/saidi/baladi rhythms. Adaptive calm/combat layers; synthesized per-element SFX; OGG drop-in per chapter.

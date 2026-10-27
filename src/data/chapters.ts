@@ -28,6 +28,9 @@ export interface ChapterPalette {
   sunDir: [number, number, number];
   sunLight: string;
   ambient: string;
+  /** Night skies: stars and a moon disc. */
+  stars?: boolean;
+  moon?: boolean;
 }
 
 export interface RivalConfig {
@@ -92,6 +95,8 @@ export function validateChapter(c: ChapterConfig): string[] {
   for (const [k, v] of Object.entries(c.palette)) {
     if (k === 'sunDir') {
       need(Array.isArray(v) && v.length === 3, 'sunDir must be [x,y,z]');
+    } else if (k === 'stars' || k === 'moon') {
+      need(typeof v === 'boolean', `palette.${k} must be a boolean`);
     } else {
       need(typeof v === 'string' && HEX.test(v), `palette.${k} must be #rrggbb`);
     }

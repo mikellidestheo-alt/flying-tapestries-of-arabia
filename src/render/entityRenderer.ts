@@ -12,6 +12,8 @@ import { MergeBuilder } from './mergeBuilder';
 import { Particles } from './particles';
 import type { ChapterConfig } from '../data/chapters';
 import { StructureRenderer } from './structureRenderer';
+import { CREATURES } from '../sim/combat';
+import type { Beacon } from './kits';
 
 const MANA = [0.35, 0.85, 1.0] as const;
 const FIRE = [1.0, 0.55, 0.18] as const;
@@ -26,6 +28,26 @@ const ROCK = [0.62, 0.45, 0.28] as const;
 const SPARK = [0.85, 0.9, 1.0] as const;
 const ELEMENT_RGB: Record<string, readonly [number, number, number]> = { fire: FIRE, water: ICE, earth: ROCK, air: SPARK };
 const CURSE = [0.65, 0.25, 0.95] as const;
+
+/** Monster bolt looks: outer glow, hot core, trail particle. */
+const MONSTER_BOLTS: Record<string, { glow: readonly [number, number, number]; core: readonly [number, number, number]; trail: readonly [number, number, number] }> = {
+  'genie-bolt': { glow: [0.7, 0.25, 1], core: [1, 0.8, 1], trail: [0.6, 0.2, 0.95] },
+  'wraith-bolt': { glow: [1, 0.45, 0.3], core: [1, 0.9, 0.7], trail: [0.9, 0.35, 0.3] },
+  'tide-bolt': { glow: [0.2, 0.9, 0.85], core: [0.85, 1, 1], trail: [0.2, 0.75, 0.8] },
+};
+
+/** How each creature type moves on screen. */
+type Motion = 'sprite' | 'caster' | 'walker' | 'flier';
+const MOTION: Record<string, { motion: Motion; scale: number; eye?: readonly [number, number, number]; eyeY?: number; smoke?: readonly [number, number, number] }> = {
+  'dust-sprite': { motion: 'sprite', scale: 1 },
+  'evil-genie': { motion: 'caster', scale: 1.15, eye: [1, 0.2, 0.15], eyeY: 3.9, smoke: [0.35, 0.25, 0.6] },
+  'tide-djinn': { motion: 'caster', scale: 1.15, eye: [0.4, 1, 0.95], eyeY: 3.9, smoke: [0.2, 0.55, 0.6] },
+  'canyon-wraith': { motion: 'caster', scale: 1.2, eye: [1, 0.65, 0.2], eyeY: 4.3, smoke: [0.5, 0.3, 0.4] },
+  oryx: { motion: 'walker', scale: 1.5 },
+  ibex: { motion: 'walker', scale: 1.4 },
+  'stone-bat': { motion: 'flier', scale: 1.3 },
+  'night-gull': { motion: 'flier', scale: 1.6 },
+};
 
 function makeBeamTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -65,27 +87,83 @@ function oryxGeometry(): THREE.BufferGeometry {
   return b.build();
 }
 
-/** Evil genie: smoky tail, muscled torso with gold armlets, horned black turban, glowing red eyes. */
-function genieGeometry(): THREE.BufferGeometry {
+interface GeniePalette {
+  smoke: string;
+  wisp: string;
+  skin: string;
+  hand: string;
+  sash: string;
+  band: string;
+  dome: string;
+  gem: string;
+  eye: string;
+  horns: string;
+}
+
+const EVIL_GENIE: GeniePalette = { smoke: '#4a3f9a', wisp: '#2f2872', skin: '#5a6fd0', hand: '#7a8be8', sash: '#e8b83a', band: '#1c1630', dome: '#2a2050', gem: '#ff4a3a', eye: '#ff3b2e', horns: '#e8e0d0' };
+const TIDE_DJINN: GeniePalette = { smoke: '#1f8a8a', wisp: '#14566a', skin: '#3fb7b0', hand: '#7fe0d4', sash: '#f2f0e4', band: '#e8e4d4', dome: '#f6f3e8', gem: '#7ee8ff', eye: '#d8ffff', horns: '#f0e6c8' };
+
+/** Genie: smoky tail, muscled torso with sash and armlets, turban, glowing eyes. Palette picks the species. */
+function genieGeometry(c: GeniePalette): THREE.BufferGeometry {
   const b = new MergeBuilder();
-  const smoke = '#4a3f9a';
-  const skin = '#5a6fd0';
-  b.add(new THREE.ConeGeometry(1.3, 3.6, 9), smoke, [0, 0.6, 0], [Math.PI, 0, 0]); // wispy tail, tip down
-  b.add(new THREE.ConeGeometry(0.8, 2.2, 7), '#2f2872', [0.35, -0.5, 0.1], [Math.PI, 0.4, 0.3]); // curling wisp
-  b.add(new THREE.CylinderGeometry(1.15, 0.9, 1.7, 9), skin, [0, 2.4, 0]); // torso
-  b.add(new THREE.CylinderGeometry(1.2, 1.2, 0.35, 9), '#e8b83a', [0, 1.8, 0]); // gold sash
+  b.add(new THREE.ConeGeometry(1.3, 3.6, 9), c.smoke, [0, 0.6, 0], [Math.PI, 0, 0]); // wispy tail, tip down
+  b.add(new THREE.ConeGeometry(0.8, 2.2, 7), c.wisp, [0.35, -0.5, 0.1], [Math.PI, 0.4, 0.3]); // curling wisp
+  b.add(new THREE.CylinderGeometry(1.15, 0.9, 1.7, 9), c.skin, [0, 2.4, 0]); // torso
+  b.add(new THREE.CylinderGeometry(1.2, 1.2, 0.35, 9), c.sash, [0, 1.8, 0]); // sash
   for (const sx of [-1, 1]) {
-    b.add(new THREE.CylinderGeometry(0.32, 0.26, 1.7, 6), skin, [sx * 1.35, 2.4, 0.5], [-0.9, 0, sx * -0.35]); // arms forward
-    b.add(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 6), '#e8b83a', [sx * 1.55, 2.0, 0.95], [-0.9, 0, sx * -0.35]); // armlets
-    b.add(new THREE.SphereGeometry(0.4, 6, 5), '#7a8be8', [sx * 1.7, 1.8, 1.4]); // hands
+    b.add(new THREE.CylinderGeometry(0.32, 0.26, 1.7, 6), c.skin, [sx * 1.35, 2.4, 0.5], [-0.9, 0, sx * -0.35]); // arms forward
+    b.add(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 6), c.sash, [sx * 1.55, 2.0, 0.95], [-0.9, 0, sx * -0.35]); // armlets
+    b.add(new THREE.SphereGeometry(0.4, 6, 5), c.hand, [sx * 1.7, 1.8, 1.4]); // hands
   }
-  b.add(new THREE.SphereGeometry(0.78, 9, 7), skin, [0, 3.85, 0.1]); // head
+  b.add(new THREE.SphereGeometry(0.78, 9, 7), c.skin, [0, 3.85, 0.1]); // head
   b.add(new THREE.ConeGeometry(0.2, 0.55, 4), '#2a1f1a', [0, 3.35, 0.7], [Math.PI, 0, 0]); // pointed goatee
-  for (const sx of [-1, 1]) b.add(new THREE.SphereGeometry(0.17, 5, 4), '#ff3b2e', [sx * 0.3, 3.95, 0.8]); // glowing eyes
-  b.add(new THREE.CylinderGeometry(0.85, 0.9, 0.6, 9), '#1c1630', [0, 4.45, 0.05]); // black turban band
-  b.add(new THREE.SphereGeometry(0.85, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), '#2a2050', [0, 4.7, 0.05]); // turban dome
-  b.add(new THREE.OctahedronGeometry(0.25), '#ff4a3a', [0, 4.55, 0.85]); // ruby
-  for (const sx of [-1, 1]) b.add(new THREE.ConeGeometry(0.22, 1.2, 5), '#e8e0d0', [sx * 0.7, 5.0, 0], [0, 0, sx * -0.45]); // horns
+  for (const sx of [-1, 1]) b.add(new THREE.SphereGeometry(0.17, 5, 4), c.eye, [sx * 0.3, 3.95, 0.8]); // glowing eyes
+  b.add(new THREE.CylinderGeometry(0.85, 0.9, 0.6, 9), c.band, [0, 4.45, 0.05]); // turban band
+  b.add(new THREE.SphereGeometry(0.85, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), c.dome, [0, 4.7, 0.05]); // turban dome
+  b.add(new THREE.OctahedronGeometry(0.25), c.gem, [0, 4.55, 0.85]); // turban jewel
+  for (const sx of [-1, 1]) b.add(new THREE.ConeGeometry(0.22, 1.2, 5), c.horns, [sx * 0.7, 5.0, 0], [0, 0, sx * -0.45]); // horns
+  return b.build();
+}
+
+/** Canyon wraith: a hooded spectre in rose-grey rags, burning orange eyes, long clawed arms. */
+function wraithGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  b.add(new THREE.ConeGeometry(1.7, 4.2, 8), '#7a4a5e', [0, 1.4, 0], [Math.PI, 0, 0]); // cloak, tip down
+  b.add(new THREE.ConeGeometry(1.1, 2.6, 6), '#4b2c3c', [-0.6, -0.2, -0.2], [Math.PI, 0.5, 0.25]); // ragged tatters
+  b.add(new THREE.ConeGeometry(0.9, 2.2, 6), '#4b2c3c', [0.7, -0.1, 0.1], [Math.PI, 1.1, -0.3]);
+  b.add(new THREE.CylinderGeometry(0.9, 1.5, 1.8, 8), '#8e5a70', [0, 3.0, 0]); // shoulders
+  b.add(new THREE.SphereGeometry(0.85, 8, 6), '#2a1620', [0, 4.2, 0.1]); // hood interior
+  b.add(new THREE.ConeGeometry(1.0, 1.7, 7), '#6a3a50', [0, 4.7, -0.15], [-0.25, 0, 0]); // peaked hood
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.SphereGeometry(0.17, 5, 4), '#ffb040', [sx * 0.3, 4.3, 0.85]); // burning eyes
+    b.add(new THREE.CylinderGeometry(0.2, 0.14, 2.6, 5), '#8e5a70', [sx * 1.5, 2.8, 0.9], [-1.1, 0, sx * -0.2]); // long arms
+    for (let k = -1; k <= 1; k++) b.add(new THREE.ConeGeometry(0.07, 0.8, 4), '#e8d8c0', [sx * 1.6 + k * 0.17, 2.0, 2.2], [-1.7, 0, k * 0.2]); // claws
+  }
+  return b.build();
+}
+
+/** Stone bat: a rounded, slate body with broad membrane wings and big pointed ears. */
+function batGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  b.add(new THREE.SphereGeometry(0.85, 7, 6), '#6a5a68', [0, 0, 0]);
+  b.add(new THREE.SphereGeometry(0.55, 6, 5), '#7e6c7c', [0, 0.2, 0.9]); // head
+  for (const sx of [-1, 1]) {
+    b.add(new THREE.ConeGeometry(0.22, 0.8, 4), '#4a3c48', [sx * 0.28, 0.85, 0.95]); // ears
+    b.add(new THREE.SphereGeometry(0.1, 4, 4), '#ff6a4a', [sx * 0.2, 0.3, 1.35]); // eyes
+    b.add(new THREE.BoxGeometry(2.6, 0.08, 1.5), '#4f4150', [sx * 1.85, 0.15, -0.1], [0, sx * 0.25, sx * 0.3]); // wing membrane
+    b.add(new THREE.BoxGeometry(2.7, 0.14, 0.14), '#2f2530', [sx * 1.85, 0.3, 0.55], [0, sx * 0.25, sx * 0.3]); // wing bone
+  }
+  return b.build();
+}
+
+/** Night gull: pale body and long slim wings, a yellow beak. */
+function gullGeometry(): THREE.BufferGeometry {
+  const b = new MergeBuilder();
+  b.add(new THREE.SphereGeometry(0.6, 7, 5), '#e6ecf4', [0, 0, 0]);
+  b.add(new THREE.SphereGeometry(0.34, 6, 5), '#f4f7fb', [0, 0.25, 0.75]); // head
+  b.add(new THREE.ConeGeometry(0.1, 0.5, 4), '#f0b030', [0, 0.18, 1.2], [Math.PI / 2, 0, 0]); // beak
+  b.add(new THREE.ConeGeometry(0.2, 0.8, 4), '#c8d2e0', [0, 0, -0.9], [-Math.PI / 2, 0, 0]); // tail
+  for (const sx of [-1, 1]) b.add(new THREE.BoxGeometry(2.4, 0.07, 0.65), '#d0d9e6', [sx * 1.4, 0.1, 0], [0, sx * 0.2, sx * 0.22]); // wings
   return b.build();
 }
 
@@ -106,13 +184,19 @@ export class EntityRenderer {
   private typeGeoms = new Map<string, THREE.BufferGeometry>([
     ['dust-sprite', dustSpriteGeometry()],
     ['oryx', oryxGeometry()],
-    ['evil-genie', genieGeometry()],
+    ['evil-genie', genieGeometry(EVIL_GENIE)],
+    ['tide-djinn', genieGeometry(TIDE_DJINN)],
+    ['canyon-wraith', wraithGeometry()],
+    ['stone-bat', batGeometry()],
+    ['ibex', oryxGeometry()], // same silhouette, rose tint from creatures.json
+    ['night-gull', gullGeometry()],
   ]);
   private creatureMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   private wellViews: WellView[] = [];
   private beamTex = makeBeamTexture();
   private dummy = new THREE.Object3D();
   private tint = new THREE.Color();
+  private baseTint = new THREE.Color();
   private flashScale = 1;
   private nearest: number[] = [];
   private nearDist: number[] = [];
@@ -120,9 +204,13 @@ export class EntityRenderer {
   private quality: QualityPreset;
   private structures!: StructureRenderer;
   private sim: Sim | null = null;
+  /** Supplies lit lighthouses/lanterns near the camera (set by the game renderer). */
+  beaconSource: (() => Beacon[]) | null = null;
+  private waterLevel = -1e9;
 
   constructor(quality: QualityPreset, private chapter: ChapterConfig) {
     this.quality = quality;
+    this.waterLevel = chapter.terrain.waterLevel;
     this.build();
     for (let i = 0; i < simData.caps.wells; i++) this.wellViews.push(this.makeWell());
   }
@@ -364,10 +452,11 @@ export class EntityRenderer {
       const x = lerp(p.px, p.x);
       const y = lerp(p.py, p.y);
       const z = lerp(p.pz, p.z);
-      if (p.spell === 'genie-bolt') {
-        glow.add(x, y, z, 0.7, 0.25, 1, 1, 3.4);
-        glow.add(x, y, z, 1, 0.8, 1, 1, 1.5);
-        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, this.rnd() * 2, (this.rnd() - 0.5) * 2, 0.3, 1.8 * this.flashScale, 0.6, 0.2, 0.95, 0);
+      const mb = MONSTER_BOLTS[p.spell];
+      if (mb) {
+        glow.add(x, y, z, mb.glow[0], mb.glow[1], mb.glow[2], 1, 3.4);
+        glow.add(x, y, z, mb.core[0], mb.core[1], mb.core[2], 1, 1.5);
+        this.particles.spawn(x, y, z, (this.rnd() - 0.5) * 2, this.rnd() * 2, (this.rnd() - 0.5) * 2, 0.3, 1.8 * this.flashScale, mb.trail[0], mb.trail[1], mb.trail[2], 0);
         continue;
       }
       const tier = p.tier ?? 1;
@@ -442,9 +531,10 @@ export class EntityRenderer {
       const z = lerp(c.pz, c.z);
       this.dummy.position.set(x, y, z);
       const heading = Math.atan2(c.vx, c.vz);
-      let scale = 1;
-      if (c.type === 'dust-sprite') this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
-      else if (c.type === 'evil-genie') {
+      const look = MOTION[c.type] ?? { motion: 'walker' as Motion, scale: 1.5 };
+      const scale = look.scale;
+      if (look.motion === 'sprite') this.dummy.rotation.set(0, heading + Math.sin(time * 3 + c.id) * 0.4, Math.sin(time * 5 + c.id) * 0.08);
+      else if (look.motion === 'caster') {
         // Faces the nearest wizard while circling; sways like smoke.
         let face = heading;
         let bd = Infinity;
@@ -457,10 +547,12 @@ export class EntityRenderer {
         }
         this.dummy.rotation.set(0, face, Math.sin(time * 2.2 + c.id) * 0.1);
         this.dummy.position.y += Math.sin(time * 2.6 + c.id) * 0.5;
-        scale = 1.15;
+      } else if (look.motion === 'flier') {
+        // Banks into turns and flaps (rolls) as it flies.
+        this.dummy.rotation.set(Math.sin(time * 4 + c.id) * 0.1, heading, Math.sin(time * (c.type === 'stone-bat' ? 17 : 9) + c.id * 1.3) * 0.45);
+        this.dummy.position.y += Math.sin(time * 3 + c.id) * 0.4;
       } else {
         this.dummy.rotation.set(0, heading, 0);
-        scale = 1.5;
         this.dummy.position.y += Math.abs(Math.sin(time * 9 + c.id)) * (c.state === 1 ? 0.5 : 0.08); // gallop bounce
       }
       this.dummy.scale.setScalar(scale);
@@ -470,11 +562,15 @@ export class EntityRenderer {
       else if (c.burnTicks > 0) this.tint.setRGB(1.8, 0.8, 0.45);
       else if (c.slowTicks > 0) this.tint.setRGB(0.8, 1.0, 1.4);
       else this.tint.setRGB(1, 1, 1);
+      const base = CREATURES[c.type]?.tint;
+      if (base) this.tint.multiply(this.baseTint.setRGB(base[0], base[1], base[2]));
       mesh.setColorAt(idx, this.tint);
-      if (c.type === 'evil-genie') {
-        // Menacing red eye-glow and a trail of dark smoke.
-        glow.add(x, y + 3.9 * scale, z, 1, 0.2, 0.15, 0.7 + 0.3 * Math.sin(time * 6 + c.id), 2.4);
-        if (this.rnd() < 0.35) this.particles.spawn(x, y - 0.5, z, (this.rnd() - 0.5) * 2, -1, (this.rnd() - 0.5) * 2, 0.7, 2.4, 0.35, 0.25, 0.6);
+      if (look.eye) {
+        // Menacing eye-glow and a trail of smoke.
+        const e = look.eye;
+        glow.add(x, y + (look.eyeY ?? 3.9) * scale, z, e[0], e[1], e[2], 0.7 + 0.3 * Math.sin(time * 6 + c.id), 2.4);
+        const sm = look.smoke ?? [0.35, 0.25, 0.6];
+        if (this.rnd() < 0.35) this.particles.spawn(x, y - 0.5, z, (this.rnd() - 0.5) * 2, -1, (this.rnd() - 0.5) * 2, 0.7, 2.4, sm[0], sm[1], sm[2]);
       }
       if (c.burnTicks > 0 && this.rnd() < 0.5) this.particles.spawn(x, y + 1, z, 0, 3, 0, 0.5, 1.6 * this.flashScale, FIRE[0], FIRE[1], FIRE[2]);
     }
@@ -521,9 +617,37 @@ export class EntityRenderer {
       }
     }
 
+    this.drawBeacons(glow, time, camX, camZ);
     this.structures.update(sim, camX, camZ, time, glow);
     this.particles.update(dt, glow);
     glow.end(pxScale);
+  }
+
+  /** Lighthouse sweeps and harbour lanterns, with a wobbling mirror image on the water. */
+  private drawBeacons(glow: GlowLayer, time: number, camX: number, camZ: number): void {
+    if (!this.beaconSource) return;
+    const water = this.waterLevel;
+    for (const b of this.beaconSource()) {
+      const d2 = (b.x - camX) ** 2 + (b.z - camZ) ** 2;
+      const far = b.kind === 'lighthouse' ? 520 : 240;
+      if (d2 > far * far) continue;
+      const flicker = b.kind === 'lighthouse' ? 0.85 + 0.15 * Math.sin(time * 2) : 0.75 + 0.25 * Math.sin(time * 7 + b.x * 0.3);
+      glow.add(b.x, b.y, b.z, b.color[0], b.color[1], b.color[2], flicker, b.size);
+      glow.add(b.x, b.y, b.z, 1, 1, 0.9, flicker, b.size * 0.4);
+      if (b.kind === 'lighthouse') {
+        // A slow sweeping beam: a line of fading points, seen best when it points at the camera.
+        const a = time * 0.7;
+        const dx = Math.cos(a);
+        const dz = Math.sin(a);
+        for (let k = 1; k <= 9; k++) glow.add(b.x + dx * k * 9, b.y - k * 0.25, b.z + dz * k * 9, b.color[0], b.color[1], b.color[2], 0.6 - k * 0.05, 7 - k * 0.4);
+      }
+      if (b.y > water + 1 && water > -1e8) {
+        const my = 2 * water - b.y;
+        const wob = Math.sin(time * 1.7 + b.x) * 0.8;
+        glow.add(b.x + wob, my, b.z, b.color[0], b.color[1], b.color[2], flicker * 0.35, b.size * 1.1);
+        glow.add(b.x - wob, my - 1.2, b.z, b.color[0], b.color[1], b.color[2], flicker * 0.18, b.size * 0.8);
+      }
+    }
   }
 
   get particleCount(): number {

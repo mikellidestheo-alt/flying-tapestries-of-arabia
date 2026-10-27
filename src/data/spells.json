@@ -501,6 +501,44 @@
     "interceptHp": 8,
     "structureMult": 0
   },
+  "wraith-bolt": {
+    "name": "Wraith Wail",
+    "element": "dark",
+    "manaCost": 0,
+    "cooldownTicks": 0,
+    "speed": 34,
+    "maxRange": 135,
+    "gravity": 0,
+    "damage": 15,
+    "area": 4,
+    "falloff": 0.3,
+    "hitRadius": 1.9,
+    "effects": [],
+    "interceptHp": 10,
+    "structureMult": 0
+  },
+  "tide-bolt": {
+    "name": "Tide Surge",
+    "element": "dark",
+    "manaCost": 0,
+    "cooldownTicks": 0,
+    "speed": 38,
+    "maxRange": 135,
+    "gravity": 0,
+    "damage": 9,
+    "area": 3.5,
+    "falloff": 0.3,
+    "hitRadius": 1.5,
+    "effects": [
+      {
+        "type": "slow",
+        "mult": 0.7,
+        "durationTicks": 50
+      }
+    ],
+    "interceptHp": 8,
+    "structureMult": 0
+  },
   "combos": [
     {
       "id": "steam",

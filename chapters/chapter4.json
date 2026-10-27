@@ -22,34 +22,46 @@
       -0.76
     ],
     "sunLight": "#a8c0ff",
-    "ambient": "#4a5a9a"
+    "ambient": "#4a5a9a",
+    "stars": true,
+    "moon": true
   },
   "terrain": {
     "seed": 4404,
-    "baseHeight": 8,
-    "swellAmplitude": 8,
-    "swellScale": 0.0018,
-    "duneAmplitude": 10,
-    "duneScale": 0.0075,
-    "duneWarp": 60,
+    "baseHeight": 12,
+    "swellAmplitude": 7,
+    "swellScale": 0.0024,
+    "duneAmplitude": 8,
+    "duneScale": 0.008,
+    "duneWarp": 50,
     "duneSharpness": 2,
     "detailAmplitude": 0.9,
     "detailScale": 0.05,
-    "waterLevel": 6,
-    "oasisScale": 0.004,
-    "oasisThreshold": 0.53,
-    "oasisSoftness": 0.18,
-    "oasisDepth": 9,
-    "oasisRim": 3.2
+    "waterLevel": 7,
+    "oasisScale": 0.0021,
+    "oasisThreshold": 0.5,
+    "oasisSoftness": 0.14,
+    "oasisDepth": 12,
+    "oasisRim": 3.5,
+    "landmarks": {
+      "kind": "lighthouse",
+      "cell": 420,
+      "chance": 0.55,
+      "radius": 4.5,
+      "height": 46,
+      "minAboveWater": 1.5,
+      "maxAboveWater": 9
+    }
   },
   "props": {
-    "candidatesPerChunk": 22,
-    "palmChance": 0.4,
-    "rockChance": 0.1
+    "candidatesPerChunk": 14,
+    "palmChance": 0.3,
+    "rockChance": 0.12
   },
   "structureKit": "moonlit-harbour",
   "creatureSet": [
     "tide-djinn",
+    "stone-bat",
     "night-gull"
   ],
   "ambient": {

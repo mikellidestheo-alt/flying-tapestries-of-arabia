@@ -4,7 +4,6 @@
 // Then `npm test` verifies the result stays within tolerance.
 import { writeFileSync } from 'node:fs';
 import balance from '../src/data/balance.json';
-import oldSpells from '../src/data/spells.json';
 import { effectiveDamage, signatureValue, TICKS } from '../src/sim/balance';
 import type { SpellDef } from '../src/sim/spelldefs';
 
@@ -158,7 +157,13 @@ const spells: Record<string, unknown> = {
 };
 for (const d of Object.values(designs)) spells[d.id] = toEntry(d, solvePrimary(d));
 Object.assign(spells, signatures);
-spells['genie-bolt'] = (oldSpells as unknown as Record<string, unknown>)['genie-bolt'];
+// Monster bolts (not part of any wizard's budget): they hurt wizards only.
+const monsterBolt = (name: string, speed: number, damage: number, area: number, hp: number, effects: unknown[] = [], extra: Record<string, unknown> = {}) => ({
+  name, element: 'dark', manaCost: 0, cooldownTicks: 0, speed, maxRange: 135, gravity: 0, damage, area, falloff: 0.3, hitRadius: 1.5, effects, interceptHp: hp, structureMult: 0, ...extra,
+});
+spells['genie-bolt'] = monsterBolt('Curse Bolt', 42, 11, 3.5, 8);
+spells['wraith-bolt'] = monsterBolt('Wraith Wail', 34, 15, 4, 10, [], { hitRadius: 1.9 });
+spells['tide-bolt'] = monsterBolt('Tide Surge', 38, 9, 3.5, 8, [{ type: 'slow', mult: 0.7, durationTicks: 50 }]);
 spells.combos = [
   { id: 'steam', name: 'Steam Cloud', needs: ['water', 'fire'], description: 'Water bolts crossing a fire zone make a scalding, vision-blocking steam cloud.', durationTicks: 150, radius: 16, dps: 12, slowMult: 0.7 },
   { id: 'firetornado', name: 'Fire Tornado', needs: ['air', 'fire'], description: 'Lightning through a Firestorm whips it into a roaming fire tornado.', durationTicks: 120, radius: 10, dps: 22, slowMult: 1 },
