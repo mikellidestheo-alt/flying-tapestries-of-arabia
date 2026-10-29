@@ -22,6 +22,9 @@ export interface Settings {
   highContrast: boolean;
   reducedMotion: boolean;
   colorBlind: boolean;
+  /** Camera: 'auto' = first person with a mouse, chase camera on touch; or force one. */
+  view: 'auto' | 'first' | 'third';
+  mouseSensitivity: 'low' | 'normal' | 'high';
 }
 
 export interface Progress {
@@ -61,6 +64,8 @@ export const DEFAULT_SETTINGS: Settings = {
   highContrast: false,
   reducedMotion: false,
   colorBlind: false,
+  view: 'auto',
+  mouseSensitivity: 'normal',
 };
 
 export const DEFAULT_PROGRESS: Progress = { unlockedChapters: 1, wizard: 'fire', tutorialDone: false, cleared: 0, bestSeconds: [0, 0, 0, 0, 0, 0], wins: 0, played: 0 };
@@ -96,6 +101,8 @@ export function loadSave(): SaveData {
   if (!['high', 'medium', 'low'].includes(settings.quality)) settings.quality = DEFAULT_SETTINGS.quality;
   if (!['easy', 'normal', 'hard'].includes(settings.difficulty)) settings.difficulty = DEFAULT_SETTINGS.difficulty;
   if (![1, 1.2, 1.4].includes(settings.textScale)) settings.textScale = 1;
+  if (!['auto', 'first', 'third'].includes(settings.view)) settings.view = 'auto';
+  if (!['low', 'normal', 'high'].includes(settings.mouseSensitivity)) settings.mouseSensitivity = 'normal';
   const progress = mergeKnown(DEFAULT_PROGRESS, o.progress);
   const best = Array.isArray(progress.bestSeconds) ? progress.bestSeconds : [];
   progress.bestSeconds = DEFAULT_PROGRESS.bestSeconds.map((_, i) => (typeof best[i] === 'number' && Number.isFinite(best[i]) && best[i]! > 0 ? best[i]! : 0));

@@ -29,13 +29,14 @@ function unpack(target: object, keys: readonly string[], arr: readonly (number |
   });
 }
 
-const PLAYER = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'heading', 'speed', 'turnRate', 'hp', 'mana', 'spellCd', 'invuln', 'kills', 'deaths', 'casts', 'drawing', 'active', 'spellTier', 'sigCd', 'burnTicks', 'burnDps', 'burnBy', 'slowTicks', 'slowMult', 'freezeTicks', 'boostTicks', 'boostMult', 'cooldown', 'lastHitBy', 'lastHitTick', 'rivalIndex'] as const;
+const PLAYER = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'heading', 'speed', 'turnRate', 'hp', 'mana', 'spellCd', 'invuln', 'kills', 'deaths', 'casts', 'drawing', 'active', 'spellTier', 'sigCd', 'burnTicks', 'burnDps', 'burnBy', 'slowTicks', 'slowMult', 'freezeTicks', 'boostTicks', 'boostMult', 'cooldown', 'lastHitBy', 'lastHitTick', 'rivalIndex', 'pitch', 'alt'] as const;
 const PLAYER_BOOL = ['active'];
 const CASTLE = ['id', 'faction', 'x', 'y', 'z', 'tier', 'hp', 'maxHp', 'invuln', 'ruined', 'released', 'lastHit'] as const;
 const CASTLE_BOOL = ['ruined'];
 const CREATURE = ['id', 'nest', 'x', 'y', 'z', 'vx', 'vz', 'hp', 'state', 'burnTicks', 'burnDps', 'slowTicks', 'slowMult', 'freezeTicks'] as const;
 const PROJECTILE = ['id', 'owner', 'faction', 'hp', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'tier', 'tk', 'tid', 'chainMult'] as const;
 const ZONE = ['id', 'x', 'y', 'z', 'r', 'ticksLeft', 'faction', 'owner', 'dps', 'burst', 'structureMult', 'vx', 'vz', 'slow'] as const;
+const ORB = ['id', 'x', 'y', 'z', 'value', 'claim'] as const;
 const WELL = ['id', 'x', 'y', 'z', 'reserve', 'max', 'age', 'fade'] as const;
 const STRUCT = ['id', 'x', 'y', 'z', 'hp', 'max', 'alive', 'spawnCd', 'respawnAt'] as const;
 const STRUCT_BOOL = ['alive'];
@@ -84,7 +85,7 @@ export function buildSnapshot(sim: Sim, ctx: SnapshotContext): SnapshotWire {
     p: sim.players.map((p) => pack(p, PLAYER)),
     c: sim.castles.map((c) => [...pack(c, CASTLE), c.branches.join(',')]),
     cr: sim.creatures.filter((c) => near(c.x, c.z)).map((c) => [c.type, ...pack(c, CREATURE)]),
-    o: orbs.map((o) => pack(o, ['id', 'x', 'y', 'z', 'value'])),
+    o: orbs.map((o) => pack(o, ORB)),
     pr: sim.projectiles.map((p) => [p.spell, ...pack(p, PROJECTILE)]),
     z: sim.zones.map((z) => [z.element, z.combo ?? '', ...pack(z, ZONE)]),
     w: sim.wells.map((w) => pack(w, WELL)),
@@ -135,7 +136,8 @@ export function decodeSnapshot(w: SnapshotWire): DecodedSnapshot {
   });
   const orbs = w.o.map((a) => {
     const o = { vx: 0, vz: 0, age: 0, px: 0, py: 0, pz: 0 } as unknown as Orb;
-    unpack(o, ['id', 'x', 'y', 'z', 'value'], a, 0);
+    unpack(o, ORB, a, 0);
+    if (!o.claim) o.claim = undefined;
     return o;
   });
   const projectiles = w.pr.map((a) => {

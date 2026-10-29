@@ -1,6 +1,8 @@
 // Touch (floating left stick + action buttons), keyboard (dev convenience) and optional tilt.
 // Produces a PlayerInput per sim tick. Never touches gameplay state.
-import { ACTION_CRATER, ACTION_HOLD, ACTION_MOUND, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
+import { ACTION_CRATER, ACTION_HOLD, ACTION_MOUND, ACTION_POSSESS, ACTION_SIGNATURE, ACTION_SPELL, ACTION_SPELLUP, ACTION_UPGRADE, type PlayerInput } from '../sim/sim';
+import { MouseLook, type Sensitivity } from './mouseLook';
+import { SPELL_SLOTS, cycleSlot, slotForKey } from './spellbar';
 
 const DEADZONE = 0.12;
 const STICK_RADIUS = 64; // px of thumb travel for full deflection
@@ -38,6 +40,24 @@ export class Controls {
   }
   tiltInvert = false;
   onPress: ((bit: number) => void) | null = null;
+
+  // ---- laptop play: Pointer Lock mouse look, number-key spell bar ----
+  private mouse = new MouseLook();
+  mouseSensitivity: Sensitivity = 'normal';
+  /** True while the mouse is captured: it steers and aims, A/D strafe. */
+  locked = false;
+  /** Selected spell slot (0-5, see spellbar.ts). */
+  selected = 0;
+  private lmb = false;
+  private rmb = false;
+  onSelect: ((slot: number) => void) | null = null;
+  onToggleView: (() => void) | null = null;
+  /** The Castle spell is a UI action (it opens the upgrade); the controls only announce that it was cast. */
+  onCastle: (() => void) | null = null;
+  /** The player first used a mouse or keyboard: show the spell bar. */
+  onDesktop: (() => void) | null = null;
+  onLockChange: ((locked: boolean) => void) | null = null;
+  private canvas: HTMLElement | null = null;
 
   private stick: HTMLElement;
   private knob: HTMLElement;
@@ -105,11 +125,57 @@ export class Controls {
     this.bindButton('#btnMound', ACTION_MOUND);
     this.bindButton('#btnSpell', ACTION_SPELL);
     this.bindButton('#btnSig', ACTION_SIGNATURE);
+    this.bindButton('#btnPossess', ACTION_POSSESS);
     this.bindTap('#btnWeapon', ACTION_SPELLUP);
+
+    this.canvas = document.getElementById('game');
+    document.addEventListener('pointerlockchange', () => {
+      this.locked = document.pointerLockElement === this.canvas;
+      this.lmb = this.rmb = false;
+      this.mouse.reset();
+      this.onLockChange?.(this.locked);
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!this.locked) return;
+      this.mouse.feed(e.movementX, e.movementY, this.mouseSensitivity);
+    });
+    document.addEventListener('mousedown', (e) => {
+      if (!this.locked) return;
+      if (e.button === 0) {
+        this.lmb = true;
+        if (SPELL_SLOTS[this.selected]!.id === 'castle') this.onCastle?.();
+        else {
+          this.pressed |= SPELL_SLOTS[this.selected]!.action; // a click shorter than one tick still casts
+          this.onPress?.(SPELL_SLOTS[this.selected]!.action);
+        }
+      } else if (e.button === 2) {
+        this.rmb = true;
+        this.pressed |= ACTION_SIGNATURE;
+        this.onPress?.(ACTION_SIGNATURE);
+      }
+      e.preventDefault();
+    });
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 0) this.lmb = false;
+      if (e.button === 2) this.rmb = false;
+    });
+    document.addEventListener('contextmenu', (e) => {
+      if (this.locked) e.preventDefault();
+    });
+    document.addEventListener('wheel', (e) => {
+      if (!this.locked) return;
+      this.select(cycleSlot(this.selected, e.deltaY > 0 ? 1 : -1));
+    }, { passive: true });
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+      this.onDesktop?.();
       this.keys.add(e.code);
+      const slot = slotForKey(e.code);
+      if (slot >= 0) this.select(slot);
+      if (e.code === 'KeyT') this.onToggleView?.();
+      if (e.code === 'KeyQ') this.pressed |= ACTION_POSSESS;
+      if (e.code === 'KeyR') this.onCastle?.();
       if (e.code === 'KeyC') this.pressed |= ACTION_CRATER;
       if (e.code === 'KeyV') this.pressed |= ACTION_MOUND;
       if (e.code === 'Space' || e.code === 'KeyF') this.pressed |= ACTION_SPELL;
@@ -120,6 +186,25 @@ export class Controls {
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.releaseAll());
 
+  }
+
+  select(slot: number): void {
+    this.selected = slot;
+    this.onSelect?.(slot);
+  }
+
+  /** Capture the mouse (desktop). Browsers only allow this from a click or key press. */
+  requestLock(): void {
+    if (this.locked || !this.canvas?.requestPointerLock) return;
+    try {
+      void (this.canvas.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => undefined);
+    } catch {
+      /* not allowed right now */
+    }
+  }
+
+  releaseLock(): void {
+    if (document.pointerLockElement) document.exitPointerLock();
   }
 
   private bindButton(sel: string, bit: number): void {
@@ -191,6 +276,7 @@ export class Controls {
     this.held = 0;
     this.pressed = 0;
     this.upgradeBranch = -1;
+    this.lmb = this.rmb = false;
   }
 
   /** Sample once per sim tick. */
@@ -199,9 +285,19 @@ export class Controls {
     let throttle = this.throttleAxis;
 
     const k = this.keys;
+    let pitch: number | undefined;
+    let strafe = 0;
+    const kx0 = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
+    if (this.locked) {
+      // Laptop: the mouse steers and tilts the carpet, A/D slide sideways, W/S speed up and brake.
+      const m = this.mouse.sample(this.mouseSensitivity);
+      steer = m.steer;
+      pitch = m.pitch;
+      strafe = kx0;
+    }
     const kx = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
     const ky = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
-    if (kx !== 0) steer = kx;
+    if (kx !== 0 && !this.locked) steer = kx;
     if (ky !== 0) throttle = ky;
 
     if (this.tiltEnabled && kx === 0 && this.stickPointer === -1) {
@@ -210,7 +306,8 @@ export class Controls {
       steer = Math.max(-1, Math.min(1, shape(Math.abs(t) < 0.06 ? 0 : t))) * (this.tiltInvert ? -1 : 1);
     }
 
-    const actions = this.held | this.pressed | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0) | (k.has('KeyE') ? ACTION_SIGNATURE : 0);
+    const slotBits = (this.lmb ? SPELL_SLOTS[this.selected]!.action : 0) | (this.rmb ? ACTION_SIGNATURE : 0);
+    const actions = slotBits | this.held | this.pressed | (k.has('KeyQ') ? ACTION_POSSESS : 0) | (k.has('KeyC') ? ACTION_CRATER : 0) | (k.has('KeyV') ? ACTION_MOUND : 0) | (k.has('Space') || k.has('KeyF') ? ACTION_SPELL : 0) | (k.has('KeyE') ? ACTION_SIGNATURE : 0);
     this.pressed = 0;
     let branch = 0;
     let act = actions;
@@ -219,7 +316,7 @@ export class Controls {
       branch = this.upgradeBranch;
       this.upgradeBranch = -1;
     }
-    if (this.hold) return { steer: 0, throttle: 0, actions: act | ACTION_HOLD, branch };
-    return { steer, throttle, actions: act, branch };
+    if (this.hold) return { steer: 0, throttle: 0, actions: act | ACTION_HOLD, branch, pitch: this.locked ? 0 : undefined, strafe: 0 };
+    return { steer, throttle, actions: act, branch, pitch, strafe };
   }
 }

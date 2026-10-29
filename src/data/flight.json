@@ -15,5 +15,12 @@
   "springDamping": 0.9,
   "minClearance": 2.2,
   "maxAltitude": 140,
-  "bankMax": 0.55
+  "bankMax": 0.55,
+  "strafeSpeed": 16,
+  "climbRate": 34,
+  "descendRate": 50,
+  "maxAltBias": 95,
+  "altDecay": 18,
+  "pitchResponse": 7,
+  "pitchMaxRad": 0.55
 }

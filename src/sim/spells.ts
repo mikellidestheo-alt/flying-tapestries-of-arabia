@@ -3,6 +3,8 @@ import { clamp, dcos, dsin } from './dmath';
 import { DELTA_BUMP } from './deltas';
 import { applyCreatureEffects, applyWizardEffects, hurtCreature, hurtStructure, hurtWizard, pickTarget, primaryDef, signatureDef } from './combat';
 import simData from '../data/sim.json';
+import flightData from '../data/flight.json';
+import utility from '../data/utility-spells.json';
 import type { Sim } from './sim';
 import { SIM_DT } from './sim';
 import type { PlayerState } from './sim';
@@ -79,6 +81,45 @@ export function trySignature(sim: Sim, idx: number): boolean {
   }
   p.mana -= def.manaCost;
   p.sigCd = def.cooldownTicks;
+  return true;
+}
+
+/**
+ * Possess: claim the mana orbs in front of you from a distance. Every orb inside the view cone (up to maxOrbs) is
+ * marked as yours: it flies to you (stepOrbs) and nobody else can take it. Costs a little mana and only if something was claimed.
+ */
+export function tryPossess(sim: Sim, idx: number): boolean {
+  const p = sim.players[idx]!;
+  const u = utility.possess;
+  if (!p.active || p.possessCd > 0 || p.freezeTicks > 0 || p.mana < u.manaCost) return false;
+  const pitchRad = p.pitch * flightData.pitchMaxRad;
+  const cp = dcos(pitchRad);
+  const ax = dsin(p.heading) * cp;
+  const ay = dsin(pitchRad);
+  const az = dcos(p.heading) * cp;
+  const ox = p.x;
+  const oy = p.y + 1.6;
+  const oz = p.z;
+  let claimed = 0;
+  for (const orb of sim.orbs) {
+    if (claimed >= u.maxOrbs) break;
+    if (orb.claim && orb.claim !== idx + 1) continue;
+    const dx = orb.x - ox;
+    const dy = orb.y - oy;
+    const dz = orb.z - oz;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (d > u.range || d < 0.5) continue;
+    if ((dx * ax + dy * ay + dz * az) / d < u.cosMin) continue;
+    if (orb.claim !== idx + 1) claimed++;
+    orb.claim = idx + 1;
+  }
+  if (claimed === 0) {
+    p.possessCd = u.missCooldownTicks;
+    return false;
+  }
+  p.mana -= u.manaCost;
+  p.possessCd = u.cooldownTicks;
+  sim.emitLine('possess', ox, oy, oz, claimed, ox + ax * u.range, oy + ay * u.range, oz + az * u.range);
   return true;
 }
 

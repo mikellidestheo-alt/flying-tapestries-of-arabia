@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import simData from '../data/sim.json';
 import flight from '../data/flight.json';
+import controls from '../data/controls.json';
 import castleData from '../data/castles.json';
 import type { ChapterConfig } from '../data/chapters';
 import type { Element } from '../data/elements';
@@ -66,6 +67,7 @@ export class GameRenderer {
   private reducedMotion = false;
   /** 0 normal, 1 bloom off, 2 also a little less resolution and distance (see ThermalGuard). */
   private thermalStage = 0;
+  private view: 'first' | 'third' = 'third';
   private bloom: BloomPipeline | null = null;
   private bloomLoading = false;
   localIndex = 0;
@@ -223,6 +225,17 @@ export class GameRenderer {
     this.world?.entities.handleEvent(e);
   }
 
+  /** First person (eye of the carpet, like Magic Carpet) or the chase camera. */
+  setView(v: 'first' | 'third'): void {
+    if (v === this.view) return;
+    this.view = v;
+    this.camReady = false; // the chase camera re-seats itself behind the carpet
+  }
+
+  get currentView(): 'first' | 'third' {
+    return this.view;
+  }
+
   /** Called by the game when sustained play has warmed the phone up (see ThermalGuard). */
   setThermalStage(stage: number): void {
     if (stage === this.thermalStage) return;
@@ -336,25 +349,52 @@ export class GameRenderer {
     // Stream terrain chunks around the local player (budgeted per frame).
     w.terrain.update(lx, lz, this.radiusScale);
 
-    // Chase camera: trails the heading with a lag, rises with speed.
-    if (!this.camReady) {
-      this.camHeading = lheading;
-      this.camReady = true;
-      this.camPos.set(lx - Math.sin(lheading) * 14, ly + 6, lz - Math.cos(lheading) * 14);
+    const localPlayer = sim.players[this.localIndex];
+    const pitchRad = (localPlayer?.pitch ?? 0) * flight.pitchMaxRad;
+    const first = this.view === 'first';
+    const lview = w.wizards[this.localIndex];
+    if (lview) {
+      lview.model.root.visible = !first && lview.model.root.visible;
+      lview.model.shadow.visible = !first && lview.model.shadow.visible;
     }
-    this.camHeading += wrapAngle(lheading - this.camHeading) * (1 - Math.exp(-3.2 * dt));
-    const back = 13 + lspeedFrac * 4;
-    const up = 5.5 + lspeedFrac * 1.5;
-    const desired = this.camDesired.set(lx - Math.sin(this.camHeading) * back, ly + up, lz - Math.cos(this.camHeading) * back);
-    const floor = sim.terrain.surfaceAt(desired.x, desired.z) + 2.5;
-    if (desired.y < floor) desired.y = floor;
-    this.camPos.lerp(desired, 1 - Math.exp(-7 * dt));
-    this.camera.position.copy(this.camPos);
-    this.camera.lookAt(lx + Math.sin(this.camHeading) * 9, ly + 1.2, lz + Math.cos(this.camHeading) * 9);
-    const fov = 62 + (this.reducedMotion ? 0 : lspeedFrac * 9);
-    if (Math.abs(this.camera.fov - fov) > 0.05) {
-      this.camera.fov += (fov - this.camera.fov) * (1 - Math.exp(-4 * dt));
-      this.camera.updateProjectionMatrix();
+    if (first) {
+      // First person: the eye sits on the carpet, looking along the heading and the mouse pitch, leaning into turns.
+      const fp = controls.firstPerson;
+      const sh = Math.sin(lheading);
+      const ch = Math.cos(lheading);
+      this.camPos.set(lx + sh * fp.forward, ly + fp.eyeHeight, lz + ch * fp.forward);
+      this.camera.position.copy(this.camPos);
+      const cp = Math.cos(pitchRad);
+      this.camera.up.set(0, 1, 0);
+      this.camera.lookAt(lx + sh * cp * fp.lookDistance, ly + fp.eyeHeight + Math.sin(pitchRad) * fp.lookDistance, lz + ch * cp * fp.lookDistance);
+      this.camera.rotateZ(-(lview?.roll ?? 0) * fp.rollScale);
+      const fov = fp.fov + (this.reducedMotion ? 0 : lspeedFrac * fp.fovSpeedBoost);
+      if (Math.abs(this.camera.fov - fov) > 0.05) {
+        this.camera.fov += (fov - this.camera.fov) * (1 - Math.exp(-6 * dt));
+        this.camera.updateProjectionMatrix();
+      }
+    } else {
+      // Chase camera: trails the heading with a lag, rises with speed.
+      if (!this.camReady) {
+        this.camHeading = lheading;
+        this.camReady = true;
+        this.camPos.set(lx - Math.sin(lheading) * 14, ly + 6, lz - Math.cos(lheading) * 14);
+      }
+      this.camHeading += wrapAngle(lheading - this.camHeading) * (1 - Math.exp(-3.2 * dt));
+      const back = 13 + lspeedFrac * 4;
+      const up = 5.5 + lspeedFrac * 1.5;
+      const desired = this.camDesired.set(lx - Math.sin(this.camHeading) * back, ly + up, lz - Math.cos(this.camHeading) * back);
+      const floor = sim.terrain.surfaceAt(desired.x, desired.z) + 2.5;
+      if (desired.y < floor) desired.y = floor;
+      this.camPos.lerp(desired, 1 - Math.exp(-7 * dt));
+      this.camera.position.copy(this.camPos);
+      this.camera.up.set(0, 1, 0);
+      this.camera.lookAt(lx + Math.sin(this.camHeading) * 9, ly + 1.2 + Math.sin(pitchRad) * controls.chasePitchLook, lz + Math.cos(this.camHeading) * 9);
+      const fov = 62 + (this.reducedMotion ? 0 : lspeedFrac * 9);
+      if (Math.abs(this.camera.fov - fov) > 0.05) {
+        this.camera.fov += (fov - this.camera.fov) * (1 - Math.exp(-4 * dt));
+        this.camera.updateProjectionMatrix();
+      }
     }
 
     const pxScale = this.renderer.domElement.height / (2 * Math.tan((this.camera.fov * Math.PI) / 360));

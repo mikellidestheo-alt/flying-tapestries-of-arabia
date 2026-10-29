@@ -489,6 +489,16 @@ export class EntityRenderer {
         }
         break;
       }
+      case 'possess': {
+        // A golden beam from the caster to where they are looking, with sparkles on the claimed mana.
+        const steps = 16;
+        for (let i = 0; i < steps; i++) {
+          const t = i / (steps - 1);
+          P.spawn(e.x + (e.x2 - e.x) * t, e.y + (e.y2 - e.y) * t, e.z + (e.z2 - e.z) * t, 0, 1.5, 0, 0.35 + 0.35 * t, 1.6 * f, GOLD[0], GOLD[1], GOLD[2]);
+        }
+        P.burst(this.rnd, n(10), e.x, e.y, e.z, 7, 0.5, 1.4 * f, ...MANA);
+        break;
+      }
       case 'combo': {
         // 0 steam, 1 fire tornado, 2 earth channel (see COMBOS in combos.ts)
         if (e.v === 0) {

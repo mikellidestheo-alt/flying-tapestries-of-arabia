@@ -12,6 +12,8 @@ export interface Orb {
   vz: number;
   value: number;
   age: number;
+  /** Possessed by wizard index + 1 (0 = free): it flies to that wizard and nobody else can take it. */
+  claim?: number;
 }
 
 export interface Projectile {
@@ -169,6 +171,7 @@ export type SimEventType =
   | 'castleHit'
   | 'castleRelease'
   | 'combo'
+  | 'possess'
   | 'castleDowngrade'
   | 'castleDestroyed'
   | 'nestDestroyed'

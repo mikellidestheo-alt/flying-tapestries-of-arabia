@@ -13,7 +13,7 @@ import {
 } from './entities';
 import { CREATURES, creatureHp, stepProjectiles, tryCast, tryUpgradeSpell } from './combat';
 import { stepCombos, type WallChannel } from './combos';
-import { stepWizardStatuses, stepZones, trySignature } from './spells';
+import { stepWizardStatuses, stepZones, tryPossess, trySignature } from './spells';
 import { findCastleSite, makeCastle, refreshObstacle, stepCastles, tryUpgrade } from './castles';
 import { DIFFICULTIES, stepMatch, type MatchSetup, type MatchState } from './match';
 import { makeRivalAI, rivalInput, type Personality, type RivalAI } from './rivals';
@@ -28,6 +28,8 @@ export const ACTION_CRATER = 1;
 export const ACTION_MOUND = 2;
 export const ACTION_SPELL = 4;
 export const ACTION_UPGRADE = 8;
+/** Possess: claim the mana in front of you from a distance. */
+export const ACTION_POSSESS = 16;
 export const ACTION_SPELLUP = 32;
 export const ACTION_SIGNATURE = 64;
 /** Hover in place (the castle path picker is open): no steering, no drift. Capped per hold (player.maxHoldTicks). */
@@ -42,6 +44,10 @@ export interface PlayerInput {
   actions: number;
   /** Castle upgrade branch choice, 1-3 (0 = none). Only read with ACTION_UPGRADE. */
   branch?: number;
+  /** Mouse look (laptops): -1 (down) .. 1 (up). Leave undefined on touch: the carpet then hovers at its normal height. */
+  pitch?: number;
+  /** Sideways flight, -1 (left) .. 1 (right). */
+  strafe?: number;
 }
 
 export const NEUTRAL_INPUT: PlayerInput = { steer: 0, throttle: 0, actions: 0 };
@@ -60,6 +66,10 @@ export interface PlayerState {
   cooldown: number;
   /** Consecutive ticks spent holding in place (ACTION_HOLD). */
   holdTicks: number;
+  /** Smoothed look/aim pitch (-1..1) and the extra altitude (units) climbed above the normal hover height. */
+  pitch: number;
+  alt: number;
+  possessCd: number;
   hp: number;
   mana: number;
   spellCd: number;
@@ -193,7 +203,7 @@ export class Sim {
 
   private newWizard(x: number, y: number, z: number, faction: number, isRival: boolean, rivalIndex: number, element: Element): PlayerState {
     return {
-      x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0, holdTicks: 0,
+      x, y, z, vx: 0, vy: 0, vz: 0, heading: 0, speed: this.flight.cruiseSpeed, turnRate: 0, cooldown: 0, holdTicks: 0, pitch: 0, alt: 0, possessCd: 0,
       hp: simData.player.maxHp, mana: simData.player.startMana, spellCd: 0, invuln: 0, kills: 0, deaths: 0, casts: 0,
       drawing: 0, faction, isRival, rivalIndex, active: true, lastHitBy: -1, lastHitTick: -9999, spellTier: 1, element, sigCd: 0, burnTicks: 0, burnDps: 0, burnBy: -1,
       slowTicks: 0, slowMult: 1, freezeTicks: 0, boostTicks: 0, boostMult: 1,
@@ -280,6 +290,8 @@ export class Sim {
       if ((input.actions | 0) & ACTION_UPGRADE) tryUpgrade(this, p, input);
       if ((input.actions | 0) & ACTION_SPELLUP) tryUpgradeSpell(this, p);
       if ((input.actions | 0) & ACTION_SIGNATURE) trySignature(this, i);
+      if ((input.actions | 0) & ACTION_POSSESS) tryPossess(this, i);
+      if (p.possessCd > 0) p.possessCd--;
     }
     stepProjectiles(this);
     stepCombos(this);
@@ -300,7 +312,7 @@ export class Sim {
    * Terrain tools and spells are not predicted (they are server business).
    */
   predictPlayer(p: PlayerState, input: PlayerInput): void {
-    this.stepPlayer(p, { steer: input.steer, throttle: input.throttle, actions: input.actions & ACTION_HOLD });
+    this.stepPlayer(p, { steer: input.steer, throttle: input.throttle, actions: input.actions & ACTION_HOLD, pitch: input.pitch, strafe: input.strafe });
   }
 
   /** Let the rival AI fly a human's wizard (a teammate who dropped out of a co-op match), or hand it back with `null`. */
@@ -328,6 +340,13 @@ export class Sim {
     const holdWanted = ((input.actions | 0) & ACTION_HOLD) !== 0 && !p.isRival;
     const hold = holdWanted && p.holdTicks < simData.player.maxHoldTicks;
     p.holdTicks = holdWanted ? p.holdTicks + 1 : 0;
+    // Mouse look: pitch eases to the wanted angle; pitching up while flying climbs above the normal hover height, down descends.
+    const mouse = input.pitch !== undefined;
+    p.pitch += ((mouse && !frozen ? sanitize(input.pitch ?? 0) : 0) - p.pitch) * clamp(f.pitchResponse * dt, 0, 1);
+    if (mouse) {
+      const drive = clamp(p.speed / f.cruiseSpeed, 0.3, 1.5);
+      p.alt = clamp(p.alt + p.pitch * (p.pitch >= 0 ? f.climbRate : f.descendRate) * drive * dt, 0, f.maxAltBias);
+    } else p.alt = Math.max(0, p.alt - f.altDecay * dt);
     if (hold) {
       p.speed = 0;
       p.turnRate = 0;
@@ -359,8 +378,9 @@ export class Sim {
       const hx = dsin(p.heading);
       const hz = dcos(p.heading);
       const grip = clamp(f.grip * dt, 0, 1);
-      p.vx += (hx * p.speed - p.vx) * grip;
-      p.vz += (hz * p.speed - p.vz) * grip;
+      const side = sanitize(input.strafe ?? 0) * (frozen ? 0 : f.strafeSpeed);
+      p.vx += (hx * p.speed - hz * side - p.vx) * grip; // right of heading h is (-cos h, sin h)
+      p.vz += (hz * p.speed + hx * side - p.vz) * grip;
       p.x += p.vx * dt;
       p.z += p.vz * dt;
     }
@@ -371,7 +391,7 @@ export class Sim {
     let ground = this.terrain.surfaceAt(p.x, p.z);
     ground = Math.max(ground, this.terrain.surfaceAt(p.x + p.vx * ahead * 0.5, p.z + p.vz * ahead * 0.5));
     ground = Math.max(ground, this.terrain.surfaceAt(p.x + p.vx * ahead, p.z + p.vz * ahead));
-    const targetY = ground + f.hoverHeight + f.boostLift * speedFrac;
+    const targetY = ground + f.hoverHeight + f.boostLift * speedFrac + p.alt;
     const damping = 2 * f.springDamping * Math.sqrt(f.springK);
     p.vy += (f.springK * (targetY - p.y) - damping * p.vy) * dt;
     p.y += p.vy * dt;

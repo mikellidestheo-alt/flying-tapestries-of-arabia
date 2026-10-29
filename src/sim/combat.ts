@@ -2,6 +2,7 @@
 import creatureData from '../data/creatures.json';
 import matchData from '../data/match.json';
 import simData from '../data/sim.json';
+import flightData from '../data/flight.json';
 import { clamp, dcos, dsin } from './dmath';
 import type { Creature, Projectile, Structure } from './entities';
 import { damageCastle } from './castles';
@@ -129,7 +130,9 @@ export function tryCast(sim: Sim, playerIndex: number): boolean {
   const tgt = pickTarget(sim, p, ox, oy, oz, fx, fz, assist);
   let vx = fx * def.speed;
   let vz = fz * def.speed;
-  let vy = def.gravity > 0 ? -1.5 : 0;
+  // Mouse aim: the bolt leaves along the view direction, tilted by the wizard's pitch (touch play has pitch 0).
+  const pitchRad = p.pitch * flightData.pitchMaxRad;
+  let vy = (def.gravity > 0 ? -1.5 : 0) + def.speed * (dsin(pitchRad) / dcos(pitchRad));
   if (tgt) {
     const dx0 = tgt.x - ox;
     const dz0 = tgt.z - oz;

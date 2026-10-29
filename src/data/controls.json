@@ -1,0 +1,9 @@
+{
+  "mouseYaw": 0.045,
+  "mousePitch": 0.0042,
+  "pitchRecenterDelayTicks": 75,
+  "pitchRecenter": 0.97,
+  "sensitivity": { "low": 0.6, "normal": 1, "high": 1.7 },
+  "firstPerson": { "eyeHeight": 2.3, "forward": 0.7, "fov": 76, "fovSpeedBoost": 8, "rollScale": 0.45, "lookDistance": 12 },
+  "chasePitchLook": 9
+}

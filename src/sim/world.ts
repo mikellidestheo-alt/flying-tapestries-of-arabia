@@ -1,5 +1,6 @@
 // Ambient world systems: mana orbs, wild creatures (AI + spawning), mana wells.
 import simData from '../data/sim.json';
+import utility from '../data/utility-spells.json';
 import { clamp, dcos, dsin } from './dmath';
 import { CREATURE_CHASE, CREATURE_WANDER } from './entities';
 import { CREATURES, MONSTER_FACTION, SPELLS, hurtCreature } from './combat';
@@ -244,6 +245,28 @@ export function stepOrbs(sim: Sim): void {
     orb.pz = orb.z;
     orb.age++;
     if (orb.age > o.lifetimeTicks) continue;
+    if (orb.claim) {
+      // Possessed: fly to the claimant (released if they are gone or their pool is full).
+      const owner = sim.players[orb.claim - 1];
+      if (!owner || !owner.active || owner.mana >= P.maxMana) orb.claim = 0;
+      else {
+        const dx = owner.x - orb.x;
+        const dy = owner.y - orb.y;
+        const dz = owner.z - orb.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < utility.possess.absorbRadius) {
+          sim.gainMana(owner, orb.value);
+          if (!owner.isRival) sim.emit('orb', orb.x, orb.y, orb.z, orb.value);
+          continue;
+        }
+        const step = Math.min(dist, utility.possess.pullSpeed * SIM_DT);
+        orb.x += (dx / dist) * step;
+        orb.y += (dy / dist) * step;
+        orb.z += (dz / dist) * step;
+        list[w++] = orb;
+        continue;
+      }
+    }
     const { p, d2 } = nearestPlayer(sim, orb.x, orb.y, orb.z);
     if (d2 > o.despawnDistance * o.despawnDistance) continue;
 

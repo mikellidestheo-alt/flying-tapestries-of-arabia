@@ -78,6 +78,7 @@ export class Game {
       const p = this.sim?.players[this.sim.localPlayer];
       if (bit === ACTION_SPELL && p && p.mana < primaryDef(p).manaCost) this.audio.denied();
     };
+    this.wireDesktopControls(canvas);
     this.debug = new DebugOverlay($('#debug'));
     this.panel = new SettingsPanel($('#settings'), () => this.save.settings, (p, r) => this.changeSettings(p, r), {
       get: () => this.wizardElement(),
@@ -116,6 +117,55 @@ export class Game {
     });
     if (import.meta.env.DEV) (window as unknown as { __game: Game }).__game = this; // dev/testing hook
     requestAnimationFrame((t) => this.loop(t));
+  }
+
+  // ------------------------------------------------------------ laptop controls and camera view
+  private desktop = false;
+
+  private wireDesktopControls(canvas: HTMLCanvasElement): void {
+    this.controls.onSelect = (i) => this.hud.setSelectedSlot(i);
+    this.hud.onSelectSlot = (i) => this.controls.select(i);
+    this.controls.onToggleView = () => {
+      if (this.phase === 'playing' || this.phase === 'paused') this.toggleView();
+    };
+    this.controls.onCastle = () => {
+      if (this.phase === 'playing') this.hud.castleSpell();
+    };
+    this.controls.onDesktop = () => this.setDesktop(true);
+    this.controls.onLockChange = (locked) => {
+      this.ui.classList.toggle('locked', locked);
+      if (!locked && this.phase === 'playing' && this.desktop) this.pause(); // Esc frees the mouse and pauses
+    };
+    canvas.addEventListener('click', () => {
+      if (this.phase === 'playing' && this.desktop) this.controls.requestLock();
+    });
+    $('#viewBtn').addEventListener('click', () => this.toggleView());
+    this.setDesktop(window.matchMedia?.('(pointer: fine)').matches ?? false);
+  }
+
+  private setDesktop(on: boolean): void {
+    if (on === this.desktop) return;
+    this.desktop = on;
+    this.ui.classList.toggle('desk', on);
+    this.applyView();
+  }
+
+  /** The camera actually used: the setting, or first person with a mouse and the chase camera on touch. */
+  private effectiveView(): 'first' | 'third' {
+    const v = this.save.settings.view;
+    return v === 'auto' ? (this.desktop ? 'first' : 'third') : v;
+  }
+
+  private applyView(): void {
+    const v = this.effectiveView();
+    this.renderer.setView(v);
+    this.ui.classList.toggle('fp', v === 'first');
+  }
+
+  private toggleView(): void {
+    const next = this.effectiveView() === 'first' ? 'third' : 'first';
+    this.changeSettings({ view: next });
+    this.hud.showToast(next === 'first' ? 'First person view' : 'Third person view');
   }
 
   // ------------------------------------------------------------ setup helpers
@@ -234,6 +284,7 @@ export class Game {
     void requestWakeLock();
     this.phase = 'playing';
     this.last = performance.now();
+    this.enterPlay();
     this.hud.update(sim);
   }
 
@@ -271,7 +322,17 @@ export class Game {
     this.phase = 'playing';
     this.last = performance.now();
     this.hud.showToast('Connected: fly together! Pair different elements for combos.');
+    this.enterPlay();
     this.hud.update(sim, sim.localPlayer);
+  }
+
+  /** Laptop: capture the mouse (needs a click, which Play provided) and explain the controls. */
+  private enterPlay(): void {
+    this.applyView();
+    this.hud.setSelectedSlot(this.controls.selected);
+    if (!this.desktop) return;
+    this.controls.requestLock();
+    this.hud.showToast('Mouse steers and aims · W/S speed · A/D slide · 1-6 spells · click casts · T view · Esc pauses. Click the game if the mouse is free.');
   }
 
   private coopLost(text: string): void {
@@ -357,6 +418,8 @@ export class Game {
     root.classList.toggle('hc', s.highContrast);
     root.classList.toggle('rm', s.reducedMotion);
     this.renderer.setReducedMotion(s.reducedMotion);
+    this.controls.mouseSensitivity = s.mouseSensitivity;
+    this.applyView();
     this.audio.setVolumes(s.musicVolume, s.sfxVolume, s.muted);
     this.renderer.setReducedFlashing(s.reducedFlashing);
     this.hud.reducedFlashing = s.reducedFlashing;
@@ -373,6 +436,7 @@ export class Game {
   pause(): void {
     if (this.phase !== 'playing') return;
     this.phase = 'paused';
+    this.controls.releaseLock();
     this.controls.releaseAll();
     this.hud.closePicker();
     this.audio.pause();
@@ -389,6 +453,7 @@ export class Game {
     this.show('#pauseScreen', false);
     this.audio.resume();
     void requestWakeLock();
+    if (this.desktop) this.controls.requestLock(); // called from the Resume click, so the browser allows it
   }
 
   private fatal(msg: string): void {

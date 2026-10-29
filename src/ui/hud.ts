@@ -3,15 +3,19 @@ import castleData from '../data/castles.json';
 import simData from '../data/sim.json';
 import { BRANCHES, castleStats, nextUpgrade, tierDef } from '../sim/castles';
 import { nextSpellUpgrade, primaryDef, signatureDef } from '../sim/combat';
+import utility from '../data/utility-spells.json';
+import { SPELL_SLOTS } from '../input/spellbar';
 import { primaryIcon, signatureIcon, weaponIcon } from './icons';
 import { wrapAngle } from '../sim/dmath';
-import type { Sim } from '../sim/sim';
+import type { Element as WizardElement } from '../data/elements';
+import type { PlayerState, Sim } from '../sim/sim';
 
 const $ = <T extends Element>(sel: string) => document.querySelector<T>(sel)!;
 
 const ICON = {
   castle: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 21V9l3 1V6h2v3h2V6h2v3h2V6h2v4l3-1v12h-5v-5a3 3 0 0 0-6 0v5z" fill="currentColor"/></svg>',
   mate: '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="7" r="4" fill="currentColor"/><path d="M4 21c0-5 3.5-8 8-8s8 3 8 8z" fill="currentColor"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" width="28" height="28"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
   well: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/></svg>',
   bow: '<svg viewBox="0 0 24 24" width="30" height="30"><path d="M6 3c8 3 8 15 0 18M6 12h14m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   walls: '<svg viewBox="0 0 24 24" width="30" height="30"><path d="M3 20V8h3V5h2v3h2V5h2v3h2V5h2v3h3v12z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
@@ -64,6 +68,11 @@ export class Hud {
   reducedFlashing = false;
   onUpgrade: (branch: number) => void = () => undefined;
   pickerOpen = false;
+  private hotbarBtns: HTMLButtonElement[] = [];
+  private hotbarKey = '';
+  private selectedSlot = 0;
+  /** A slot was clicked on the spell bar. */
+  onSelectSlot: (slot: number) => void = () => undefined;
 
   constructor() {
     this.upgrade.addEventListener('click', () => this.pressUpgrade());
@@ -104,6 +113,53 @@ export class Hud {
     this.foeInfo.classList.add('hidden');
     this.upgrade.classList.add('hidden');
     this.setTutorial(null);
+    this.buildHotbar(me.element);
+  }
+
+  // ---- laptop spell bar (number keys 1-6) ----
+  private buildHotbar(element: WizardElement): void {
+    const bar = $('#hotbar');
+    bar.replaceChildren();
+    const icons: Record<string, string> = {
+      fireball: primaryIcon(element, 30),
+      crater: '<svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>',
+      mound: '<svg viewBox="0 0 24 24" width="28" height="28"><path d="M2 19 12 5l10 14z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>',
+      possess: ICON.eye,
+      castle: ICON.castle.replace('width="22" height="22"', 'width="28" height="28"'),
+      signature: signatureIcon(element, 30),
+    };
+    this.hotbarBtns = SPELL_SLOTS.map((slot, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', `${i + 1}: ${slot.name}`);
+      b.innerHTML = `<b>${i + 1}</b>${icons[slot.id] ?? ''}<i></i>`;
+      b.addEventListener('click', () => this.onSelectSlot(i));
+      bar.appendChild(b);
+      return b;
+    });
+    this.hotbarKey = '';
+    this.setSelectedSlot(this.selectedSlot);
+  }
+
+  setSelectedSlot(slot: number): void {
+    this.selectedSlot = slot;
+    this.hotbarBtns.forEach((b, i) => b.classList.toggle('sel', i === slot));
+  }
+
+  /** Costs and "not enough mana" state of the spell bar (cheap: only touches the DOM when something changed). */
+  private updateHotbar(sim: Sim, p: PlayerState): void {
+    if (this.hotbarBtns.length === 0) return;
+    const mine = sim.castles.find((c) => c.faction === p.faction);
+    const up = mine ? nextUpgrade(mine) : null;
+    const costs = [primaryDef(p).manaCost, simData.debugTools.manaCost, simData.debugTools.manaCost, utility.possess.manaCost, up ? up.cost : 0, signatureDef(p).manaCost];
+    const key = costs.map((c) => `${c}${p.mana >= c ? 1 : 0}`).join('|');
+    if (key === this.hotbarKey) return;
+    this.hotbarKey = key;
+    costs.forEach((c, i) => {
+      const b = this.hotbarBtns[i]!;
+      b.classList.toggle('nomana', p.mana < c);
+      b.querySelector('i')!.textContent = i === 4 && !up ? 'max' : String(Math.ceil(c));
+    });
   }
 
   private marker(i: number, kind: string): Marker {
@@ -135,6 +191,7 @@ export class Hud {
       this.manaFill.style.transform = `scaleX(${Math.min(1, p.mana / simData.player.barMana)})`;
       this.manaText.textContent = String(mana);
     }
+    this.updateHotbar(sim, p);
     const def = primaryDef(p);
     const cd = Math.round((p.spellCd / def.cooldownTicks) * 100);
     if (cd !== this.last.cd) {
@@ -281,6 +338,27 @@ export class Hud {
         this.foeFill.style.transform = `scaleX(${Math.max(0, foe.hp / foe.max)})`;
       }
     }
+  }
+
+  /**
+   * The Castle spell (key 5 / R): builds up your base. Near your castle it opens the upgrade (a path choice at tiers 3 and 5, with the
+   * wizard held in place); far away it tells you how far to fly.
+   */
+  castleSpell(): void {
+    const sim = this.sim;
+    const mine = sim?.castles.find((c) => c.faction === 0);
+    const p = sim?.players[sim.localPlayer];
+    if (!sim || !mine || !p) return;
+    const d = Math.hypot(p.x - mine.x, p.z - mine.z);
+    if (d > castleData.upgradeRadius + 10) {
+      this.showToast(`Your castle is ${Math.round(d)} units away: fly home to build it up.`);
+      return;
+    }
+    if (!nextUpgrade(mine)) {
+      this.showToast('Your castle is already a palace.');
+      return;
+    }
+    this.pressUpgrade();
   }
 
   private pressUpgrade(): void {

@@ -52,7 +52,7 @@ describe('protocol', () => {
     const list = [input(0.5), input(0.5), input(0.5), input(-0.25, 1, ACTION_SPELL), input(0)];
     const runs = encodeRuns(list);
     expect(runs.length).toBe(3);
-    expect(runs[0]![4]).toBe(3);
+    expect(runs[0]![6]).toBe(3);
     const back = decodeRuns(runs);
     expect(back.length).toBe(list.length);
     expect(back[3]!.steer).toBeCloseTo(-0.25);
@@ -62,13 +62,13 @@ describe('protocol', () => {
   it('accepts good messages and rejects every malformed one', () => {
     expect(parseClientMsg('{"t":"hello","v":1,"name":"Ann","element":"water"}')?.t).toBe('hello');
     expect(parseClientMsg('{"t":"start"}')?.t).toBe('start');
-    expect(parseClientMsg(JSON.stringify({ t: 'in', seq: 5, runs: [[10, -20, 4, 0, 3]] }))?.t).toBe('in');
+    expect(parseClientMsg(JSON.stringify({ t: 'in', seq: 5, runs: [[10, -20, 4, 0, null, 0, 3]] }))?.t).toBe('in');
     const bad = [
       'nope', '[]', 'null', '{"t":"zap"}', '{"t":"hello"}', '{"t":"hello","v":1,"element":"plasma"}',
       '{"t":"setup","chapter":99,"difficulty":"normal"}', '{"t":"setup","chapter":0,"difficulty":"insane"}',
-      '{"t":"in","seq":-1,"runs":[[0,0,0,0,1]]}', '{"t":"in","seq":1,"runs":[]}', '{"t":"in","seq":1,"runs":[[999,0,0,0,1]]}',
-      '{"t":"in","seq":1,"runs":[[0,0,0,0,0]]}', '{"t":"in","seq":1,"runs":[[0,0,0,0,300]]}', '{"t":"in","seq":1.5,"runs":[[0,0,0,0,1]]}',
-      '{"t":"in","seq":1,"runs":[[0,0,0,0]]}', '{"t":"ping","c":"x"}',
+      '{"t":"in","seq":-1,"runs":[[0,0,0,0,null,0,1]]}', '{"t":"in","seq":1,"runs":[]}', '{"t":"in","seq":1,"runs":[[999,0,0,0,null,0,1]]}',
+      '{"t":"in","seq":1,"runs":[[0,0,0,0,null,0,0]]}', '{"t":"in","seq":1,"runs":[[0,0,0,0,null,0,300]]}', '{"t":"in","seq":1.5,"runs":[[0,0,0,0,null,0,1]]}',
+      '{"t":"in","seq":1,"runs":[[0,0,0,0,1]]}', '{"t":"in","seq":1,"runs":[[0,0,0,0,500,0,1]]}', '{"t":"in","seq":1,"runs":[[0,0,0,0,"up",0,1]]}', '{"t":"ping","c":"x"}',
       JSON.stringify({ t: 'hello', v: 1, name: 'x'.repeat(NET.maxMessageBytes) }),
     ];
     for (const b of bad) expect(parseClientMsg(b), b.slice(0, 40)).toBeNull();

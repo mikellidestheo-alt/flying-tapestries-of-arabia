@@ -1,0 +1,16 @@
+{
+  "possess": {
+    "name": "Possess",
+    "manaCost": 4,
+    "cooldownTicks": 45,
+    "missCooldownTicks": 12,
+    "range": 175,
+    "cosMin": 0.84,
+    "maxOrbs": 60,
+    "pullSpeed": 95,
+    "absorbRadius": 4
+  },
+  "castle": {
+    "name": "Castle"
+  }
+}

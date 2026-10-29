@@ -233,3 +233,18 @@ h2 .ar.small { display: inline-block; margin-left: 10px; font-size: 20px; vertic
 #chapterList .rank { display: block; padding: 0 9px; font: 400 13px var(--font-title); font-style: normal; letter-spacing: 0.4px; color: #ffd98a; opacity: 0.95; }
 #chapterList .rank.r1 { color: #9fe3a6; } #chapterList .rank.r2 { color: #b6e07a; } #chapterList .rank.r3 { color: #f3d86a; }
 #chapterList .rank.r4 { color: #ffb45a; } #chapterList .rank.r5 { color: #ff8a6a; } #chapterList .rank.r6 { color: #ff6f9a; }
+
+/* ---- First person, laptop spell bar, view toggle ---- */
+#crosshair { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; color: #ffe08a; pointer-events: none; display: none; filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8)); }
+#ui.fp #crosshair, #ui.locked #crosshair { display: block; }
+#hotbar { position: absolute; left: 50%; bottom: calc(var(--safe-b) + 10px); transform: translateX(-50%); display: none; gap: 6px; pointer-events: none; }
+#ui.desk #hotbar { display: flex; }
+#hotbar button { pointer-events: auto; position: relative; width: 62px; height: 62px; border-radius: 14px 14px 10px 10px; border: 2px solid rgba(243, 201, 105, 0.55); background: rgba(26, 16, 48, 0.78); color: #f3e2b0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font: 700 12px var(--font-body); }
+#hotbar button b { position: absolute; top: 2px; left: 6px; font: 400 14px var(--font-title); color: var(--gold); }
+#hotbar button i { position: absolute; bottom: 2px; font-style: normal; font-size: 12px; color: #cfe8ff; }
+#hotbar button svg { display: block; margin-top: -6px; }
+#hotbar button.sel { border-color: #fff0b8; background: rgba(120, 76, 20, 0.85); box-shadow: 0 0 0 2px rgba(243, 201, 105, 0.5), 0 0 14px rgba(243, 201, 105, 0.45); transform: translateY(-4px); }
+#hotbar button.nomana { opacity: 0.55; }
+#viewBtn { position: absolute; top: calc(var(--safe-t) + 12px); right: calc(var(--safe-r) + 76px); width: 52px; height: 52px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.6); background: rgba(26, 16, 48, 0.5); color: #fff; pointer-events: auto; display: flex; align-items: center; justify-content: center; padding: 0; touch-action: manipulation; }
+#ui.lefty #viewBtn { right: auto; left: calc(var(--safe-l) + 76px); }
+#btnPossess { color: #ffe08a; border-color: #ffe08a; }

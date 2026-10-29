@@ -171,6 +171,14 @@ Phone result: works well, no fps drop. Changes:
 - `main` was fast-forwarded to the session branch on the owner's instruction, so Cloudflare's Git integration builds and deploys everything since M5a (M5b-M6, music, Arabesque UI, co-op).
 **Tests:** 259 passing.
 
+### First person + laptop controls (2026-10-29, branch only, not on main)
+- **View:** first person by default with a mouse (camera at the wizard's eye, leans with the carpet), third person on **T** / the eye button / Settings -> Camera view (auto, first, third). Touch keeps the chase camera.
+- **Mouse + keys:** Pointer Lock (Esc pauses); mouse steers and pitches (climb/descend, vertical fireball aim); W/S speed, A/D strafe; **1-6** pick Fireball / Crater / Mound / Possess / Castle / signature (hotbar), left click casts, right click signature, Q Possess, R Castle, wheel cycles.
+- **Possess:** claims mana orbs in a forward cone and pulls them to you; nobody else can take claimed orbs. **Castle** spell opens the castle build/upgrade flow; mana stays in the single shared pool (no separate vault).
+- **Sim/protocol:** `pitch`/`strafe` inputs, `ACTION_POSSESS`, orb `claim`; run tuples are now 7 fields.
+**Tests:** 277 passing. Bundle: JS 216.8 KB gzip.
+**Laptop checklist:** click Play (mouse is captured), steer with the mouse, W to fly, move the mouse up/down to climb/dive, press 4 and click to Possess the orbs a kill dropped, 2/3 for Crater/Mound, 5 or R near your castle for the upgrade picker (you hover in place), T for third person, Esc to pause. Tell me about mouse sensitivity (Settings), pitch feel and whether first person is too low or too fast.
+
 ## RESUME HERE (written 2026-10-27, end of M6)
 **State:** M1-M6 done. `npm run check` exits 0 (252 tests, 212.7 KB gzip JS). **M6 is a CHECKPOINT: stop and report.** Waiting for: the M3-M6 phone feedback (FPS/warmth per preset, bloom cost, the economy and archer changes, co-op feel with two phones, ping, data use), the answer on the 20:1 WebSocket billing ratio, and any wish for follow-ups (3-4 player co-op, voice/ping markers, delta-compressed snapshots, public matchmaking).
 **Tips:** co-op dev needs `npm run dev:server` next to `npm run dev`; never `pkill -f` with a pattern that appears in your own command line (it kills the shell: use `pgrep -x workerd` or kill by pid); the room-creation limit (6/hour/IP) also applies locally, so restart wrangler with `--persist-to <fresh dir>` between test runs.

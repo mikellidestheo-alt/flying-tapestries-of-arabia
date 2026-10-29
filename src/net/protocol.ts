@@ -29,7 +29,8 @@ export interface LobbyState {
 }
 
 // ---------------------------------------------------------------- client -> server
-export type RunInput = [steer: number, throttle: number, actions: number, branch: number, count: number];
+/** [steer, throttle, actions, branch, pitch (null = touch play), strafe, count], steer/throttle/pitch/strafe in hundredths. */
+export type RunInput = [steer: number, throttle: number, actions: number, branch: number, pitch: number | null, strafe: number, count: number];
 
 export type ClientMsg =
   | { t: 'hello'; v: number; token?: string; name?: string; element?: Element }
@@ -93,17 +94,19 @@ export function encodeRuns(inputs: readonly PlayerInput[]): RunInput[] {
     const th = Math.round(clampUnit(i.throttle) * 100);
     const ac = i.actions | 0;
     const br = (i.branch ?? 0) | 0;
+    const pi = i.pitch === undefined ? null : Math.round(clampUnit(i.pitch) * 100);
+    const sd = Math.round(clampUnit(i.strafe ?? 0) * 100);
     const last = runs[runs.length - 1];
-    if (last && last[0] === st && last[1] === th && last[2] === ac && last[3] === br && last[4] < 255) last[4]++;
-    else runs.push([st, th, ac, br, 1]);
+    if (last && last[0] === st && last[1] === th && last[2] === ac && last[3] === br && last[4] === pi && last[5] === sd && last[6] < 255) last[6]++;
+    else runs.push([st, th, ac, br, pi, sd, 1]);
   }
   return runs;
 }
 
 export function decodeRuns(runs: readonly RunInput[]): PlayerInput[] {
   const out: PlayerInput[] = [];
-  for (const [st, th, ac, br, n] of runs) {
-    for (let k = 0; k < n; k++) out.push({ steer: st / 100, throttle: th / 100, actions: ac, branch: br });
+  for (const [st, th, ac, br, pi, sd, n] of runs) {
+    for (let k = 0; k < n; k++) out.push({ steer: st / 100, throttle: th / 100, actions: ac, branch: br, pitch: pi === null ? undefined : pi / 100, strafe: sd / 100 });
   }
   return out;
 }
@@ -147,11 +150,11 @@ export function parseClientMsg(raw: string): ClientMsg | null {
       const runs: RunInput[] = [];
       let total = 0;
       for (const r of o.runs) {
-        if (!Array.isArray(r) || r.length !== 5) return null;
-        const [st, th, ac, br, n] = r as unknown[];
-        if (!int(st, -100, 100) || !int(th, -100, 100) || !int(ac, 0, 255) || !int(br, 0, 3) || !int(n, 1, 255)) return null;
+        if (!Array.isArray(r) || r.length !== 7) return null;
+        const [st, th, ac, br, pi, sd, n] = r as unknown[];
+        if (!int(st, -100, 100) || !int(th, -100, 100) || !int(ac, 0, 1023) || !int(br, 0, 3) || !(pi === null || int(pi, -100, 100)) || !int(sd, -100, 100) || !int(n, 1, 255)) return null;
         total += n;
-        runs.push([st, th, ac, br, n]);
+        runs.push([st, th, ac, br, pi as number | null, sd, n]);
       }
       if (total > 255) return null;
       return { t: 'in', seq: o.seq, runs };
